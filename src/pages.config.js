@@ -6,6 +6,7 @@ import ClientManagement from './pages/ClientManagement';
 import SatisfactionSurvey from './pages/SatisfactionSurvey';
 import EmployeeDashboard from './pages/EmployeeDashboard';
 import Welcome from './pages/Welcome';
+import Careers from './pages/Careers';
 import Layout from './Layout.jsx';
 
 
@@ -18,6 +19,7 @@ export const PAGES = {
     "SatisfactionSurvey": SatisfactionSurvey,
     "EmployeeDashboard": EmployeeDashboard,
     "Welcome": Welcome,
+    "Careers": Careers,
 }
 
 export const pagesConfig = {

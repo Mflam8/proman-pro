@@ -56,6 +56,7 @@ export default function Layout({ children }) {
     { name: "Inicio", href: createPageUrl("Home") },
     { name: "Servicios", href: createPageUrl("Services") },
     { name: "Galería", href: createPageUrl("Gallery") },
+    { name: "Empleos", href: createPageUrl("Careers") }, // Added new navigation item
     { name: "Contacto", href: createPageUrl("Contact") }
   ];
 
