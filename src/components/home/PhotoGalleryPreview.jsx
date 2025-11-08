@@ -7,17 +7,17 @@ import { ArrowRight, CheckCircle } from "lucide-react";
 export default function PhotoGalleryPreview() {
   const workPhotos = [
     {
-      image: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ef04efb2facc1f9d963736/d329235e7_WhatsAppImage2025-10-14at122737PM.jpg",
+      image: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ef04efb2facc1f9d963736/3c7509e6a_20210227_141443.jpg",
       title: "Fontanería General",
       category: "Fontanería"
     },
     {
-      image: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ef04efb2facc1f9d963736/460602920_WhatsAppImage2025-10-14at122740PM3.jpg",
+      image: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ef04efb2facc1f9d963736/314cf23a8_20220408_200249.jpg",
       title: "Fontanería Comercial",
       category: "Fontanería"
     },
     {
-      image: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ef04efb2facc1f9d963736/5a41180fc_WhatsAppImage2025-10-14at122740PM1.jpg",
+      image: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ef04efb2facc1f9d963736/4c5e09e7a_20220622_145406.jpg",
       title: "Pintura Comercial",
       category: "Pintura"
     },
