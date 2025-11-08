@@ -27,7 +27,7 @@ export default function PhotoGalleryPreview() {
       category: "Remodelación"
     },
     {
-      image: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ef04efb2facc1f9d963736/698a8782c_WhatsAppImage2025-10-14at122741PM.jpg",
+      image: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ef04efb2facc1f9d963736/bb24f7300_20220628_153515.jpg",
       title: "Pintura Profesional",
       category: "Pintura"
     },
