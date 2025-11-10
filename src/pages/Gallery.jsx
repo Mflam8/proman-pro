@@ -1,8 +1,7 @@
-import React, { useState } from "react";
+import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Calendar } from "lucide-react";
 import { format } from "date-fns";
@@ -18,19 +17,11 @@ const categoryNames = {
 };
 
 export default function Gallery() {
-  const [activeCategory, setActiveCategory] = useState("all");
-
   const { data: projects, isLoading } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('-completion_date'),
     initialData: [],
   });
-
-  const filteredProjects = activeCategory === "all" 
-    ? projects 
-    : projects.filter(p => p.category === activeCategory);
-
-  const categories = ["all", ...new Set(projects.map(p => p.category))];
 
   return (
     <div className="min-h-screen bg-white">
@@ -48,27 +39,8 @@ export default function Gallery() {
 
       {/* Gallery Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <Tabs value={activeCategory} onValueChange={setActiveCategory} className="mb-10">
-          <div className="flex justify-center mb-8">
-            <TabsList className="bg-gray-100 p-1 overflow-x-auto">
-              <TabsTrigger value="all" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
-                Todos
-              </TabsTrigger>
-              {categories.filter(c => c !== "all").map((category) => (
-                <TabsTrigger 
-                  key={category} 
-                  value={category}
-                  className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy whitespace-nowrap"
-                >
-                  {categoryNames[category] || category}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </div>
-        </Tabs>
-
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProjects.map((project) => (
+          {projects.map((project) => (
             <Card key={project.id} className="overflow-hidden border-2 border-gray-100 hover:border-proman-yellow transition-all hover:shadow-lg">
               <div className="relative">
                 {project.after_image_url ? (
@@ -144,9 +116,9 @@ export default function Gallery() {
           ))}
         </div>
 
-        {filteredProjects.length === 0 && !isLoading && (
+        {projects.length === 0 && !isLoading && (
           <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">No hay proyectos disponibles en esta categoría</p>
+            <p className="text-gray-500 text-lg">No hay proyectos disponibles</p>
           </div>
         )}
       </div>
