@@ -13,7 +13,7 @@ export default function CompanyShowcase() {
           <div className="order-2 md:order-1">
             <div className="relative overflow-hidden rounded-2xl shadow-2xl" style={{ height: '500px' }}>
               <img
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ef04efb2facc1f9d963736/76f02ec68_20201017_104950.jpg"
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ef04efb2facc1f9d963736/5e396b2f3_Mario2.jpg"
                 alt="CEO de PROMAN con equipo profesional"
                 className="w-full h-full object-cover object-bottom"
               />
