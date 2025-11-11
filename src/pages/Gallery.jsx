@@ -42,25 +42,25 @@ export default function Gallery() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {projects.map((project) => (
             <Card key={project.id} className="overflow-hidden border-2 border-gray-100 hover:border-proman-yellow transition-all hover:shadow-lg">
-              <div className="relative">
+              <div className="relative w-full" style={{ paddingBottom: '75%' }}>
                 {project.after_image_url ? (
                   <img 
                     src={project.after_image_url} 
                     alt={project.title}
-                    className="w-full h-64 object-cover"
+                    className="absolute inset-0 w-full h-full object-contain bg-gray-50"
                   />
                 ) : project.image_url ? (
                   <img 
                     src={project.image_url} 
                     alt={project.title}
-                    className="w-full h-64 object-cover"
+                    className="absolute inset-0 w-full h-full object-contain bg-gray-50"
                   />
                 ) : (
-                  <div className="w-full h-64 bg-gray-200 flex items-center justify-center">
+                  <div className="absolute inset-0 w-full h-full bg-gray-200 flex items-center justify-center">
                     <span className="text-gray-400">Sin imagen</span>
                   </div>
                 )}
-                <Badge className="absolute top-4 right-4 bg-proman-yellow text-proman-navy">
+                <Badge className="absolute top-4 right-4 bg-proman-yellow text-proman-navy z-10">
                   {categoryNames[project.category] || project.category}
                 </Badge>
               </div>
@@ -93,19 +93,23 @@ export default function Gallery() {
                     <p className="text-xs font-semibold text-proman-navy mb-2">Antes y Después:</p>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <img 
-                          src={project.before_image_url} 
-                          alt="Antes"
-                          className="w-full h-20 object-cover rounded"
-                        />
+                        <div className="relative w-full" style={{ paddingBottom: '100%' }}>
+                          <img 
+                            src={project.before_image_url} 
+                            alt="Antes"
+                            className="absolute inset-0 w-full h-full object-contain bg-gray-50 rounded"
+                          />
+                        </div>
                         <p className="text-xs text-gray-500 mt-1 text-center">Antes</p>
                       </div>
                       <div>
-                        <img 
-                          src={project.after_image_url} 
-                          alt="Después"
-                          className="w-full h-20 object-cover rounded"
-                        />
+                        <div className="relative w-full" style={{ paddingBottom: '100%' }}>
+                          <img 
+                            src={project.after_image_url} 
+                            alt="Después"
+                            className="absolute inset-0 w-full h-full object-contain bg-gray-50 rounded"
+                          />
+                        </div>
                         <p className="text-xs text-gray-500 mt-1 text-center">Después</p>
                       </div>
                     </div>
