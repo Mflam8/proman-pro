@@ -305,7 +305,12 @@ export default function Layout({ children }) {
                 >
                   <Facebook className="w-6 h-6" />
                 </a>
-                <a href="#" className="text-gray-300 hover:text-proman-yellow transition-colors">
+                <a 
+                  href="https://www.instagram.com/proman_services/" 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-300 hover:text-proman-yellow transition-colors"
+                >
                   <Instagram className="w-6 h-6" />
                 </a>
                 <a href="#" className="text-gray-300 hover:text-proman-yellow transition-colors">
