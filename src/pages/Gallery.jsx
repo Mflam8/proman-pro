@@ -2,7 +2,6 @@ import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { MapPin, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -60,9 +59,6 @@ export default function Gallery() {
                     <span className="text-gray-400">Sin imagen</span>
                   </div>
                 )}
-                <Badge className="absolute top-4 right-4 bg-proman-yellow text-proman-navy z-10">
-                  {categoryNames[project.category] || project.category}
-                </Badge>
               </div>
               
               <CardContent className="p-6">
