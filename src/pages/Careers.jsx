@@ -3,17 +3,31 @@ import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Briefcase, Phone, X } from "lucide-react";
+import { Briefcase, Phone, X, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function Careers() {
   const [selectedImage, setSelectedImage] = useState(null);
+  const [imageScale, setImageScale] = useState(1);
 
   const { data: jobPostings, isLoading } = useQuery({
     queryKey: ['jobPostings'],
     queryFn: () => base44.entities.JobPosting.filter({ is_active: true }, 'order'),
     initialData: [],
   });
+
+  const handleZoomIn = () => {
+    setImageScale(prev => Math.min(prev + 0.25, 3));
+  };
+
+  const handleZoomOut = () => {
+    setImageScale(prev => Math.max(prev - 0.25, 0.5));
+  };
+
+  const handleCloseModal = () => {
+    setSelectedImage(null);
+    setImageScale(1);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -113,22 +127,68 @@ export default function Careers() {
         </div>
       </div>
 
-      {/* Full Screen Image Modal */}
+      {/* Image Modal with Zoom Controls */}
       {selectedImage && (
-        <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
-          <DialogContent className="max-w-7xl w-full h-[95vh] p-0 bg-black/95">
-            <button
-              onClick={() => setSelectedImage(null)}
-              className="absolute top-4 right-4 z-50 w-10 h-10 rounded-full bg-white/90 hover:bg-white flex items-center justify-center transition-colors"
-            >
-              <X className="w-6 h-6 text-gray-800" />
-            </button>
-            <div className="w-full h-full flex items-center justify-center p-4">
-              <img
-                src={selectedImage}
-                alt="Vacante"
-                className="max-w-full max-h-full object-contain"
-              />
+        <Dialog open={!!selectedImage} onOpenChange={handleCloseModal}>
+          <DialogContent className="max-w-[95vw] w-full max-h-[95vh] h-full p-0 bg-white overflow-hidden">
+            {/* Header with controls */}
+            <div className="absolute top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/70 to-transparent p-4">
+              <div className="flex items-center justify-between max-w-7xl mx-auto">
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={handleZoomOut}
+                    className="bg-white/90 hover:bg-white text-gray-800"
+                    disabled={imageScale <= 0.5}
+                  >
+                    <ZoomOut className="w-5 h-5" />
+                  </Button>
+                  <span className="text-white font-semibold bg-black/50 px-3 py-1 rounded">
+                    {Math.round(imageScale * 100)}%
+                  </span>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={handleZoomIn}
+                    className="bg-white/90 hover:bg-white text-gray-800"
+                    disabled={imageScale >= 3}
+                  >
+                    <ZoomIn className="w-5 h-5" />
+                  </Button>
+                </div>
+                
+                <button
+                  onClick={handleCloseModal}
+                  className="w-10 h-10 rounded-full bg-white/90 hover:bg-white flex items-center justify-center transition-colors"
+                >
+                  <X className="w-6 h-6 text-gray-800" />
+                </button>
+              </div>
+            </div>
+
+            {/* Scrollable image container */}
+            <div className="w-full h-full overflow-auto p-4 pt-20">
+              <div className="min-h-full flex items-start justify-center">
+                <img
+                  src={selectedImage}
+                  alt="Vacante"
+                  className="transition-transform duration-200"
+                  style={{
+                    transform: `scale(${imageScale})`,
+                    transformOrigin: 'top center',
+                    maxWidth: '100%',
+                    height: 'auto'
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Instructions */}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 z-50">
+              <div className="bg-black/70 text-white text-xs px-4 py-2 rounded-full">
+                💡 Usa los botones de zoom o desplázate para ver los detalles
+              </div>
             </div>
           </DialogContent>
         </Dialog>
