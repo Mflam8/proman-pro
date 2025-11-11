@@ -26,16 +26,6 @@ export default function Contact() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clientInquiries'] });
       setSuccessMessage(true);
-      setFormData({
-        client_name: "",
-        phone: "",
-        location: "",
-        rubro: "",
-        service_type: "",
-        preferred_time: "",
-        message: ""
-      });
-      setTimeout(() => setSuccessMessage(false), 5000);
     },
   });
 
@@ -126,135 +116,175 @@ export default function Contact() {
               </p>
             </CardHeader>
             <CardContent className="p-6">
-              {successMessage && (
-                <div className="mb-6 p-4 bg-green-50 border-2 border-green-500 rounded-lg flex items-start gap-3">
-                  <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-semibold text-green-800">¡Solicitud Recibida!</p>
-                    <p className="text-sm text-green-700 mt-1">
-                      Nuestro equipo se comunicará contigo pronto para confirmar los detalles del servicio.
+              {successMessage ? (
+                <div className="py-12 text-center">
+                  <div className="w-20 h-20 hexagon bg-green-100 mx-auto mb-6 flex items-center justify-center">
+                    <CheckCircle2 className="w-10 h-10 text-green-600" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-green-800 mb-4">
+                    ¡Solicitud Enviada Exitosamente!
+                  </h3>
+                  <div className="max-w-md mx-auto space-y-4">
+                    <p className="text-gray-700 leading-relaxed">
+                      Tu solicitud ha sido recibida. Nuestro equipo se comunicará contigo pronto para confirmar los detalles del servicio.
                     </p>
+                    <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+                      <p className="text-sm text-blue-800">
+                        <strong>📞 Tiempo de respuesta:</strong> Menos de 2 horas en horario laboral
+                      </p>
+                    </div>
+                    <div className="pt-4">
+                      <p className="text-gray-600 mb-4">
+                        ¿Necesitas contactarnos de inmediato?
+                      </p>
+                      <div className="space-y-3">
+                        <a href="tel:60531213" className="block">
+                          <Button variant="outline" className="w-full border-2 border-proman-navy text-proman-navy hover:bg-proman-navy hover:text-white">
+                            <Phone className="w-4 h-4 mr-2" />
+                            Llamar: 6053-1213
+                          </Button>
+                        </a>
+                        <a 
+                          href="https://wa.me/50360531213?text=Hola,%20me%20interesa%20conocer%20más%20sobre%20los%20servicios%20de%20PROMAN"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block"
+                        >
+                          <Button className="w-full bg-green-500 hover:bg-green-600 text-white">
+                            <MessageCircle className="w-4 h-4 mr-2" />
+                            WhatsApp
+                          </Button>
+                        </a>
+                      </div>
+                    </div>
                   </div>
                 </div>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-proman-navy mb-2">
+                      Nombre Completo *
+                    </label>
+                    <Input
+                      required
+                      value={formData.client_name}
+                      onChange={(e) => setFormData({...formData, client_name: e.target.value})}
+                      placeholder="Juan Pérez"
+                      disabled={submitInquiry.isPending}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-proman-navy mb-2">
+                      Teléfono *
+                    </label>
+                    <Input
+                      required
+                      value={formData.phone}
+                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                      placeholder="7XXX-XXXX"
+                      disabled={submitInquiry.isPending}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-proman-navy mb-2">
+                      Departamento *
+                    </label>
+                    <Select
+                      required
+                      value={formData.location}
+                      onValueChange={(value) => setFormData({...formData, location: value})}
+                      disabled={submitInquiry.isPending}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona tu departamento" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {departamentos.map((dept) => (
+                          <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-proman-navy mb-2">
+                      Tipo de Servicio *
+                    </label>
+                    <Select
+                      required
+                      value={formData.rubro}
+                      onValueChange={(value) => setFormData({...formData, rubro: value})}
+                      disabled={submitInquiry.isPending}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona el tipo de servicio" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {rubros.map((rubro) => (
+                          <SelectItem key={rubro.value} value={rubro.value}>
+                            {rubro.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-proman-navy mb-2">
+                      Servicio Específico
+                    </label>
+                    <Input
+                      value={formData.service_type}
+                      onChange={(e) => setFormData({...formData, service_type: e.target.value})}
+                      placeholder="Ej: Destapado de tuberías, instalación eléctrica..."
+                      disabled={submitInquiry.isPending}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-proman-navy mb-2">
+                      Horario Preferido
+                    </label>
+                    <Select
+                      value={formData.preferred_time}
+                      onValueChange={(value) => setFormData({...formData, preferred_time: value})}
+                      disabled={submitInquiry.isPending}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona tu horario preferido" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="mañana">Mañana (8:00 AM - 12:00 PM)</SelectItem>
+                        <SelectItem value="tarde">Tarde (12:00 PM - 4:00 PM)</SelectItem>
+                        <SelectItem value="vespertino">Vespertino (4:00 PM - 6:00 PM)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-proman-navy mb-2">
+                      Describe tu necesidad
+                    </label>
+                    <Textarea
+                      value={formData.message}
+                      onChange={(e) => setFormData({...formData, message: e.target.value})}
+                      placeholder="Cuéntanos los detalles de lo que necesitas..."
+                      rows={4}
+                      disabled={submitInquiry.isPending}
+                    />
+                  </div>
+
+                  <Button
+                    type="submit"
+                    className="w-full bg-proman-yellow text-proman-navy hover:opacity-90 font-semibold text-lg py-6"
+                    disabled={submitInquiry.isPending}
+                  >
+                    {submitInquiry.isPending ? "Enviando..." : "Solicitar Servicio"}
+                  </Button>
+                </form>
               )}
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-proman-navy mb-2">
-                    Nombre Completo *
-                  </label>
-                  <Input
-                    required
-                    value={formData.client_name}
-                    onChange={(e) => setFormData({...formData, client_name: e.target.value})}
-                    placeholder="Juan Pérez"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-proman-navy mb-2">
-                    Teléfono *
-                  </label>
-                  <Input
-                    required
-                    value={formData.phone}
-                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                    placeholder="7XXX-XXXX"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-proman-navy mb-2">
-                    Departamento *
-                  </label>
-                  <Select
-                    required
-                    value={formData.location}
-                    onValueChange={(value) => setFormData({...formData, location: value})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona tu departamento" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {departamentos.map((dept) => (
-                        <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-proman-navy mb-2">
-                    Tipo de Servicio *
-                  </label>
-                  <Select
-                    required
-                    value={formData.rubro}
-                    onValueChange={(value) => setFormData({...formData, rubro: value})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona el tipo de servicio" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {rubros.map((rubro) => (
-                        <SelectItem key={rubro.value} value={rubro.value}>
-                          {rubro.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-proman-navy mb-2">
-                    Servicio Específico
-                  </label>
-                  <Input
-                    value={formData.service_type}
-                    onChange={(e) => setFormData({...formData, service_type: e.target.value})}
-                    placeholder="Ej: Destapado de tuberías, instalación eléctrica..."
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-proman-navy mb-2">
-                    Horario Preferido
-                  </label>
-                  <Select
-                    value={formData.preferred_time}
-                    onValueChange={(value) => setFormData({...formData, preferred_time: value})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona tu horario preferido" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="mañana">Mañana (8:00 AM - 12:00 PM)</SelectItem>
-                      <SelectItem value="tarde">Tarde (12:00 PM - 4:00 PM)</SelectItem>
-                      <SelectItem value="vespertino">Vespertino (4:00 PM - 6:00 PM)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-proman-navy mb-2">
-                    Describe tu necesidad
-                  </label>
-                  <Textarea
-                    value={formData.message}
-                    onChange={(e) => setFormData({...formData, message: e.target.value})}
-                    placeholder="Cuéntanos los detalles de lo que necesitas..."
-                    rows={4}
-                  />
-                </div>
-
-                <Button
-                  type="submit"
-                  className="w-full bg-proman-yellow text-proman-navy hover:opacity-90 font-semibold text-lg py-6"
-                  disabled={submitInquiry.isPending}
-                >
-                  {submitInquiry.isPending ? "Enviando..." : "Solicitar Servicio"}
-                </Button>
-              </form>
             </CardContent>
           </Card>
 
