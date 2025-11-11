@@ -297,7 +297,12 @@ export default function Layout({ children }) {
                 Generando soluciones en tu ambiente de trabajo.
               </p>
               <div className="flex space-x-4">
-                <a href="#" className="text-gray-300 hover:text-proman-yellow transition-colors">
+                <a 
+                  href="https://www.facebook.com/profile.php?id=100028099016956" 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-300 hover:text-proman-yellow transition-colors"
+                >
                   <Facebook className="w-6 h-6" />
                 </a>
                 <a href="#" className="text-gray-300 hover:text-proman-yellow transition-colors">
