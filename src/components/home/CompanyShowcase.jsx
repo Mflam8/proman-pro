@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,7 +13,7 @@ export default function CompanyShowcase() {
           <div className="order-2 md:order-1">
             <div className="relative">
               <img
-                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ef04efb2facc1f9d963736/97fe4ab81_OrangeandBluePlumbingServicesFacebookPost12.png"
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ef04efb2facc1f9d963736/1f8d7847d_20201017_104950.jpg"
                 alt="Equipo profesional de PROMAN"
                 className="rounded-2xl shadow-2xl w-full"
               />
