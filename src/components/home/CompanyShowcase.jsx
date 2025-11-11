@@ -11,11 +11,11 @@ export default function CompanyShowcase() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
           <div className="order-2 md:order-1">
-            <div className="relative">
+            <div className="relative overflow-hidden rounded-2xl shadow-2xl" style={{ height: '500px' }}>
               <img
                 src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ef04efb2facc1f9d963736/1f8d7847d_20201017_104950.jpg"
-                alt="Equipo profesional de PROMAN"
-                className="rounded-2xl shadow-2xl w-full"
+                alt="CEO de PROMAN con equipo profesional"
+                className="w-full h-full object-cover object-bottom"
               />
               <div className="absolute -bottom-4 -right-4 w-24 h-24 sm:w-32 sm:h-32 hexagon bg-proman-yellow opacity-20"></div>
             </div>
