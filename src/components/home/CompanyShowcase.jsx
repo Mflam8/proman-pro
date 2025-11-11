@@ -9,8 +9,21 @@ export default function CompanyShowcase() {
   return (
     <div className="py-12 md:py-20 bg-gradient-to-br from-gray-50 via-blue-50/30 to-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="space-y-6">
+        <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+          {/* Imagen del lado izquierdo */}
+          <div className="order-2 md:order-1">
+            <div className="relative overflow-hidden rounded-2xl shadow-2xl">
+              <img
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ef04efb2facc1f9d963736/335e8880b_Mario2.jpg"
+                alt="CEO de PROMAN con equipo profesional"
+                className="w-full h-auto object-contain"
+              />
+              <div className="absolute -bottom-4 -right-4 w-24 h-24 sm:w-32 sm:h-32 hexagon bg-proman-yellow opacity-20"></div>
+            </div>
+          </div>
+
+          {/* Contenido del lado derecho */}
+          <div className="space-y-6 order-1 md:order-2">
             <div>
               <span className="inline-block bg-proman-yellow text-proman-navy px-4 py-2 rounded-full text-sm font-semibold mb-4">
                 Sobre Nosotros
