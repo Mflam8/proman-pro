@@ -58,7 +58,10 @@ export default function PhotoGalleryPreview() {
             >
               <img
                 src={photo.image}
-                alt={photo.title}
+                alt={`Proyecto de ${photo.category} - ${photo.title} realizado por PROMAN Services`}
+                width="400"
+                height="300"
+                loading="lazy"
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
               />
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-3 sm:p-4">

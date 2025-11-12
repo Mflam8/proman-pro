@@ -51,13 +51,19 @@ export default function Gallery() {
                 {project.after_image_url ? (
                   <img 
                     src={project.after_image_url} 
-                    alt={project.title}
+                    alt={`${project.title} - Proyecto finalizado por PROMAN Services en ${project.location || 'El Salvador'}`}
+                    width="600"
+                    height="450"
+                    loading="lazy"
                     className="absolute inset-0 w-full h-full object-contain bg-gray-50"
                   />
                 ) : project.image_url ? (
                   <img 
                     src={project.image_url} 
-                    alt={project.title}
+                    alt={`${project.title} - Proyecto de ${categoryNames[project.category] || project.category} en ${project.location || 'El Salvador'}`}
+                    width="600"
+                    height="450"
+                    loading="lazy"
                     className="absolute inset-0 w-full h-full object-contain bg-gray-50"
                   />
                 ) : (
@@ -98,7 +104,10 @@ export default function Gallery() {
                         <div className="relative w-full" style={{ paddingBottom: '100%' }}>
                           <img 
                             src={project.before_image_url} 
-                            alt="Antes"
+                            alt={`Estado inicial antes de la intervención - ${project.title}`}
+                            width="200"
+                            height="200"
+                            loading="lazy"
                             className="absolute inset-0 w-full h-full object-contain bg-gray-50 rounded"
                           />
                         </div>
@@ -108,7 +117,10 @@ export default function Gallery() {
                         <div className="relative w-full" style={{ paddingBottom: '100%' }}>
                           <img 
                             src={project.after_image_url} 
-                            alt="Después"
+                            alt={`Resultado final después del trabajo - ${project.title}`}
+                            width="200"
+                            height="200"
+                            loading="lazy"
                             className="absolute inset-0 w-full h-full object-contain bg-gray-50 rounded"
                           />
                         </div>

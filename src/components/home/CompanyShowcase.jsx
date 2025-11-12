@@ -15,7 +15,10 @@ export default function CompanyShowcase() {
             <div className="relative overflow-hidden rounded-2xl shadow-2xl">
               <img
                 src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ef04efb2facc1f9d963736/335e8880b_Mario2.jpg"
-                alt="CEO de PROMAN con equipo profesional"
+                alt="CEO Mario de PROMAN Services con equipo de técnicos profesionales"
+                width="800"
+                height="600"
+                loading="lazy"
                 className="w-full h-auto object-contain"
               />
               <div className="absolute -bottom-4 -right-4 w-24 h-24 sm:w-32 sm:h-32 hexagon bg-proman-yellow opacity-20"></div>

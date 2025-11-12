@@ -121,10 +121,13 @@ export default function Layout({ children }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
             {/* Logo */}
-            <Link to={createPageUrl("Home")} className="flex items-center">
+            <Link to={createPageUrl("Home")} className="flex items-center" aria-label="Ir a página de inicio">
               <img 
                 src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/user_68ef020757cff60f209415e9/1ab38f408_21558763_235265087000605_2527538411050239409_n-Editado.png"
-                alt="PROMAN Services"
+                alt="Logo PROMAN Services - Fontanería y Construcción"
+                width="120"
+                height="48"
+                loading="eager"
                 className="h-12 w-auto"
               />
             </Link>
@@ -149,9 +152,9 @@ export default function Layout({ children }) {
 
             {/* CTA Buttons */}
             <div className="hidden md:flex items-center space-x-3">
-              <a href="tel:60531213">
+              <a href="tel:60531213" aria-label="Llamar a PROMAN Services al 6053-1213">
                 <Button variant="outline" className="border-2 border-proman-navy text-proman-navy hover:bg-proman-navy hover:text-white">
-                  <Phone className="w-4 h-4 mr-2" />
+                  <Phone className="w-4 h-4 mr-2" aria-hidden="true" />
                   6053-1213
                 </Button>
               </a>
@@ -159,6 +162,7 @@ export default function Layout({ children }) {
                 href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label="Contactar por WhatsApp"
               >
                 <Button className="bg-proman-yellow text-proman-navy hover:opacity-90 font-semibold">
                   WhatsApp
@@ -200,8 +204,10 @@ export default function Layout({ children }) {
             <button
               className="md:hidden p-2 rounded-lg text-proman-navy hover:bg-gray-100"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label={mobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
+              aria-expanded={mobileMenuOpen}
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileMenuOpen ? <X className="w-6 h-6" aria-hidden="true" /> : <Menu className="w-6 h-6" aria-hidden="true" />}
             </button>
           </div>
         </div>
@@ -301,19 +307,27 @@ export default function Layout({ children }) {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-gray-300 hover:text-proman-yellow transition-colors"
+                  aria-label="Visitar página de Facebook de PROMAN Services"
                 >
-                  <Facebook className="w-6 h-6" />
+                  <Facebook className="w-6 h-6" aria-hidden="true" />
                 </a>
                 <a 
                   href="https://www.instagram.com/proman_services/" 
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-gray-300 hover:text-proman-yellow transition-colors"
+                  aria-label="Visitar Instagram de PROMAN Services"
                 >
-                  <Instagram className="w-6 h-6" />
+                  <Instagram className="w-6 h-6" aria-hidden="true" />
                 </a>
-                <a href="#" className="text-gray-300 hover:text-proman-yellow transition-colors">
-                  <Youtube className="w-6 h-6" />
+                <a 
+                  href="https://www.youtube.com/@promanservices" 
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-300 hover:text-proman-yellow transition-colors"
+                  aria-label="Visitar canal de YouTube de PROMAN Services"
+                >
+                  <Youtube className="w-6 h-6" aria-hidden="true" />
                 </a>
               </div>
             </div>

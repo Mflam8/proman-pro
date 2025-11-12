@@ -31,6 +31,9 @@ export default function SEO({
     // Basic meta tags
     setMetaTag('description', description);
     setMetaTag('keywords', keywords);
+    setMetaTag('robots', 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1');
+    setMetaTag('viewport', 'width=device-width, initial-scale=1, viewport-fit=cover');
+    setMetaTag('theme-color', '#252a5c');
 
     // Open Graph tags
     setMetaTag('og:title', title, true);
@@ -46,6 +49,24 @@ export default function SEO({
     setMetaTag('twitter:title', title);
     setMetaTag('twitter:description', description);
     setMetaTag('twitter:image', image);
+
+    // Performance hints
+    const preconnectLinks = [
+      'https://qtrypzzcjebvfcihiynt.supabase.co',
+      'https://fonts.googleapis.com',
+      'https://ui-avatars.com'
+    ];
+
+    preconnectLinks.forEach(href => {
+      let link = document.querySelector(`link[rel="preconnect"][href="${href}"]`);
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'preconnect';
+        link.href = href;
+        link.crossOrigin = 'anonymous';
+        document.head.appendChild(link);
+      }
+    });
 
     // Structured Data (JSON-LD)
     if (structuredData) {
