@@ -8,6 +8,7 @@ import EmployeeDashboard from './pages/EmployeeDashboard';
 import Welcome from './pages/Welcome';
 import Careers from './pages/Careers';
 import Sitemap from './pages/Sitemap';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 import Layout from './Layout.jsx';
 
 
@@ -22,6 +23,7 @@ export const PAGES = {
     "Welcome": Welcome,
     "Careers": Careers,
     "Sitemap": Sitemap,
+    "PrivacyPolicy": PrivacyPolicy,
 }
 
 export const pagesConfig = {
