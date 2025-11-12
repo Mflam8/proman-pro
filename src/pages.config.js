@@ -7,6 +7,7 @@ import SatisfactionSurvey from './pages/SatisfactionSurvey';
 import EmployeeDashboard from './pages/EmployeeDashboard';
 import Welcome from './pages/Welcome';
 import Careers from './pages/Careers';
+import Sitemap from './pages/Sitemap';
 import Layout from './Layout.jsx';
 
 
@@ -20,6 +21,7 @@ export const PAGES = {
     "EmployeeDashboard": EmployeeDashboard,
     "Welcome": Welcome,
     "Careers": Careers,
+    "Sitemap": Sitemap,
 }
 
 export const pagesConfig = {
