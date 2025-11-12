@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Phone } from "lucide-react";
@@ -29,14 +28,15 @@ export default function HeroSection() {
                 href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label="Agendar servicio por WhatsApp"
               >
                 <Button size="lg" className="bg-proman-yellow text-proman-navy hover:opacity-90 font-semibold text-lg w-full sm:w-auto">
                   Agendar Servicio
                 </Button>
               </a>
-              <a href="tel:60531213">
+              <a href="tel:60531213" aria-label="Llamar a PROMAN al 6053-1213">
                 <Button size="lg" variant="outline" className="border-2 border-white text-white hover:bg-white hover:!text-proman-navy w-full sm:w-auto">
-                  <Phone className="w-5 h-5 mr-2" />
+                  <Phone className="w-5 h-5 mr-2" aria-hidden="true" />
                   6053-1213
                 </Button>
               </a>
@@ -63,7 +63,10 @@ export default function HeroSection() {
             <div className="relative z-10">
               <img
                 src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ef04efb2facc1f9d963736/97fe4ab81_OrangeandBluePlumbingServicesFacebookPost12.png"
-                alt="Profesional de PROMAN Services"
+                alt="Técnico profesional de PROMAN Services - Expertos en fontanería, electricidad y construcción"
+                width="800"
+                height="800"
+                loading="eager"
                 className="rounded-2xl shadow-2xl w-full"
               />
               <div className="absolute -bottom-4 -left-4 bg-proman-yellow text-proman-navy p-4 sm:p-6 rounded-xl shadow-xl">
