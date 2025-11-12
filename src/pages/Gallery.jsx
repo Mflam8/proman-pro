@@ -1,6 +1,7 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import SEO from "../components/SEO";
 import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, Calendar } from "lucide-react";
 import { format } from "date-fns";
@@ -24,6 +25,11 @@ export default function Gallery() {
 
   return (
     <div className="min-h-screen bg-white">
+      <SEO 
+        title="Galería de Proyectos - Trabajos Realizados | PROMAN Services"
+        description="Conoce nuestros proyectos de fontanería, construcción, electricidad y remodelación en San Salvador. Fotos reales de trabajos terminados con antes y después."
+        keywords="proyectos fontanería El Salvador, galería construcción, trabajos realizados plomería, antes y después remodelación, portafolio PROMAN, obras terminadas"
+      />
       {/* Hero Section */}
       <div className="gradient-navy-yellow text-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">

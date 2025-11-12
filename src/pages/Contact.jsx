@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import SEO from "../components/SEO";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,6 +54,11 @@ export default function Contact() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <SEO 
+        title="Contacto - Solicita tu Servicio | PROMAN Services"
+        description="Contáctanos para servicios de fontanería, plomería, electricidad y construcción en San Salvador. Atención inmediata por WhatsApp o teléfono 6053-1213. Solicita tu cotización gratis."
+        keywords="contacto fontanero San Salvador, solicitar plomero, electricista urgente, cotización construcción, servicios de emergencia, fontanería La Libertad, WhatsApp PROMAN"
+      />
       {/* Hero Section */}
       <div className="gradient-navy-yellow text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
