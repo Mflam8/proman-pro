@@ -382,6 +382,11 @@ export default function Layout({ children }) {
           </div>
 
           <div className="border-t border-gray-600 mt-8 pt-8 text-center text-sm text-gray-300">
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-4">
+              <Link to={createPageUrl("PrivacyPolicy")} className="hover:text-proman-yellow transition-colors">
+                Política de Privacidad
+              </Link>
+            </div>
             <p>&copy; 2024 PROMAN Services. Todos los derechos reservados.</p>
           </div>
         </div>
