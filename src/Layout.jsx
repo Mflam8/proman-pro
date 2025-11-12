@@ -1,8 +1,7 @@
-
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Phone, Menu, X, Users, Briefcase, Facebook, Instagram, Youtube, LogIn } from "lucide-react";
+import { Phone, Menu, X, Users, Briefcase, Facebook, Instagram, Youtube, LogIn, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
 
@@ -56,7 +55,7 @@ export default function Layout({ children }) {
     { name: "Inicio", href: createPageUrl("Home") },
     { name: "Servicios", href: createPageUrl("Services") },
     { name: "Galería", href: createPageUrl("Gallery") },
-    { name: "Empleos", href: createPageUrl("Careers") }, // Added new navigation item
+    { name: "Empleos", href: createPageUrl("Careers") },
     { name: "Contacto", href: createPageUrl("Contact") }
   ];
 
@@ -322,10 +321,36 @@ export default function Layout({ children }) {
             <div>
               <h3 className="font-semibold mb-4 text-proman-yellow">Contacto</h3>
               <ul className="space-y-2 text-sm text-gray-300">
-                <li>Teléfono: 6053-1213</li>
-                <li>San Salvador, La Libertad</li>
-                <li>y Zona Occidental</li>
-                <li>El Salvador</li>
+                <li className="flex items-center gap-2">
+                  <Phone className="w-4 h-4 text-proman-yellow flex-shrink-0" />
+                  <span>Teléfono: 6053-1213</span>
+                </li>
+                <li>
+                  <a 
+                    href="https://www.google.com/maps?q=13.715468,-89.198499"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-start gap-2 hover:text-proman-yellow transition-colors group"
+                  >
+                    <MapPin className="w-4 h-4 text-proman-yellow flex-shrink-0 mt-0.5" />
+                    <span className="leading-relaxed">
+                      17 Avenida norte #1721<br />
+                      Colonia Layco<br />
+                      San Salvador, El Salvador
+                    </span>
+                  </a>
+                </li>
+                <li className="pt-2">
+                  <a 
+                    href="https://www.google.com/maps?q=13.715468,-89.198499"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-proman-yellow hover:underline text-xs"
+                  >
+                    <MapPin className="w-3 h-3" />
+                    Ver en Google Maps
+                  </a>
+                </li>
               </ul>
             </div>
 
