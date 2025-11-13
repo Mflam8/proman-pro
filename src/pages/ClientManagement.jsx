@@ -17,7 +17,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { createPageUrl } from "@/utils";
 import {
-  Phone, MapPin, Clock, FileText, CheckCircle, AlertCircle, Calendar, DollarSign, User, Filter, Percent, Camera, MessageCircle, Star, Copy, ExternalLink, UserPlus, Edit2, Building, Home as HomeIcon
+  Phone, MapPin, Clock, FileText, CheckCircle, AlertCircle, Calendar, DollarSign, User, Filter, Percent, Camera, MessageCircle, Star, Copy, ExternalLink, UserPlus, Edit2, Building, Home as HomeIcon, ClipboardCheck, FileCheck, ThumbsUp
 } from "lucide-react";
 import { format, parseISO, addHours } from "date-fns";
 import { es } from "date-fns/locale";
@@ -28,14 +28,14 @@ import EquipmentManagement from "../components/admin/EquipmentManagement";
 
 const statusConfig = {
   nuevo: { label: "Nuevo", color: "bg-blue-100 text-blue-800", icon: AlertCircle },
-  contactado: { label: "Contactado", color: "bg-purple-100 text-purple-800", icon: Phone },
-  visita_pendiente: { label: "Visita Pendiente", color: "bg-yellow-100 text-yellow-800", icon: Calendar },
-  visita_aprobada: { label: "Visita Aprobada", color: "bg-green-100 text-green-800", icon: CheckCircle },
-  cotizacion_enviada: { label: "Cotización Enviada", color: "bg-orange-100 text-orange-800", icon: FileText },
-  cotizacion_aprobada: { label: "Cotización Aprobada", color: "bg-green-100 text-green-800", icon: DollarSign },
-  en_proceso: { label: "En Proceso", color: "bg-indigo-100 text-indigo-800", icon: Clock },
-  completado: { label: "Completado", color: "bg-green-100 text-green-800", icon: CheckCircle },
-  cancelado: { label: "Cancelado", color: "bg-gray-100 text-gray-800", icon: AlertCircle }
+  evaluacion_agendada: { label: "Evaluación Agendada", color: "bg-indigo-100 text-indigo-800", icon: Calendar },
+  evaluacion_pendiente: { label: "Evaluación Pendiente", color: "bg-yellow-100 text-yellow-800", icon: Clock },
+  evaluacion_realizada: { label: "Evaluación Realizada", color: "bg-green-100 text-green-800", icon: ClipboardCheck },
+  cotizacion_pendiente: { label: "Cotización Pendiente", color: "bg-orange-100 text-orange-800", icon: FileText },
+  cotizacion_realizada: { label: "Cotización Realizada", color: "bg-purple-100 text-purple-800", icon: FileCheck },
+  trabajo_aprobado: { label: "Trabajo Aprobado", color: "bg-teal-100 text-teal-800", icon: ThumbsUp },
+  en_proceso: { label: "Trabajo en Proceso", color: "bg-blue-100 text-blue-800", icon: Clock },
+  completado: { label: "Trabajo Completado", color: "bg-green-100 text-green-800", icon: CheckCircle }
 };
 
 const priorityConfig = {
@@ -99,7 +99,6 @@ export default function ClientManagement() {
       await queryClient.invalidateQueries({ queryKey: ['employeeSchedules'] }); 
       await queryClient.invalidateQueries({ queryKey: ['customers'] });
       
-      // Wait a bit for queries to refetch, then update selectedInquiry with fresh data
       setTimeout(() => {
         if (selectedInquiry) {
           const updatedInquiries = queryClient.getQueryData(['clientInquiries', sortOrder]);
@@ -114,17 +113,13 @@ export default function ClientManagement() {
 
   const createInquiry = useMutation({
     mutationFn: async (data) => {
-      // Crear el trabajo
       const newInquiry = await base44.entities.ClientInquiry.create(data);
       
-      // Si tiene customer_id, actualizar el cliente
       if (data.customer_id) {
         const customer = customers.find(c => c.id === data.customer_id);
         if (customer) {
-          // Actualizar total_jobs
           await base44.entities.Customer.update(data.customer_id, {
             total_jobs: (customer.total_jobs || 0) + 1,
-            // Cambiar estado a "activo" automáticamente si es el primer trabajo o si está en "nuevo" o "contactado"
             status: (!customer.status || customer.status === "nuevo" || customer.status === "contactado") ? "activo" : customer.status
           });
         }
@@ -162,8 +157,8 @@ export default function ClientManagement() {
   const stats = {
     total: inquiries.length,
     nuevo: inquiries.filter(i => i.status === "nuevo").length,
-    visita_pendiente: inquiries.filter(i => i.status === "visita_pendiente").length,
-    cotizacion_enviada: inquiries.filter(i => i.status === "cotizacion_enviada").length,
+    evaluacion_pendiente: inquiries.filter(i => i.status === "evaluacion_pendiente" || i.status === "evaluacion_agendada").length,
+    cotizacion_pendiente: inquiries.filter(i => i.status === "cotizacion_pendiente").length,
     en_proceso: inquiries.filter(i => i.status === "en_proceso").length
   };
 
@@ -262,8 +257,8 @@ export default function ClientManagement() {
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
               <Card><CardContent className="p-4"><div className="text-2xl font-bold text-proman-navy">{stats.total}</div><div className="text-sm text-gray-600">Total</div></CardContent></Card>
               <Card><CardContent className="p-4"><div className="text-2xl font-bold text-blue-600">{stats.nuevo}</div><div className="text-sm text-gray-600">Nuevos</div></CardContent></Card>
-              <Card><CardContent className="p-4"><div className="text-2xl font-bold text-yellow-600">{stats.visita_pendiente}</div><div className="text-sm text-gray-600">Visitas</div></CardContent></Card>
-              <Card><CardContent className="p-4"><div className="text-2xl font-bold text-orange-600">{stats.cotizacion_enviada}</div><div className="text-sm text-gray-600">Cotizaciones</div></CardContent></Card>
+              <Card><CardContent className="p-4"><div className="text-2xl font-bold text-yellow-600">{stats.evaluacion_pendiente}</div><div className="text-sm text-gray-600">Evaluaciones</div></CardContent></Card>
+              <Card><CardContent className="p-4"><div className="text-2xl font-bold text-orange-600">{stats.cotizacion_pendiente}</div><div className="text-sm text-gray-600">Cotizaciones</div></CardContent></Card>
               <Card><CardContent className="p-4"><div className="text-2xl font-bold text-indigo-600">{stats.en_proceso}</div><div className="text-sm text-gray-600">En Proceso</div></CardContent></Card>
             </div>
 
