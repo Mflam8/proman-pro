@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -11,14 +10,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import {
   User, UserPlus, Phone, Mail, MapPin, Star, DollarSign,
-  Briefcase, Edit2, Plus, Home, Building, Trash2
+  Briefcase, Edit2, Plus, Home, Building, Trash2, AlertTriangle,
+  UserCheck, UserX, Clock
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
 export default function CustomerManagement() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState("all");
+  const [filterRubro, setFilterRubro] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -58,27 +59,53 @@ export default function CustomerManagement() {
       c.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.phone?.includes(searchTerm) ||
       c.email?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = filterType === "all" || c.customer_type === filterType;
-    return matchesSearch && matchesType;
+    const matchesRubro = filterRubro === "all" || c.primary_rubro === filterRubro;
+    const matchesStatus = filterStatus === "all" || c.status === filterStatus;
+    return matchesSearch && matchesRubro && matchesStatus;
   });
 
   const stats = {
     total: customers.length,
-    residencial: customers.filter(c => c.customer_type === "residencial").length,
-    comercial: customers.filter(c => c.customer_type === "comercial").length,
+    nuevo: customers.filter(c => c.status === "nuevo").length,
+    contactado: customers.filter(c => c.status === "contactado").length,
+    activo: customers.filter(c => c.status === "activo").length,
+    desactivado: customers.filter(c => c.status === "desactivado").length,
+    hogar: customers.filter(c => c.primary_rubro === "Hogar").length,
+    comercial: customers.filter(c => c.primary_rubro === "Comercial").length,
+    restaurantes: customers.filter(c => c.primary_rubro === "Restaurantes").length,
+    hospitales: customers.filter(c => c.primary_rubro === "Hospitales").length,
+    emergencias: customers.filter(c => c.is_emergency).length,
     vip: customers.filter(c => c.is_vip).length,
-    avgSpent: customers.length > 0 ?
-      (customers.reduce((sum, c) => sum + (c.total_spent || 0), 0) / customers.length).toFixed(0) : 0,
   };
 
   const getCustomerJobs = (customerId) => {
     return allJobs.filter(j => j.customer_id === customerId);
   };
 
+  const getStatusConfig = (status) => {
+    const configs = {
+      nuevo: { label: "Nuevo", color: "bg-blue-100 text-blue-800", icon: Clock },
+      contactado: { label: "Contactado", color: "bg-purple-100 text-purple-800", icon: Phone },
+      activo: { label: "Activo", color: "bg-green-100 text-green-800", icon: UserCheck },
+      desactivado: { label: "Desactivado", color: "bg-gray-100 text-gray-800", icon: UserX }
+    };
+    return configs[status] || configs.nuevo;
+  };
+
+  const getRubroConfig = (rubro) => {
+    const configs = {
+      Hogar: { color: "bg-blue-100 text-blue-800", icon: Home },
+      Comercial: { color: "bg-indigo-100 text-indigo-800", icon: Building },
+      Restaurantes: { color: "bg-orange-100 text-orange-800", icon: Briefcase },
+      Hospitales: { color: "bg-red-100 text-red-800", icon: AlertTriangle }
+    };
+    return configs[rubro] || { color: "bg-gray-100 text-gray-800", icon: User };
+  };
+
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -87,7 +114,7 @@ export default function CustomerManagement() {
               </div>
               <div>
                 <div className="text-2xl font-bold text-proman-navy">{stats.total}</div>
-                <div className="text-xs text-gray-600">Total Clientes</div>
+                <div className="text-xs text-gray-600">Total</div>
               </div>
             </div>
           </CardContent>
@@ -97,11 +124,11 @@ export default function CustomerManagement() {
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 hexagon bg-blue-100 flex items-center justify-center">
-                <Home className="w-5 h-5 text-blue-600" />
+                <Clock className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-blue-600">{stats.residencial}</div>
-                <div className="text-xs text-gray-600">Residenciales</div>
+                <div className="text-2xl font-bold text-blue-600">{stats.nuevo}</div>
+                <div className="text-xs text-gray-600">Nuevos</div>
               </div>
             </div>
           </CardContent>
@@ -110,12 +137,40 @@ export default function CustomerManagement() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 hexagon bg-indigo-100 flex items-center justify-center">
-                <Building className="w-5 h-5 text-indigo-600" />
+              <div className="w-10 h-10 hexagon bg-purple-100 flex items-center justify-center">
+                <Phone className="w-5 h-5 text-purple-600" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-indigo-600">{stats.comercial}</div>
-                <div className="text-xs text-gray-600">Comerciales</div>
+                <div className="text-2xl font-bold text-purple-600">{stats.contactado}</div>
+                <div className="text-xs text-gray-600">Contactados</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 hexagon bg-green-100 flex items-center justify-center">
+                <UserCheck className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-green-600">{stats.activo}</div>
+                <div className="text-xs text-gray-600">Activos</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 hexagon bg-red-100 flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-red-600">{stats.emergencias}</div>
+                <div className="text-xs text-gray-600">Emergencias</div>
               </div>
             </div>
           </CardContent>
@@ -134,16 +189,53 @@ export default function CustomerManagement() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Rubro Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <Home className="w-5 h-5 text-blue-600" />
+              <div>
+                <div className="text-xl font-bold text-blue-600">{stats.hogar}</div>
+                <div className="text-xs text-gray-600">Hogar</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 hexagon bg-green-100 flex items-center justify-center">
-                <DollarSign className="w-5 h-5 text-green-600" />
-              </div>
+              <Building className="w-5 h-5 text-indigo-600" />
               <div>
-                <div className="text-2xl font-bold text-green-600">${stats.avgSpent}</div>
-                <div className="text-xs text-gray-600">Gasto Promedio</div>
+                <div className="text-xl font-bold text-indigo-600">{stats.comercial}</div>
+                <div className="text-xs text-gray-600">Comercial</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <Briefcase className="w-5 h-5 text-orange-600" />
+              <div>
+                <div className="text-xl font-bold text-orange-600">{stats.restaurantes}</div>
+                <div className="text-xs text-gray-600">Restaurantes</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="w-5 h-5 text-red-600" />
+              <div>
+                <div className="text-xl font-bold text-red-600">{stats.hospitales}</div>
+                <div className="text-xs text-gray-600">Hospitales</div>
               </div>
             </div>
           </CardContent>
@@ -154,7 +246,7 @@ export default function CustomerManagement() {
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <CardTitle>Base de Clientes</CardTitle>
+            <CardTitle>Gestión de Clientes</CardTitle>
             <Button
               onClick={() => setShowCreateModal(true)}
               className="bg-proman-yellow text-proman-navy hover:opacity-90"
@@ -165,30 +257,50 @@ export default function CustomerManagement() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <div className="flex flex-col gap-4 mb-6">
             <Input
               placeholder="Buscar por nombre, teléfono o email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1"
+              className="w-full"
             />
-            <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="Tipo de cliente" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="residencial">Residencial</SelectItem>
-                <SelectItem value="comercial">Comercial</SelectItem>
-                <SelectItem value="corporativo">Corporativo</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Select value={filterRubro} onValueChange={setFilterRubro}>
+                <SelectTrigger className="w-full sm:w-48">
+                  <SelectValue placeholder="Filtrar por rubro" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los Rubros</SelectItem>
+                  <SelectItem value="Hogar">Hogar</SelectItem>
+                  <SelectItem value="Comercial">Comercial</SelectItem>
+                  <SelectItem value="Restaurantes">Restaurantes</SelectItem>
+                  <SelectItem value="Hospitales">Hospitales</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-full sm:w-48">
+                  <SelectValue placeholder="Filtrar por estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los Estados</SelectItem>
+                  <SelectItem value="nuevo">Nuevos</SelectItem>
+                  <SelectItem value="contactado">Contactados</SelectItem>
+                  <SelectItem value="activo">Activos</SelectItem>
+                  <SelectItem value="desactivado">Desactivados</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="space-y-3">
             {filteredCustomers.map((customer) => {
               const customerJobs = getCustomerJobs(customer.id);
               const primaryAddress = customer.addresses?.find(a => a.is_primary) || customer.addresses?.[0];
+              const statusConfig = getStatusConfig(customer.status);
+              const rubroConfig = getRubroConfig(customer.primary_rubro);
+              const StatusIcon = statusConfig.icon;
+              const RubroIcon = rubroConfig.icon;
 
               return (
                 <Card
@@ -208,19 +320,28 @@ export default function CustomerManagement() {
                               <h3 className="text-lg font-bold text-proman-navy">
                                 {customer.full_name}
                               </h3>
+                              <Badge className={statusConfig.color}>
+                                <StatusIcon className="w-3 h-3 mr-1" />
+                                {statusConfig.label}
+                              </Badge>
+                              {customer.primary_rubro && (
+                                <Badge className={rubroConfig.color}>
+                                  <RubroIcon className="w-3 h-3 mr-1" />
+                                  {customer.primary_rubro}
+                                </Badge>
+                              )}
+                              {customer.is_emergency && (
+                                <Badge className="bg-red-100 text-red-800">
+                                  <AlertTriangle className="w-3 h-3 mr-1" />
+                                  Emergencia
+                                </Badge>
+                              )}
                               {customer.is_vip && (
                                 <Badge className="bg-yellow-100 text-yellow-800">
                                   <Star className="w-3 h-3 mr-1" />
                                   VIP
                                 </Badge>
                               )}
-                              <Badge className={
-                                customer.customer_type === "residencial" ? "bg-blue-100 text-blue-800" :
-                                customer.customer_type === "comercial" ? "bg-indigo-100 text-indigo-800" :
-                                "bg-purple-100 text-purple-800"
-                              }>
-                                {customer.customer_type}
-                              </Badge>
                             </div>
                             <div className="grid md:grid-cols-2 gap-2 text-sm text-gray-600">
                               <div className="flex items-center gap-2">
@@ -283,7 +404,7 @@ export default function CustomerManagement() {
             <div className="text-center py-12 bg-gray-50 rounded-lg">
               <User className="w-12 h-12 text-gray-300 mx-auto mb-3" />
               <p className="text-gray-500 font-medium">No se encontraron clientes</p>
-              <p className="text-sm text-gray-400 mt-1">Crea tu primer cliente para empezar</p>
+              <p className="text-sm text-gray-400 mt-1">Ajusta los filtros o crea un nuevo cliente</p>
             </div>
           )}
         </CardContent>
@@ -320,6 +441,12 @@ export default function CustomerManagement() {
             setSelectedCustomer(null);
             setEditingCustomer(customer);
           }}
+          onUpdateStatus={(customerId, newStatus) => {
+            updateCustomer.mutate({ 
+              id: customerId, 
+              data: { ...selectedCustomer, status: newStatus }
+            });
+          }}
         />
       )}
     </div>
@@ -332,6 +459,9 @@ function CustomerFormModal({ customer, isOpen, onClose, onSubmit, isSubmitting }
     phone: "",
     secondary_phone: "",
     email: "",
+    status: "nuevo",
+    primary_rubro: "",
+    is_emergency: false,
     customer_type: "residencial",
     preferred_contact: "whatsapp",
     addresses: [{ label: "Principal", address: "", location: "San Salvador", reference: "", is_primary: true }],
@@ -425,24 +555,45 @@ function CustomerFormModal({ customer, isOpen, onClose, onSubmit, isSubmitting }
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-proman-navy mb-2">Tipo de Cliente</label>
+                <label className="block text-sm font-medium text-proman-navy mb-2">Estado del Cliente *</label>
                 <Select
-                  value={formData.customer_type}
-                  onValueChange={(value) => setFormData({...formData, customer_type: value})}
+                  value={formData.status}
+                  onValueChange={(value) => setFormData({...formData, status: value})}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="residencial">Residencial</SelectItem>
-                    <SelectItem value="comercial">Comercial</SelectItem>
-                    <SelectItem value="corporativo">Corporativo</SelectItem>
+                    <SelectItem value="nuevo">Nuevo</SelectItem>
+                    <SelectItem value="contactado">Contactado</SelectItem>
+                    <SelectItem value="activo">Activo</SelectItem>
+                    <SelectItem value="desactivado">Desactivado</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-proman-navy mb-2">Rubro Principal</label>
+                <Select
+                  value={formData.primary_rubro || ""}
+                  onValueChange={(value) => setFormData({...formData, primary_rubro: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar rubro..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Hogar">Hogar</SelectItem>
+                    <SelectItem value="Comercial">Comercial</SelectItem>
+                    <SelectItem value="Restaurantes">Restaurantes</SelectItem>
+                    <SelectItem value="Hospitales">Hospitales</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-proman-navy mb-2">Contacto Preferido</label>
                 <Select
@@ -458,6 +609,18 @@ function CustomerFormModal({ customer, isOpen, onClose, onSubmit, isSubmitting }
                     <SelectItem value="email">Email</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="flex items-center pt-6">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.is_emergency}
+                    onChange={(e) => setFormData({...formData, is_emergency: e.target.checked})}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-sm font-medium text-proman-navy">Es Emergencia</span>
+                </label>
               </div>
 
               <div className="flex items-center pt-6">
@@ -574,7 +737,19 @@ function CustomerFormModal({ customer, isOpen, onClose, onSubmit, isSubmitting }
   );
 }
 
-function CustomerDetailModal({ customer, jobs, isOpen, onClose, onEdit }) {
+function CustomerDetailModal({ customer, jobs, isOpen, onClose, onEdit, onUpdateStatus }) {
+  const getStatusConfig = (status) => {
+    const configs = {
+      nuevo: { label: "Nuevo", color: "bg-blue-100 text-blue-800" },
+      contactado: { label: "Contactado", color: "bg-purple-100 text-purple-800" },
+      activo: { label: "Activo", color: "bg-green-100 text-green-800" },
+      desactivado: { label: "Desactivado", color: "bg-gray-100 text-gray-800" }
+    };
+    return configs[status] || configs.nuevo;
+  };
+
+  const statusConfig = getStatusConfig(customer.status);
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -582,14 +757,21 @@ function CustomerDetailModal({ customer, jobs, isOpen, onClose, onEdit }) {
           <div className="flex justify-between items-start">
             <div>
               <DialogTitle className="text-2xl">{customer.full_name}</DialogTitle>
-              <div className="flex items-center gap-2 mt-2">
-                <Badge className={
-                  customer.customer_type === "residencial" ? "bg-blue-100 text-blue-800" :
-                  customer.customer_type === "comercial" ? "bg-indigo-100 text-indigo-800" :
-                  "bg-purple-100 text-purple-800"
-                }>
-                  {customer.customer_type}
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
+                <Badge className={statusConfig.color}>
+                  {statusConfig.label}
                 </Badge>
+                {customer.primary_rubro && (
+                  <Badge className="bg-indigo-100 text-indigo-800">
+                    {customer.primary_rubro}
+                  </Badge>
+                )}
+                {customer.is_emergency && (
+                  <Badge className="bg-red-100 text-red-800">
+                    <AlertTriangle className="w-3 h-3 mr-1" />
+                    Emergencia
+                  </Badge>
+                )}
                 {customer.is_vip && (
                   <Badge className="bg-yellow-100 text-yellow-800">
                     <Star className="w-3 h-3 mr-1" />
@@ -606,6 +788,53 @@ function CustomerDetailModal({ customer, jobs, isOpen, onClose, onEdit }) {
         </DialogHeader>
 
         <div className="space-y-6">
+          {/* Status Change */}
+          <Card className="border-2 border-proman-yellow">
+            <CardHeader>
+              <CardTitle className="text-lg">Cambiar Estado</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-2 flex-wrap">
+                <Button
+                  size="sm"
+                  variant={customer.status === "nuevo" ? "default" : "outline"}
+                  onClick={() => onUpdateStatus(customer.id, "nuevo")}
+                  className={customer.status === "nuevo" ? "bg-blue-600 text-white" : ""}
+                >
+                  <Clock className="w-4 h-4 mr-1" />
+                  Nuevo
+                </Button>
+                <Button
+                  size="sm"
+                  variant={customer.status === "contactado" ? "default" : "outline"}
+                  onClick={() => onUpdateStatus(customer.id, "contactado")}
+                  className={customer.status === "contactado" ? "bg-purple-600 text-white" : ""}
+                >
+                  <Phone className="w-4 h-4 mr-1" />
+                  Contactado
+                </Button>
+                <Button
+                  size="sm"
+                  variant={customer.status === "activo" ? "default" : "outline"}
+                  onClick={() => onUpdateStatus(customer.id, "activo")}
+                  className={customer.status === "activo" ? "bg-green-600 text-white" : ""}
+                >
+                  <UserCheck className="w-4 h-4 mr-1" />
+                  Activo
+                </Button>
+                <Button
+                  size="sm"
+                  variant={customer.status === "desactivado" ? "default" : "outline"}
+                  onClick={() => onUpdateStatus(customer.id, "desactivado")}
+                  className={customer.status === "desactivado" ? "bg-gray-600 text-white" : ""}
+                >
+                  <UserX className="w-4 h-4 mr-1" />
+                  Desactivado
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Contact Info */}
           <Card>
             <CardHeader>
