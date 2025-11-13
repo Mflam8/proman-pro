@@ -1,3 +1,4 @@
+
 import { useEffect } from 'react';
 
 export default function SEO({ 
@@ -102,8 +103,9 @@ export const createLocalBusinessSchema = () => ({
   "telephone": "+503-6053-1213",
   "address": {
     "@type": "PostalAddress",
-    "streetAddress": "17 Avenida norte #1721, Colonia Layco",
+    "streetAddress": "Urbanización Elisa, 17 Avenida Norte #1721",
     "addressLocality": "San Salvador",
+    "addressRegion": "San Salvador",
     "addressCountry": "SV"
   },
   "geo": {

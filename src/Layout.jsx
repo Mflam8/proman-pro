@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -348,9 +349,9 @@ export default function Layout({ children }) {
                   >
                     <MapPin className="w-4 h-4 text-proman-yellow flex-shrink-0 mt-0.5" />
                     <span className="leading-relaxed">
-                      17 Avenida norte #1721<br />
-                      Colonia Layco<br />
-                      San Salvador, El Salvador
+                      Urbanización Elisa<br />
+                      17 Avenida Norte #1721<br />
+                      San Salvador, San Salvador
                     </span>
                   </a>
                 </li>

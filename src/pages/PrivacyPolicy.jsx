@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield, Lock, Eye, FileText, UserCheck, Database, Mail } from "lucide-react";
@@ -277,7 +278,7 @@ export default function PrivacyPolicy() {
               </p>
               <ul className="text-sm text-gray-700 mt-2 space-y-1">
                 <li>📞 Teléfono: 6053-1213</li>
-                <li>📍 Dirección: 17 Avenida norte #1721, Colonia Layco, San Salvador</li>
+                <li>📍 Dirección: Urbanización Elisa, 17 Avenida Norte #1721, San Salvador, San Salvador</li>
               </ul>
               <p className="text-xs text-gray-600 mt-2 italic">
                 Responderemos a tu solicitud en un plazo máximo de 15 días hábiles.
@@ -354,7 +355,7 @@ export default function PrivacyPolicy() {
             
             <div className="space-y-2 text-gray-700">
               <p><strong>PROMAN Services</strong></p>
-              <p>📍 17 Avenida norte #1721, Colonia Layco, San Salvador, El Salvador</p>
+              <p>📍 Urbanización Elisa, 17 Avenida Norte #1721, San Salvador, San Salvador</p>
               <p>📞 Teléfono: 6053-1213</p>
               <p>🕒 Horario de atención: Lunes a Sábado, 7:00 AM - 6:00 PM</p>
             </div>
