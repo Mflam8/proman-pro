@@ -11,8 +11,9 @@ import { Phone, MapPin, Clock, CheckCircle2, Mail, MessageCircle } from "lucide-
 
 export default function Contact() {
   const [formData, setFormData] = useState({
-    client_name: "",
+    full_name: "",
     phone: "",
+    email: "",
     location: "",
     rubro: "",
     service_type: "",
@@ -22,20 +23,42 @@ export default function Contact() {
   const [successMessage, setSuccessMessage] = useState(false);
   const queryClient = useQueryClient();
 
-  const submitInquiry = useMutation({
-    mutationFn: (data) => base44.entities.ClientInquiry.create(data),
+  const submitCustomer = useMutation({
+    mutationFn: async (data) => {
+      // Determinar si es emergencia basado en el rubro
+      const isEmergency = data.rubro === "Emergencias";
+      
+      // Ajustar el rubro si es emergencia (no existe "Emergencias" como rubro principal)
+      const primaryRubro = isEmergency ? "Hogar" : data.rubro;
+      
+      // Crear el cliente con estado "nuevo"
+      const customerData = {
+        full_name: data.full_name,
+        phone: data.phone,
+        email: data.email || undefined,
+        status: "nuevo",
+        primary_rubro: primaryRubro,
+        is_emergency: isEmergency,
+        preferred_contact: "whatsapp",
+        addresses: [{
+          label: "Principal",
+          location: data.location,
+          is_primary: true
+        }],
+        notes: data.message ? `Solicitud web: ${data.service_type || 'Sin especificar'}. ${data.message}` : `Solicitud web: ${data.service_type || 'Sin especificar'}`
+      };
+      
+      return base44.entities.Customer.create(customerData);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clientInquiries'] });
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
       setSuccessMessage(true);
     },
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    submitInquiry.mutate({
-      ...formData,
-      status: "nuevo"
-    });
+    submitCustomer.mutate(formData);
   };
 
   const rubros = [
@@ -173,10 +196,10 @@ export default function Contact() {
                     </label>
                     <Input
                       required
-                      value={formData.client_name}
-                      onChange={(e) => setFormData({...formData, client_name: e.target.value})}
+                      value={formData.full_name}
+                      onChange={(e) => setFormData({...formData, full_name: e.target.value})}
                       placeholder="Juan Pérez"
-                      disabled={submitInquiry.isPending}
+                      disabled={submitCustomer.isPending}
                     />
                   </div>
 
@@ -189,7 +212,20 @@ export default function Contact() {
                       value={formData.phone}
                       onChange={(e) => setFormData({...formData, phone: e.target.value})}
                       placeholder="7XXX-XXXX"
-                      disabled={submitInquiry.isPending}
+                      disabled={submitCustomer.isPending}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-proman-navy mb-2">
+                      Email (Opcional)
+                    </label>
+                    <Input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      placeholder="tu@email.com"
+                      disabled={submitCustomer.isPending}
                     />
                   </div>
 
@@ -201,7 +237,7 @@ export default function Contact() {
                       required
                       value={formData.location}
                       onValueChange={(value) => setFormData({...formData, location: value})}
-                      disabled={submitInquiry.isPending}
+                      disabled={submitCustomer.isPending}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecciona tu departamento" />
@@ -222,7 +258,7 @@ export default function Contact() {
                       required
                       value={formData.rubro}
                       onValueChange={(value) => setFormData({...formData, rubro: value})}
-                      disabled={submitInquiry.isPending}
+                      disabled={submitCustomer.isPending}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecciona el tipo de servicio" />
@@ -245,7 +281,7 @@ export default function Contact() {
                       value={formData.service_type}
                       onChange={(e) => setFormData({...formData, service_type: e.target.value})}
                       placeholder="Ej: Destapado de tuberías, instalación eléctrica..."
-                      disabled={submitInquiry.isPending}
+                      disabled={submitCustomer.isPending}
                     />
                   </div>
 
@@ -256,7 +292,7 @@ export default function Contact() {
                     <Select
                       value={formData.preferred_time}
                       onValueChange={(value) => setFormData({...formData, preferred_time: value})}
-                      disabled={submitInquiry.isPending}
+                      disabled={submitCustomer.isPending}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecciona tu horario preferido" />
@@ -278,16 +314,16 @@ export default function Contact() {
                       onChange={(e) => setFormData({...formData, message: e.target.value})}
                       placeholder="Cuéntanos los detalles de lo que necesitas..."
                       rows={4}
-                      disabled={submitInquiry.isPending}
+                      disabled={submitCustomer.isPending}
                     />
                   </div>
 
                   <Button
                     type="submit"
                     className="w-full bg-proman-yellow text-proman-navy hover:opacity-90 font-semibold text-lg py-6"
-                    disabled={submitInquiry.isPending}
+                    disabled={submitCustomer.isPending}
                   >
-                    {submitInquiry.isPending ? "Enviando..." : "Solicitar Servicio"}
+                    {submitCustomer.isPending ? "Enviando..." : "Solicitar Servicio"}
                   </Button>
                 </form>
               )}

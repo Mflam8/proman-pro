@@ -114,15 +114,23 @@ export default function ClientManagement() {
 
   const createInquiry = useMutation({
     mutationFn: async (data) => {
+      // Crear el trabajo
+      const newInquiry = await base44.entities.ClientInquiry.create(data);
+      
+      // Si tiene customer_id, actualizar el cliente
       if (data.customer_id) {
         const customer = customers.find(c => c.id === data.customer_id);
         if (customer) {
+          // Actualizar total_jobs
           await base44.entities.Customer.update(data.customer_id, {
-            total_jobs: (customer.total_jobs || 0) + 1
+            total_jobs: (customer.total_jobs || 0) + 1,
+            // Cambiar estado a "activo" automáticamente si es el primer trabajo o si está en "nuevo" o "contactado"
+            status: (!customer.status || customer.status === "nuevo" || customer.status === "contactado") ? "activo" : customer.status
           });
         }
       }
-      return base44.entities.ClientInquiry.create(data);
+      
+      return newInquiry;
     },
     onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['clientInquiries'] });
