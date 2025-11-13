@@ -501,6 +501,7 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
         scheduled_date: inquiry.scheduled_date || '',
         scheduled_start_time: inquiry.scheduled_start_time || '',
         estimated_duration_hours: inquiry.estimated_duration_hours || '',
+        quote_pdf_url: inquiry.quote_pdf_url || '',
     });
     const [beforeImageFile, setBeforeImageFile] = useState(null);
     const [afterImageFile, setAfterImageFile] = useState(null);
@@ -519,6 +520,7 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
             scheduled_date: inquiry.scheduled_date || '',
             scheduled_start_time: inquiry.scheduled_start_time || '',
             estimated_duration_hours: inquiry.estimated_duration_hours || '',
+            quote_pdf_url: inquiry.quote_pdf_url || '',
         });
     }, [inquiry]);
 
@@ -909,6 +911,36 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
                                         />
                                     </div>
                                 </div>
+                                
+                                <div className="pt-4 border-t">
+                                    <Label className="block text-sm font-medium text-proman-navy mb-2">
+                                        📄 Enlace PDF de Cotización
+                                    </Label>
+                                    <div className="flex gap-2">
+                                        <Input 
+                                            value={formData.quote_pdf_url || ''} 
+                                            onChange={(e) => setFormData(p => ({...p, quote_pdf_url: e.target.value}))}
+                                            placeholder="https://ejemplo.com/cotizacion.pdf"
+                                            disabled={isUpdating}
+                                        />
+                                        {formData.quote_pdf_url && (
+                                            <a 
+                                                href={formData.quote_pdf_url} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                <Button type="button" size="icon" variant="outline">
+                                                    <ExternalLink className="w-4 h-4" />
+                                                </Button>
+                                            </a>
+                                        )}
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Pega aquí el enlace del PDF de la cotización que enviaste al cliente
+                                    </p>
+                                </div>
+                                
                                 <Textarea name="notes" placeholder="Notas internas administrativas..." value={formData.notes || ''} onChange={(e) => setFormData(prev => ({...prev, notes: e.target.value}))} rows={2} disabled={isUpdating} />
                             </CardContent>
                         </Card>
