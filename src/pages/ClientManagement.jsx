@@ -499,7 +499,6 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
     const canEdit = isAdmin || isSupervisor;
     const [showCustomerEdit, setShowCustomerEdit] = useState(false);
     const [customerSearch, setCustomerSearch] = useState("");
-    const [showHistory, setShowHistory] = useState(false);
     const queryClient = useQueryClient();
     
     const [formData, setFormData] = useState({
@@ -553,7 +552,7 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
         e.preventDefault();
         const { id, ...updateData } = formData;
         
-        // Guardar en el log si cambió el progreso
+        // Guardar en el log si cambió el progreso, notas o fotos
         const progressChanged = 
             formData.progress_percentage !== inquiry.progress_percentage ||
             formData.work_notes_done !== inquiry.work_notes_done ||
@@ -564,16 +563,28 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
         if (progressChanged) {
             try {
                 const currentUser = await base44.auth.me();
+                
+                // Recolectar solo las fotos NUEVAS que se subieron en esta actualización
+                const newBeforePhotos = [];
+                const newAfterPhotos = [];
+                
+                if (formData.before_image_url && formData.before_image_url !== inquiry.before_image_url) {
+                    newBeforePhotos.push(formData.before_image_url);
+                }
+                if (formData.after_image_url && formData.after_image_url !== inquiry.after_image_url) {
+                    newAfterPhotos.push(formData.after_image_url);
+                }
+                
                 await base44.entities.ProgressLog.create({
                     inquiry_id: id,
                     progress_percentage: formData.progress_percentage || 0,
                     work_done: formData.work_notes_done || '',
                     work_pending: formData.work_notes_pending || '',
                     next_follow_up_date: formData.next_follow_up_date || null,
-                    before_photos: formData.before_image_url ? [formData.before_image_url] : [],
-                    after_photos: formData.after_image_url ? [formData.after_image_url] : [],
+                    before_photos: newBeforePhotos,
+                    after_photos: newAfterPhotos,
                     updated_by: currentUser.email,
-                    notes: ''
+                    notes: formData.notes || ''
                 });
                 queryClient.invalidateQueries({ queryKey: ['progressLogs', id] });
             } catch (error) {
@@ -595,6 +606,26 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
         c.phone?.includes(customerSearch)
     );
 
+    // Calcular estadísticas del trabajo
+    const workStats = useMemo(() => {
+        if (progressLogs.length === 0) return null;
+        
+        const firstLog = progressLogs[progressLogs.length - 1];
+        const lastLog = progressLogs[0];
+        
+        const startDate = new Date(firstLog.created_date);
+        const lastUpdate = new Date(lastLog.created_date);
+        const daysPassed = Math.ceil((lastUpdate - startDate) / (1000 * 60 * 60 * 24));
+        
+        return {
+            totalUpdates: progressLogs.length,
+            daysPassed: daysPassed,
+            startDate: startDate,
+            lastUpdate: lastUpdate,
+            currentProgress: lastLog.progress_percentage
+        };
+    }, [progressLogs]);
+
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -605,7 +636,7 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
                                 👷 Actualización de Progreso del Trabajo
                             </CardTitle>
                             <p className="text-xs text-blue-100 mt-1">
-                                Esta sección es para que el técnico registre el avance del trabajo
+                                Cada cambio que guardes se registrará automáticamente en el historial
                             </p>
                         </CardHeader>
                         <CardContent className="space-y-4 pt-4">
@@ -620,7 +651,7 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-proman-navy mb-2">¿Qué se realizó?</label>
-                                <Textarea name="work_notes_done" value={formData.work_notes_done || ''} onChange={(e) => setFormData(prev => ({...prev, work_notes_done: e.target.value}))} rows={3} disabled={isUpdating || !canEdit} placeholder="Detalla las tareas completadas..." />
+                                <Textarea name="work_notes_done" value={formData.work_notes_done || ''} onChange={(e) => setFormData(prev => ({...prev, work_notes_done: e.target.value}))} rows={3} disabled={isUpdating || !canEdit} placeholder="Detalla las tareas completadas en esta actualización..." />
                             </div>
                              <div>
                                 <label className="block text-sm font-medium text-proman-navy mb-2">¿Qué falta?</label>
@@ -637,7 +668,7 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
                         <CardHeader className="bg-blue-500 text-white">
                             <CardTitle>📸 Fotografías del Trabajo</CardTitle>
                             <p className="text-xs text-blue-100 mt-1">
-                                Documenta el antes y después del trabajo realizado
+                                Las fotos se guardarán en el historial de esta actualización
                             </p>
                         </CardHeader>
                         <CardContent className="grid grid-cols-2 gap-4 pt-4">
@@ -647,51 +678,170 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
                     </Card>
 
                     {progressLogs.length > 0 && (
-                        <Card className="border-2 border-blue-300">
-                            <CardHeader>
-                                <div className="flex justify-between items-center">
-                                    <CardTitle className="text-base">📋 Historial de Actualizaciones</CardTitle>
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => setShowHistory(!showHistory)}
-                                    >
-                                        {showHistory ? 'Ocultar' : 'Ver Historial'}
-                                    </Button>
-                                </div>
+                        <Card className="border-2 border-green-500">
+                            <CardHeader className="bg-green-500 text-white">
+                                <CardTitle className="flex items-center justify-between">
+                                    <span>📊 Historial Completo de Trabajo</span>
+                                    <Badge className="bg-white text-green-700">
+                                        {progressLogs.length} {progressLogs.length === 1 ? 'actualización' : 'actualizaciones'}
+                                    </Badge>
+                                </CardTitle>
+                                <p className="text-xs text-green-100 mt-1">
+                                    Registro cronológico de todos los avances realizados
+                                </p>
                             </CardHeader>
-                            {showHistory && (
-                                <CardContent className="space-y-3 max-h-96 overflow-y-auto">
-                                    {progressLogs.map((log, idx) => (
-                                        <div key={log.id} className="border-l-4 border-blue-500 pl-4 py-2 bg-gray-50 rounded">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <Badge className="bg-blue-500 text-white">
-                                                    {log.progress_percentage}% avance
-                                                </Badge>
-                                                <span className="text-xs text-gray-500">
-                                                    {format(new Date(log.created_date), "dd MMM yyyy, HH:mm", { locale: es })}
-                                                </span>
-                                            </div>
-                                            {log.work_done && (
-                                                <div className="mb-2">
-                                                    <p className="text-xs font-semibold text-green-700">✅ Realizado:</p>
-                                                    <p className="text-xs text-gray-700">{log.work_done}</p>
-                                                </div>
-                                            )}
-                                            {log.work_pending && (
-                                                <div className="mb-2">
-                                                    <p className="text-xs font-semibold text-orange-700">⏳ Pendiente:</p>
-                                                    <p className="text-xs text-gray-700">{log.work_pending}</p>
-                                                </div>
-                                            )}
-                                            {log.updated_by && (
-                                                <p className="text-xs text-gray-500 italic">Por: {log.updated_by}</p>
-                                            )}
+                            <CardContent className="pt-4">
+                                {workStats && (
+                                    <div className="bg-white rounded-lg p-4 mb-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        <div className="text-center">
+                                            <p className="text-2xl font-bold text-green-600">{workStats.currentProgress}%</p>
+                                            <p className="text-xs text-gray-600">Avance Actual</p>
                                         </div>
-                                    ))}
-                                </CardContent>
-                            )}
+                                        <div className="text-center">
+                                            <p className="text-2xl font-bold text-blue-600">{workStats.totalUpdates}</p>
+                                            <p className="text-xs text-gray-600">Actualizaciones</p>
+                                        </div>
+                                        <div className="text-center">
+                                            <p className="text-2xl font-bold text-purple-600">{workStats.daysPassed}</p>
+                                            <p className="text-xs text-gray-600">{workStats.daysPassed === 1 ? 'Día' : 'Días'} transcurridos</p>
+                                        </div>
+                                        <div className="text-center">
+                                            <p className="text-lg font-bold text-gray-700">{format(workStats.lastUpdate, "dd MMM", { locale: es })}</p>
+                                            <p className="text-xs text-gray-600">Última actualización</p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+                                    {progressLogs.map((log, idx) => {
+                                        const isFirst = idx === progressLogs.length - 1;
+                                        const isLast = idx === 0;
+                                        
+                                        return (
+                                            <div key={log.id} className="relative">
+                                                {/* Timeline line */}
+                                                {!isLast && (
+                                                    <div className="absolute left-5 top-12 bottom-0 w-0.5 bg-gray-300" />
+                                                )}
+                                                
+                                                <div className="flex gap-4">
+                                                    {/* Timeline dot */}
+                                                    <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
+                                                        isFirst ? 'bg-blue-500' : 
+                                                        isLast ? 'bg-green-500' : 
+                                                        'bg-gray-400'
+                                                    }`}>
+                                                        <span className="text-white font-bold text-sm">
+                                                            {log.progress_percentage}%
+                                                        </span>
+                                                    </div>
+                                                    
+                                                    {/* Content */}
+                                                    <div className="flex-1 bg-white rounded-lg border-2 border-gray-200 p-4 shadow-sm">
+                                                        <div className="flex justify-between items-start mb-3">
+                                                            <div>
+                                                                <Badge className={
+                                                                    isFirst ? "bg-blue-500 text-white" :
+                                                                    isLast ? "bg-green-500 text-white" :
+                                                                    "bg-gray-500 text-white"
+                                                                }>
+                                                                    {isFirst && "🏁 Inicio"}
+                                                                    {isLast && "✅ Última actualización"}
+                                                                    {!isFirst && !isLast && `Actualización ${progressLogs.length - idx}`}
+                                                                </Badge>
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <p className="text-xs font-semibold text-gray-700">
+                                                                    {format(new Date(log.created_date), "dd MMM yyyy", { locale: es })}
+                                                                </p>
+                                                                <p className="text-xs text-gray-500">
+                                                                    {format(new Date(log.created_date), "HH:mm", { locale: es })}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        {log.work_done && (
+                                                            <div className="mb-3">
+                                                                <p className="text-xs font-semibold text-green-700 mb-1 flex items-center gap-1">
+                                                                    <CheckCircle className="w-3 h-3" />
+                                                                    Trabajo Realizado:
+                                                                </p>
+                                                                <p className="text-sm text-gray-700 bg-green-50 rounded p-2">
+                                                                    {log.work_done}
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                        
+                                                        {log.work_pending && (
+                                                            <div className="mb-3">
+                                                                <p className="text-xs font-semibold text-orange-700 mb-1 flex items-center gap-1">
+                                                                    <Clock className="w-3 h-3" />
+                                                                    Pendiente:
+                                                                </p>
+                                                                <p className="text-sm text-gray-700 bg-orange-50 rounded p-2">
+                                                                    {log.work_pending}
+                                                                </p>
+                                                            </div>
+                                                        )}
+
+                                                        {(log.before_photos?.length > 0 || log.after_photos?.length > 0) && (
+                                                            <div className="mb-3">
+                                                                <p className="text-xs font-semibold text-blue-700 mb-2 flex items-center gap-1">
+                                                                    <Camera className="w-3 h-3" />
+                                                                    Fotografías de esta actualización:
+                                                                </p>
+                                                                <div className="grid grid-cols-2 gap-2">
+                                                                    {log.before_photos?.map((photo, photoIdx) => (
+                                                                        <div key={`before-${photoIdx}`} className="relative">
+                                                                            <img 
+                                                                                src={photo} 
+                                                                                alt="Antes" 
+                                                                                className="w-full h-24 object-cover rounded border-2 border-blue-200"
+                                                                            />
+                                                                            <Badge className="absolute top-1 left-1 text-xs bg-blue-500">
+                                                                                Antes
+                                                                            </Badge>
+                                                                        </div>
+                                                                    ))}
+                                                                    {log.after_photos?.map((photo, photoIdx) => (
+                                                                        <div key={`after-${photoIdx}`} className="relative">
+                                                                            <img 
+                                                                                src={photo} 
+                                                                                alt="Después" 
+                                                                                className="w-full h-24 object-cover rounded border-2 border-green-200"
+                                                                            />
+                                                                            <Badge className="absolute top-1 left-1 text-xs bg-green-500">
+                                                                                Después
+                                                                            </Badge>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {log.next_follow_up_date && (
+                                                            <div className="mb-2">
+                                                                <p className="text-xs text-gray-600">
+                                                                    📅 Próximo seguimiento: <span className="font-semibold">{format(new Date(log.next_follow_up_date), "dd MMMM yyyy", { locale: es })}</span>
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                        
+                                                        {log.updated_by && (
+                                                            <div className="pt-2 border-t border-gray-200 mt-2">
+                                                                <p className="text-xs text-gray-500 flex items-center gap-1">
+                                                                    <User className="w-3 h-3" />
+                                                                    Actualizado por: <span className="font-medium">{log.updated_by}</span>
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </CardContent>
                         </Card>
                     )}
 
