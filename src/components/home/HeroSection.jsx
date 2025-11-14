@@ -35,7 +35,7 @@ export default function HeroSection() {
                 </Button>
               </a>
               <a href="tel:+50360531213" aria-label="Llamar a PROMAN al +503 6053-1213">
-                <Button size="lg" variant="outline" className="border-2 border-white !text-white hover:bg-white hover:!text-proman-navy w-full sm:w-auto [&_*]:!text-white hover:[&_*]:!text-proman-navy">
+                <Button size="lg" className="bg-transparent border-2 border-white text-white hover:bg-white hover:text-proman-navy w-full sm:w-auto transition-all">
                   <Phone className="w-5 h-5 mr-2" aria-hidden="true" />
                   <span className="text-xl font-bold">+503 6053-1213</span>
                 </Button>
