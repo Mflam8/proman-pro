@@ -3,8 +3,10 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CheckCircle } from "lucide-react";
+import { useLanguage } from "@/components/LanguageContext";
 
 export default function PhotoGalleryPreview() {
+  const { t } = useLanguage();
   const workPhotos = [
     {
       image: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ef04efb2facc1f9d963736/3c7509e6a_20210227_141443.jpg",
@@ -43,10 +45,10 @@ export default function PhotoGalleryPreview() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-8 md:mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-proman-navy mb-4">
-            Galería de Trabajos Realizados
+            {t({ es: "Galería de Trabajos Realizados", en: "Gallery of Completed Projects" })}
           </h2>
           <p className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto">
-            Proyectos reales que demuestran nuestra calidad y experiencia
+            {t({ es: "Proyectos reales que demuestran nuestra calidad y experiencia", en: "Real projects that demonstrate our quality and experience" })}
           </p>
         </div>
 
@@ -84,7 +86,7 @@ export default function PhotoGalleryPreview() {
         <div className="text-center">
           <Link to={createPageUrl("Gallery")}>
             <Button size="lg" className="bg-proman-navy text-white hover:bg-opacity-90">
-              Ver Galería Completa
+              {t({ es: "Ver Galería Completa", en: "View Full Gallery" })}
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </Link>

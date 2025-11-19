@@ -1,10 +1,14 @@
 import React from "react";
 import { Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/components/LanguageContext";
 
 export default function CompanyShowcase() {
+  const { t, language } = useLanguage();
   const whatsappNumber = "50360531213";
-  const whatsappMessage = "Hola PROMAN, quiero conocer más sobre sus servicios";
+  const whatsappMessage = language === 'es'
+    ? "Hola PROMAN, quiero conocer más sobre sus servicios"
+    : "Hello PROMAN, I want to learn more about your services";
 
   return (
     <div className="py-12 md:py-20 bg-gradient-to-br from-gray-50 via-blue-50/30 to-gray-50">
@@ -29,14 +33,16 @@ export default function CompanyShowcase() {
           <div className="space-y-6 order-1 md:order-2">
             <div>
               <span className="inline-block bg-proman-yellow text-proman-navy px-4 py-2 rounded-full text-sm font-semibold mb-4">
-                Sobre Nosotros
+                {t({ es: "Sobre Nosotros", en: "About Us" })}
               </span>
               <h2 className="text-3xl md:text-4xl font-bold text-proman-navy mb-4">
-                Una Empresa en la que Puedes Confiar
+                {t({ es: "Una Empresa en la que Puedes Confiar", en: "A Company You Can Trust" })}
               </h2>
               <p className="text-base md:text-lg text-gray-600 mb-6">
-                PROMAN Services es una empresa salvadoreña con más de 10 años de experiencia brindando 
-                soluciones profesionales en fontanería, electricidad, remodelaciones y construcción.
+                {t({
+                  es: "PROMAN Services es una empresa salvadoreña con más de 10 años de experiencia brindando soluciones profesionales en fontanería, electricidad, remodelaciones y construcción.",
+                  en: "PROMAN Services is a Salvadoran company with over 10 years of experience providing professional solutions in plumbing, electrical, remodeling and construction."
+                })}
               </p>
             </div>
 
@@ -46,9 +52,9 @@ export default function CompanyShowcase() {
                   <span className="text-proman-navy font-bold text-sm">✓</span>
                 </div>
                 <div>
-                  <h3 className="font-bold text-proman-navy mb-1">Equipos Especializados</h3>
+                  <h3 className="font-bold text-proman-navy mb-1">{t({ es: "Equipos Especializados", en: "Specialized Equipment" })}</h3>
                   <p className="text-sm text-gray-600">
-                    Trabajamos con tecnología de punta - destapamos tuberías sin romper paredes
+                    {t({ es: "Trabajamos con tecnología de punta - destapamos tuberías sin romper paredes", en: "We work with cutting-edge technology - we unclog pipes without breaking walls" })}
                   </p>
                 </div>
               </div>
@@ -58,9 +64,9 @@ export default function CompanyShowcase() {
                   <span className="text-proman-navy font-bold text-sm">✓</span>
                 </div>
                 <div>
-                  <h3 className="font-bold text-proman-navy mb-1">Personal Capacitado</h3>
+                  <h3 className="font-bold text-proman-navy mb-1">{t({ es: "Personal Capacitado", en: "Trained Staff" })}</h3>
                   <p className="text-sm text-gray-600">
-                    Nuestro equipo está certificado y cuenta con años de experiencia
+                    {t({ es: "Nuestro equipo está certificado y cuenta con años de experiencia", en: "Our team is certified and has years of experience" })}
                   </p>
                 </div>
               </div>
@@ -70,9 +76,9 @@ export default function CompanyShowcase() {
                   <span className="text-proman-navy font-bold text-sm">✓</span>
                 </div>
                 <div>
-                  <h3 className="font-bold text-proman-navy mb-1">Cobertura Total</h3>
+                  <h3 className="font-bold text-proman-navy mb-1">{t({ es: "Cobertura Total", en: "Full Coverage" })}</h3>
                   <p className="text-sm text-gray-600">
-                    Atendemos San Salvador y La Libertad con disponibilidad 24/7
+                    {t({ es: "Atendemos San Salvador y La Libertad con disponibilidad 24/7", en: "We serve San Salvador and La Libertad with 24/7 availability" })}
                   </p>
                 </div>
               </div>
@@ -86,7 +92,7 @@ export default function CompanyShowcase() {
               >
                 <Button size="lg" className="bg-proman-yellow text-proman-navy hover:opacity-90 font-semibold">
                   <Phone className="w-5 h-5 mr-2" />
-                  Contáctanos Ahora
+                  {t({ es: "Contáctanos Ahora", en: "Contact Us Now" })}
                 </Button>
               </a>
             </div>
