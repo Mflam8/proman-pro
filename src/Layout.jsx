@@ -1,20 +1,25 @@
-
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Phone, Menu, X, Users, Briefcase, Facebook, Instagram, Youtube, LogIn, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
+import { LanguageProvider, useLanguage } from "@/components/LanguageContext";
+import LanguageSelector from "@/components/LanguageSelector";
 
 // Helper function to get display name
 const getDisplayName = (user) => user?.employee_name || user?.full_name || 'Usuario';
 
-export default function Layout({ children }) {
+function LayoutContent({ children }) {
+  const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [user, setUser] = React.useState(null);
   const [checkingOnboarding, setCheckingOnboarding] = React.useState(true);
+  
+  // Check if we're on management page
+  const isManagementPage = location.pathname === createPageUrl("ClientManagement");
 
   React.useEffect(() => {
     const checkUser = async () => {
@@ -44,8 +49,16 @@ export default function Layout({ children }) {
           <p className="text-gray-600">Cargando...</p>
         </div>
       </div>
-    );
-  }
+      );
+      }
+
+      export default function Layout({ children }) {
+      return (
+      <LanguageProvider>
+      <LayoutContent>{children}</LayoutContent>
+      </LanguageProvider>
+      );
+      }
 
   // Si está en página de bienvenida, mostrar sin layout
   if (location.pathname === createPageUrl("Welcome")) {
@@ -53,11 +66,11 @@ export default function Layout({ children }) {
   }
 
   const navigation = [
-    { name: "Inicio", href: createPageUrl("Home") },
-    { name: "Servicios", href: createPageUrl("Services") },
-    { name: "Galería", href: createPageUrl("Gallery") },
-    { name: "Empleos", href: createPageUrl("Careers") },
-    { name: "Contacto", href: createPageUrl("Contact") }
+    { name: t({ es: "Inicio", en: "Home" }), href: createPageUrl("Home") },
+    { name: t({ es: "Servicios", en: "Services" }), href: createPageUrl("Services") },
+    { name: t({ es: "Galería", en: "Gallery" }), href: createPageUrl("Gallery") },
+    { name: t({ es: "Empleos", en: "Careers" }), href: createPageUrl("Careers") },
+    { name: t({ es: "Contacto", en: "Contact" }), href: createPageUrl("Contact") }
   ];
 
   // Add portal link if user is logged in
@@ -74,7 +87,7 @@ export default function Layout({ children }) {
       });
     } else {
       navigation.push({ 
-        name: "Mi Portal", 
+        name: t({ es: "Mi Portal", en: "My Portal" }), 
         href: createPageUrl("EmployeeDashboard"),
         icon: Briefcase 
       });
@@ -153,6 +166,7 @@ export default function Layout({ children }) {
 
             {/* CTA Buttons */}
             <div className="hidden md:flex items-center space-x-3">
+              {!isManagementPage && <LanguageSelector />}
               <a href="tel:60531213" aria-label="Llamar a PROMAN Services al 6053-1213">
                 <Button variant="outline" className="border-2 border-proman-navy text-proman-navy hover:bg-proman-navy hover:text-white">
                   <Phone className="w-4 h-4 mr-2" aria-hidden="true" />
@@ -252,7 +266,7 @@ export default function Layout({ children }) {
                     className="w-full"
                     onClick={handleLogout}
                   >
-                    Cerrar Sesión
+                    {t({ es: "Cerrar Sesión", en: "Logout" })}
                   </Button>
                 </div>
               ) : (
@@ -262,16 +276,21 @@ export default function Layout({ children }) {
                     className="w-full bg-proman-navy text-white hover:bg-opacity-90"
                   >
                     <LogIn className="w-4 h-4 mr-2" />
-                    Iniciar Sesión
+                    {t({ es: "Iniciar Sesión", en: "Login" })}
                   </Button>
                 </div>
               )}
-              
+
               <div className="pt-4 space-y-2 border-t">
+                {!isManagementPage && (
+                  <div className="pb-2">
+                    <LanguageSelector />
+                  </div>
+                )}
                 <a href="tel:60531213" className="block">
                   <Button variant="outline" className="w-full border-2 border-proman-navy text-proman-navy">
                     <Phone className="w-4 h-4 mr-2" />
-                    Llamar: 6053-1213
+                    {t({ es: "Llamar: 6053-1213", en: "Call: 6053-1213" })}
                   </Button>
                 </a>
                 <a 
@@ -281,7 +300,7 @@ export default function Layout({ children }) {
                   className="block"
                 >
                   <Button className="w-full bg-proman-yellow text-proman-navy hover:opacity-90 font-semibold">
-                    Contactar por WhatsApp
+                    {t({ es: "Contactar por WhatsApp", en: "Contact via WhatsApp" })}
                   </Button>
                 </a>
               </div>
@@ -297,11 +316,14 @@ export default function Layout({ children }) {
       <footer className="gradient-navy-yellow text-white mt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div>
-              <h3 className="font-semibold mb-4 text-proman-yellow">PROMAN Services</h3>
-              <p className="text-sm text-gray-300 mb-4">
-                Generando soluciones en tu ambiente de trabajo.
-              </p>
+              <div>
+                <h3 className="font-semibold mb-4 text-proman-yellow">PROMAN Services</h3>
+                <p className="text-sm text-gray-300 mb-4">
+                  {t({ 
+                    es: "Generando soluciones en tu ambiente de trabajo.",
+                    en: "Generating solutions in your work environment."
+                  })}
+                </p>
               <div className="flex space-x-4">
                 <a 
                   href="https://www.facebook.com/profile.php?id=100028099016956" 
@@ -332,13 +354,13 @@ export default function Layout({ children }) {
                 </a>
               </div>
             </div>
-            
+
             <div>
-              <h3 className="font-semibold mb-4 text-proman-yellow">Contacto</h3>
+              <h3 className="font-semibold mb-4 text-proman-yellow">{t({ es: "Contacto", en: "Contact" })}</h3>
               <ul className="space-y-2 text-sm text-gray-300">
                 <li className="flex items-center gap-2">
                   <Phone className="w-4 h-4 text-proman-yellow flex-shrink-0" />
-                  <span>Teléfono: 6053-1213</span>
+                  <span>{t({ es: "Teléfono: 6053-1213", en: "Phone: 6053-1213" })}</span>
                 </li>
                 <li>
                   <a 
@@ -370,14 +392,14 @@ export default function Layout({ children }) {
             </div>
 
             <div>
-              <h3 className="font-semibold mb-4 text-proman-yellow">Servicios</h3>
+              <h3 className="font-semibold mb-4 text-proman-yellow">{t({ es: "Servicios", en: "Services" })}</h3>
               <ul className="space-y-2 text-sm text-gray-300">
-                <li>Fontanería</li>
-                <li>Electricidad</li>
-                <li>Remodelaciones</li>
-                <li>Construcción</li>
-                <li>Pintura</li>
-                <li>Mantenimiento</li>
+                <li>{t({ es: "Fontanería", en: "Plumbing" })}</li>
+                <li>{t({ es: "Electricidad", en: "Electrical" })}</li>
+                <li>{t({ es: "Remodelaciones", en: "Remodeling" })}</li>
+                <li>{t({ es: "Construcción", en: "Construction" })}</li>
+                <li>{t({ es: "Pintura", en: "Painting" })}</li>
+                <li>{t({ es: "Mantenimiento", en: "Maintenance" })}</li>
               </ul>
             </div>
           </div>
@@ -385,10 +407,10 @@ export default function Layout({ children }) {
           <div className="border-t border-gray-600 mt-8 pt-8 text-center text-sm text-gray-300">
             <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-4">
               <Link to={createPageUrl("PrivacyPolicy")} className="hover:text-proman-yellow transition-colors">
-                Política de Privacidad
+                {t({ es: "Política de Privacidad", en: "Privacy Policy" })}
               </Link>
             </div>
-            <p>&copy; 2024 PROMAN Services. Todos los derechos reservados.</p>
+            <p>&copy; 2024 PROMAN Services. {t({ es: "Todos los derechos reservados.", en: "All rights reserved." })}</p>
           </div>
         </div>
       </footer>
