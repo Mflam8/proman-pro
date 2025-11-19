@@ -42,19 +42,22 @@ export default function ServicesPreview() {
                     <IconComponent className="w-7 h-7 text-proman-navy" />
                   </div>
                   <h3 className="text-xl font-bold text-proman-navy mb-2 group-hover:text-proman-yellow transition-colors">
-                    {service.name}
+                    {t({ es: service.service_name, en: service.service_name_en || service.service_name })}
                   </h3>
                   <p className="text-gray-600 mb-4">
-                    {service.description}
+                    {t({ es: service.description, en: service.description_en || service.description })}
                   </p>
                   {service.features && service.features.length > 0 && (
                     <ul className="space-y-1 mb-4">
-                      {service.features.slice(0, 3).map((feature, idx) => (
-                        <li key={idx} className="text-sm text-gray-500 flex items-center">
-                          <span className="w-1.5 h-1.5 rounded-full bg-proman-yellow mr-2"></span>
-                          {feature}
-                        </li>
-                      ))}
+                      {service.features.slice(0, 3).map((feature, idx) => {
+                        const featureEn = service.features_en?.[idx];
+                        return (
+                          <li key={idx} className="text-sm text-gray-500 flex items-center">
+                            <span className="w-1.5 h-1.5 rounded-full bg-proman-yellow mr-2"></span>
+                            {t({ es: feature, en: featureEn || feature })}
+                          </li>
+                        );
+                      })}
                     </ul>
                   )}
                 </CardContent>
