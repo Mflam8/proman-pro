@@ -1,10 +1,14 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Phone } from "lucide-react";
+import { useLanguage } from "@/components/LanguageContext";
 
 export default function HeroSection() {
+  const { t, language } = useLanguage();
   const whatsappNumber = "50360531213";
-  const whatsappMessage = "Hola, necesito agendar un servicio con PROMAN";
+  const whatsappMessage = language === 'es' 
+    ? "Hola, necesito agendar un servicio con PROMAN"
+    : "Hello, I need to schedule a service with PROMAN";
 
   return (
     <div className="relative gradient-navy-yellow text-white overflow-hidden">
@@ -17,11 +21,19 @@ export default function HeroSection() {
         <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
           <div className="space-y-6 order-2 md:order-1">
             <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold leading-tight">
-              Soluciones Profesionales para tu{" "}
-              <span className="text-proman-yellow">Hogar o Negocio</span>
+              {t({ 
+                es: "Soluciones Profesionales para tu ",
+                en: "Professional Solutions for your "
+              })}
+              <span className="text-proman-yellow">
+                {t({ es: "Hogar o Negocio", en: "Home or Business" })}
+              </span>
             </h1>
             <p className="text-base md:text-lg lg:text-xl text-gray-200">
-              Fontanería, electricidad, remodelaciones y más. Servicio de calidad con garantía en San Salvador, La Libertad y Zona Occidental.
+              {t({
+                es: "Fontanería, electricidad, remodelaciones y más. Servicio de calidad con garantía en San Salvador, La Libertad y Zona Occidental.",
+                en: "Plumbing, electrical, remodeling and more. Quality service with warranty in San Salvador, La Libertad and Western Zone."
+              })}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
               <a 
@@ -31,7 +43,7 @@ export default function HeroSection() {
                 aria-label="Agendar servicio por WhatsApp"
               >
                 <Button size="lg" className="bg-proman-yellow text-proman-navy hover:opacity-90 font-semibold text-lg w-full sm:w-auto">
-                  Agendar Servicio
+                  {t({ es: "Agendar Servicio", en: "Schedule Service" })}
                 </Button>
               </a>
               <a href="tel:+50360531213" aria-label="Llamar a PROMAN al +503 6053-1213">
@@ -44,17 +56,17 @@ export default function HeroSection() {
             <div className="flex items-center gap-4 sm:gap-6 pt-6 flex-wrap">
               <div className="text-center">
                 <div className="text-2xl sm:text-3xl font-bold text-proman-yellow">300+</div>
-                <div className="text-xs sm:text-sm text-gray-300">Clientes Satisfechos</div>
+                <div className="text-xs sm:text-sm text-gray-300">{t({ es: "Clientes Satisfechos", en: "Satisfied Clients" })}</div>
               </div>
               <div className="h-12 w-px bg-gray-400"></div>
               <div className="text-center">
                 <div className="text-2xl sm:text-3xl font-bold text-proman-yellow">24/7</div>
-                <div className="text-xs sm:text-sm text-gray-300">Emergencias</div>
+                <div className="text-xs sm:text-sm text-gray-300">{t({ es: "Emergencias", en: "Emergencies" })}</div>
               </div>
               <div className="h-12 w-px bg-gray-400"></div>
               <div className="text-center">
                 <div className="text-2xl sm:text-3xl font-bold text-proman-yellow">10+</div>
-                <div className="text-xs sm:text-sm text-gray-300">Años Experiencia</div>
+                <div className="text-xs sm:text-sm text-gray-300">{t({ es: "Años Experiencia", en: "Years Experience" })}</div>
               </div>
             </div>
           </div>
@@ -71,7 +83,7 @@ export default function HeroSection() {
               />
               <div className="absolute -bottom-4 -left-4 bg-proman-yellow text-proman-navy p-4 sm:p-6 rounded-xl shadow-xl">
                 <div className="text-2xl sm:text-3xl font-bold">⭐ 4.9/5</div>
-                <div className="text-xs sm:text-sm font-medium">Calificación promedio</div>
+                <div className="text-xs sm:text-sm font-medium">{t({ es: "Calificación promedio", en: "Average Rating" })}</div>
               </div>
             </div>
             <div className="absolute -top-4 -right-4 w-48 sm:w-64 h-48 sm:h-64 hexagon bg-proman-yellow opacity-20 -z-10"></div>
