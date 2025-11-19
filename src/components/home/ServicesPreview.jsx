@@ -14,7 +14,6 @@ const iconMap = {
 
 export default function ServicesPreview() {
   const { t } = useLanguage();
-  const { t } = useLanguage();
   const { data: services, isLoading } = useQuery({
     queryKey: ['services'],
     queryFn: () => base44.entities.Service.list('-created_date', 6),
