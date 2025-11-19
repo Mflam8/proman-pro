@@ -5,18 +5,21 @@ import SEO from "../components/SEO";
 import { Card, CardContent } from "@/components/ui/card";
 import { MapPin, Calendar } from "lucide-react";
 import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import { es, enUS } from "date-fns/locale";
+import { useLanguage } from "@/components/LanguageContext";
 
-const categoryNames = {
-  fontaneria: "Fontanería",
-  electricidad: "Electricidad",
-  construccion: "Construcción",
-  remodelacion: "Remodelación",
-  pintura: "Pintura",
-  mantenimiento: "Mantenimiento"
-};
+const getCategoryNames = (t) => ({
+  fontaneria: t({ es: "Fontanería", en: "Plumbing" }),
+  electricidad: t({ es: "Electricidad", en: "Electrical" }),
+  construccion: t({ es: "Construcción", en: "Construction" }),
+  remodelacion: t({ es: "Remodelación", en: "Remodeling" }),
+  pintura: t({ es: "Pintura", en: "Painting" }),
+  mantenimiento: t({ es: "Mantenimiento", en: "Maintenance" })
+});
 
 export default function Gallery() {
+  const { t, language } = useLanguage();
+  const categoryNames = getCategoryNames(t);
   const { data: projects, isLoading } = useQuery({
     queryKey: ['projects'],
     queryFn: () => base44.entities.Project.list('-completion_date'),
@@ -34,10 +37,10 @@ export default function Gallery() {
       <div className="gradient-navy-yellow text-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            Galería de Proyectos
+            {t({ es: "Galería de Proyectos", en: "Project Gallery" })}
           </h1>
           <p className="text-xl text-gray-200 max-w-3xl mx-auto">
-            Conoce algunos de los trabajos que hemos realizado para nuestros clientes
+            {t({ es: "Conoce algunos de los trabajos que hemos realizado para nuestros clientes", en: "See some of the work we have done for our clients" })}
           </p>
         </div>
       </div>
@@ -48,29 +51,29 @@ export default function Gallery() {
           {projects.map((project) => (
             <Card key={project.id} className="overflow-hidden border-2 border-gray-100 hover:border-proman-yellow transition-all hover:shadow-lg">
               <div className="relative w-full" style={{ paddingBottom: '75%' }}>
-                {project.after_image_url ? (
-                  <img 
-                    src={project.after_image_url} 
-                    alt={`${project.title} - Proyecto finalizado por PROMAN Services en ${project.location || 'El Salvador'}`}
-                    width="600"
-                    height="450"
-                    loading="lazy"
-                    className="absolute inset-0 w-full h-full object-contain bg-gray-50"
-                  />
-                ) : project.image_url ? (
-                  <img 
-                    src={project.image_url} 
-                    alt={`${project.title} - Proyecto de ${categoryNames[project.category] || project.category} en ${project.location || 'El Salvador'}`}
-                    width="600"
-                    height="450"
-                    loading="lazy"
-                    className="absolute inset-0 w-full h-full object-contain bg-gray-50"
-                  />
-                ) : (
-                  <div className="absolute inset-0 w-full h-full bg-gray-200 flex items-center justify-center">
-                    <span className="text-gray-400">Sin imagen</span>
-                  </div>
-                )}
+              {project.after_image_url ? (
+              <img 
+                src={project.after_image_url} 
+                alt={`${project.title} - ${t({ es: "Proyecto finalizado por PROMAN Services en", en: "Project completed by PROMAN Services in" })} ${project.location || 'El Salvador'}`}
+                width="600"
+                height="450"
+                loading="lazy"
+                className="absolute inset-0 w-full h-full object-contain bg-gray-50"
+              />
+              ) : project.image_url ? (
+              <img 
+                src={project.image_url} 
+                alt={`${project.title} - ${t({ es: "Proyecto de", en: "Project of" })} ${categoryNames[project.category] || project.category} ${t({ es: "en", en: "in" })} ${project.location || 'El Salvador'}`}
+                width="600"
+                height="450"
+                loading="lazy"
+                className="absolute inset-0 w-full h-full object-contain bg-gray-50"
+              />
+              ) : (
+              <div className="absolute inset-0 w-full h-full bg-gray-200 flex items-center justify-center">
+                <span className="text-gray-400">{t({ es: "Sin imagen", en: "No image" })}</span>
+              </div>
+              )}
               </div>
               
               <CardContent className="p-6">
@@ -91,40 +94,40 @@ export default function Gallery() {
                   {project.completion_date && (
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-proman-yellow" />
-                      <span>{format(new Date(project.completion_date), "MMMM yyyy", { locale: es })}</span>
+                      <span>{format(new Date(project.completion_date), "MMMM yyyy", { locale: language === 'es' ? es : enUS })}</span>
                     </div>
                   )}
                 </div>
 
                 {project.before_image_url && project.after_image_url && (
                   <div className="mt-4 pt-4 border-t">
-                    <p className="text-xs font-semibold text-proman-navy mb-2">Antes y Después:</p>
+                    <p className="text-xs font-semibold text-proman-navy mb-2">{t({ es: "Antes y Después:", en: "Before and After:" })}</p>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <div className="relative w-full" style={{ paddingBottom: '100%' }}>
                           <img 
                             src={project.before_image_url} 
-                            alt={`Estado inicial antes de la intervención - ${project.title}`}
+                            alt={`${t({ es: "Estado inicial antes de la intervención", en: "Initial state before intervention" })} - ${project.title}`}
                             width="200"
                             height="200"
                             loading="lazy"
                             className="absolute inset-0 w-full h-full object-contain bg-gray-50 rounded"
                           />
                         </div>
-                        <p className="text-xs text-gray-500 mt-1 text-center">Antes</p>
+                        <p className="text-xs text-gray-500 mt-1 text-center">{t({ es: "Antes", en: "Before" })}</p>
                       </div>
                       <div>
                         <div className="relative w-full" style={{ paddingBottom: '100%' }}>
                           <img 
                             src={project.after_image_url} 
-                            alt={`Resultado final después del trabajo - ${project.title}`}
+                            alt={`${t({ es: "Resultado final después del trabajo", en: "Final result after work" })} - ${project.title}`}
                             width="200"
                             height="200"
                             loading="lazy"
                             className="absolute inset-0 w-full h-full object-contain bg-gray-50 rounded"
                           />
                         </div>
-                        <p className="text-xs text-gray-500 mt-1 text-center">Después</p>
+                        <p className="text-xs text-gray-500 mt-1 text-center">{t({ es: "Después", en: "After" })}</p>
                       </div>
                     </div>
                   </div>
@@ -136,7 +139,7 @@ export default function Gallery() {
 
         {projects.length === 0 && !isLoading && (
           <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">No hay proyectos disponibles</p>
+            <p className="text-gray-500 text-lg">{t({ es: "No hay proyectos disponibles", en: "No projects available" })}</p>
           </div>
         )}
       </div>
