@@ -49,16 +49,8 @@ function LayoutContent({ children }) {
           <p className="text-gray-600">Cargando...</p>
         </div>
       </div>
-      );
-      }
-
-      export default function Layout({ children }) {
-      return (
-      <LanguageProvider>
-      <LayoutContent>{children}</LayoutContent>
-      </LanguageProvider>
-      );
-      }
+    );
+  }
 
   // Si está en página de bienvenida, mostrar sin layout
   if (location.pathname === createPageUrl("Welcome")) {
@@ -385,7 +377,7 @@ function LayoutContent({ children }) {
                     className="inline-flex items-center gap-2 text-proman-yellow hover:underline text-xs"
                   >
                     <MapPin className="w-3 h-3" />
-                    Ver en Google Maps
+                    {t({ es: "Ver en Google Maps", en: "View on Google Maps" })}
                   </a>
                 </li>
               </ul>
@@ -428,5 +420,13 @@ function LayoutContent({ children }) {
         </svg>
       </a>
     </div>
+  );
+}
+
+export default function Layout({ children }) {
+  return (
+    <LanguageProvider>
+      <LayoutContent>{children}</LayoutContent>
+    </LanguageProvider>
   );
 }
