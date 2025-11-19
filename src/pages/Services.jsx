@@ -2,69 +2,74 @@ import React from "react";
 import SEO from "../components/SEO";
 import { Card, CardContent } from "@/components/ui/card";
 import { Home, Building2, UtensilsCrossed, Hospital, AlertCircle, Wrench, Zap, Hammer, PaintBucket, Droplets } from "lucide-react";
+import { useLanguage } from "@/components/LanguageContext";
 
-const rubros = [
+const getRubros = (t) => [
   {
-    nombre: "Hogar",
+    nombre: t({ es: "Hogar", en: "Home" }),
     icono: Home,
-    descripcion: "Servicios profesionales para tu casa y familia",
+    descripcion: t({ es: "Servicios profesionales para tu casa y familia", en: "Professional services for your home and family" }),
     color: "bg-blue-100"
   },
   {
-    nombre: "Comercial",
+    nombre: t({ es: "Comercial", en: "Commercial" }),
     icono: Building2,
-    descripcion: "Soluciones para oficinas y negocios",
+    descripcion: t({ es: "Soluciones para oficinas y negocios", en: "Solutions for offices and businesses" }),
     color: "bg-indigo-100"
   },
   {
-    nombre: "Restaurantes",
+    nombre: t({ es: "Restaurantes", en: "Restaurants" }),
     icono: UtensilsCrossed,
-    descripcion: "Servicios especializados para cocinas industriales",
+    descripcion: t({ es: "Servicios especializados para cocinas industriales", en: "Specialized services for industrial kitchens" }),
     color: "bg-orange-100"
   },
   {
-    nombre: "Hospitales",
+    nombre: t({ es: "Hospitales", en: "Hospitals" }),
     icono: Hospital,
-    descripcion: "Instalaciones de grado hospitalario",
+    descripcion: t({ es: "Instalaciones de grado hospitalario", en: "Hospital-grade installations" }),
     color: "bg-green-100"
   },
   {
-    nombre: "Emergencias",
+    nombre: t({ es: "Emergencias", en: "Emergencies" }),
     icono: AlertCircle,
-    descripcion: "Disponibles 24/7 para cualquier urgencia",
+    descripcion: t({ es: "Disponibles 24/7 para cualquier urgencia", en: "Available 24/7 for any emergency" }),
     color: "bg-red-100"
   }
 ];
 
-const serviciosDetallados = [
+const getServiciosDetallados = (t) => [
   {
-    titulo: "Fontanería y Plomería",
+    titulo: t({ es: "Fontanería y Plomería", en: "Plumbing" }),
     icono: Droplets,
-    descripcion: "Destapado de tuberías sin romper paredes, reparación de fugas, instalación de sistemas sanitarios, mantenimiento preventivo"
+    descripcion: t({ es: "Destapado de tuberías sin romper paredes, reparación de fugas, instalación de sistemas sanitarios, mantenimiento preventivo", en: "Pipe unclogging without breaking walls, leak repair, sanitary system installation, preventive maintenance" })
   },
   {
-    titulo: "Electricidad",
+    titulo: t({ es: "Electricidad", en: "Electrical" }),
     icono: Zap,
-    descripcion: "Instalaciones eléctricas residenciales y comerciales, reparación de circuitos, iluminación LED, tableros eléctricos"
+    descripcion: t({ es: "Instalaciones eléctricas residenciales y comerciales, reparación de circuitos, iluminación LED, tableros eléctricos", en: "Residential and commercial electrical installations, circuit repair, LED lighting, electrical panels" })
   },
   {
-    titulo: "Construcción",
+    titulo: t({ es: "Construcción", en: "Construction" }),
     icono: Hammer,
-    descripcion: "Proyectos de construcción desde cero, ampliaciones, estructuras, obras civiles y acabados de calidad"
+    descripcion: t({ es: "Proyectos de construcción desde cero, ampliaciones, estructuras, obras civiles y acabados de calidad", en: "Construction projects from scratch, expansions, structures, civil works and quality finishes" })
   },
   {
-    titulo: "Remodelación",
+    titulo: t({ es: "Remodelación", en: "Remodeling" }),
     icono: Wrench,
-    descripcion: "Renovación de espacios, modernización de baños y cocinas, acabados interiores y exteriores"
+    descripcion: t({ es: "Renovación de espacios, modernización de baños y cocinas, acabados interiores y exteriores", en: "Space renovation, bathroom and kitchen modernization, interior and exterior finishes" })
   },
   {
-    titulo: "Pintura Profesional",
+    titulo: t({ es: "Pintura Profesional", en: "Professional Painting" }),
     icono: PaintBucket,
-    descripcion: "Pintura interior y exterior, impermeabilización, acabados decorativos y protección de superficies"
+    descripcion: t({ es: "Pintura interior y exterior, impermeabilización, acabados decorativos y protección de superficies", en: "Interior and exterior painting, waterproofing, decorative finishes and surface protection" })
   }
 ];
 
 export default function Services() {
+  const { t } = useLanguage();
+  const rubros = getRubros(t);
+  const serviciosDetallados = getServiciosDetallados(t);
+
   return (
     <div className="min-h-screen bg-white">
       <SEO 
@@ -75,10 +80,10 @@ export default function Services() {
       <div className="gradient-navy-yellow text-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            Servicios Profesionales en San Salvador
+            {t({ es: "Servicios Profesionales en San Salvador", en: "Professional Services in San Salvador" })}
           </h1>
           <p className="text-xl text-gray-200 max-w-3xl mx-auto">
-            Fontanería, Electricidad, Construcción y Remodelaciones con Garantía de Calidad
+            {t({ es: "Fontanería, Electricidad, Construcción y Remodelaciones con Garantía de Calidad", en: "Plumbing, Electrical, Construction and Remodeling with Quality Guarantee" })}
           </p>
         </div>
       </div>
@@ -87,10 +92,10 @@ export default function Services() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-proman-navy mb-4">
-            Especialistas en Soluciones Integrales
+            {t({ es: "Especialistas en Soluciones Integrales", en: "Specialists in Comprehensive Solutions" })}
           </h2>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            Más de 10 años brindando servicios profesionales de fontanería, electricidad y construcción en El Salvador
+            {t({ es: "Más de 10 años brindando servicios profesionales de fontanería, electricidad y construcción en El Salvador", en: "Over 10 years providing professional plumbing, electrical and construction services in El Salvador" })}
           </p>
         </div>
 
@@ -122,10 +127,10 @@ export default function Services() {
         <div className="border-t pt-16">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-proman-navy mb-4">
-              Servicios por Sector
+              {t({ es: "Servicios por Sector", en: "Services by Sector" })}
             </h2>
             <p className="text-lg text-gray-600">
-              Soluciones personalizadas para cada tipo de cliente
+              {t({ es: "Soluciones personalizadas para cada tipo de cliente", en: "Customized solutions for each type of client" })}
             </p>
           </div>
 
@@ -157,23 +162,28 @@ export default function Services() {
         {/* SEO Content Section */}
         <div className="mt-16 bg-gray-50 rounded-2xl p-8">
           <h2 className="text-2xl font-bold text-proman-navy mb-4">
-            ¿Por qué elegir PROMAN Services?
+            {t({ es: "¿Por qué elegir PROMAN Services?", en: "Why choose PROMAN Services?" })}
           </h2>
           <div className="prose prose-lg text-gray-600 max-w-none">
             <p className="mb-4">
-              Somos una empresa salvadoreña con más de 10 años de experiencia en el mercado, 
-              especializada en <strong>servicios de fontanería</strong>, <strong>plomería</strong>, 
-              <strong>electricidad</strong>, <strong>construcción</strong> y <strong>remodelaciones</strong>.
+              {t({ 
+                es: "Somos una empresa salvadoreña con más de 10 años de experiencia en el mercado, especializada en ", 
+                en: "We are a Salvadoran company with over 10 years of market experience, specialized in " 
+              })}
+              <strong>{t({ es: "servicios de fontanería", en: "plumbing services" })}</strong>, <strong>{t({ es: "plomería", en: "plumbing" })}</strong>, 
+              <strong>{t({ es: "electricidad", en: "electrical" })}</strong>, <strong>{t({ es: "construcción", en: "construction" })}</strong> {t({ es: "y", en: "and" })} <strong>{t({ es: "remodelaciones", en: "remodeling" })}</strong>.
             </p>
             <p className="mb-4">
-              Nuestro equipo de técnicos certificados utiliza tecnología de punta para el 
-              <strong> destapado de tuberías sin romper paredes</strong>, ahorrándole tiempo y dinero. 
-              Realizamos <strong>instalaciones eléctricas</strong> residenciales y comerciales cumpliendo 
-              con todas las normas de seguridad.
+              {t({ 
+                es: "Nuestro equipo de técnicos certificados utiliza tecnología de punta para el ", 
+                en: "Our team of certified technicians uses cutting-edge technology for " 
+              })}
+              <strong>{t({ es: "destapado de tuberías sin romper paredes", en: "pipe unclogging without breaking walls" })}</strong>, {t({ es: "ahorrándole tiempo y dinero", en: "saving you time and money" })}. 
+              {t({ es: "Realizamos", en: "We perform" })} <strong>{t({ es: "instalaciones eléctricas", en: "electrical installations" })}</strong> {t({ es: "residenciales y comerciales cumpliendo con todas las normas de seguridad", en: "residential and commercial complying with all safety standards" })}.
             </p>
             <p>
-              Atendemos <strong>emergencias 24/7</strong> en San Salvador, La Libertad y zonas aledañas. 
-              Contáctenos al <strong>6053-1213</strong> para una cotización sin compromiso.
+              {t({ es: "Atendemos", en: "We handle" })} <strong>{t({ es: "emergencias 24/7", en: "24/7 emergencies" })}</strong> {t({ es: "en San Salvador, La Libertad y zonas aledañas", en: "in San Salvador, La Libertad and surrounding areas" })}. 
+              {t({ es: "Contáctenos al", en: "Contact us at" })} <strong>6053-1213</strong> {t({ es: "para una cotización sin compromiso", en: "for a free quote" })}.
             </p>
           </div>
         </div>
