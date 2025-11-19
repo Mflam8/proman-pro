@@ -1,11 +1,14 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Phone, MessageCircle } from "lucide-react";
+import { useLanguage } from "@/components/LanguageContext";
 
 export default function CTASection() {
+  const { t, language } = useLanguage();
   const whatsappNumber = "50360531213";
-  const whatsappMessage = "Hola PROMAN, necesito agendar un servicio";
+  const whatsappMessage = language === 'es' 
+    ? "Hola PROMAN, necesito agendar un servicio"
+    : "Hello PROMAN, I need to schedule a service";
 
   return (
     <div className="py-20 bg-gradient-to-br from-gray-50 via-blue-50/20 to-gray-50">
@@ -16,11 +19,13 @@ export default function CTASection() {
           
           <div className="relative z-10">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              ¿Listo para Resolver tu Problema?
+              {t({ es: "¿Listo para Resolver tu Problema?", en: "Ready to Solve Your Problem?" })}
             </h2>
             <p className="text-lg text-gray-200 mb-8 max-w-2xl mx-auto">
-              Contáctanos ahora y recibe atención inmediata de nuestros expertos. 
-              Respuesta rápida garantizada.
+              {t({ 
+                es: "Contáctanos ahora y recibe atención inmediata de nuestros expertos. Respuesta rápida garantizada.",
+                en: "Contact us now and receive immediate attention from our experts. Fast response guaranteed."
+              })}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -31,7 +36,7 @@ export default function CTASection() {
               >
                 <Button size="lg" className="bg-proman-yellow text-proman-navy hover:opacity-90 font-semibold w-full sm:w-auto">
                   <MessageCircle className="w-5 h-5 mr-2" />
-                  Agendar por WhatsApp
+                  {t({ es: "Agendar por WhatsApp", en: "Schedule via WhatsApp" })}
                 </Button>
               </a>
               <a href="tel:60531213">
@@ -43,7 +48,10 @@ export default function CTASection() {
             </div>
 
             <p className="text-sm text-gray-300 mt-6">
-              Servicio disponible en San Salvador, La Libertad y Zona Occidental
+              {t({ 
+                es: "Servicio disponible en San Salvador, La Libertad y Zona Occidental",
+                en: "Service available in San Salvador, La Libertad and Western Zone"
+              })}
             </p>
           </div>
         </div>

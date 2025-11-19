@@ -1,28 +1,29 @@
-
 import React from "react";
 import { Shield, Award, Clock, ThumbsUp } from "lucide-react";
+import { useLanguage } from "@/components/LanguageContext";
 
 export default function WhyChooseUs() {
+  const { t } = useLanguage();
   const reasons = [
     {
       icon: Shield,
-      title: "Garantía de Calidad",
-      description: "Todos nuestros trabajos incluyen garantía y seguimiento post-servicio"
+      title: t({ es: "Garantía de Calidad", en: "Quality Guarantee" }),
+      description: t({ es: "Todos nuestros trabajos incluyen garantía y seguimiento post-servicio", en: "All our work includes warranty and post-service follow-up" })
     },
     {
       icon: Award,
-      title: "Profesionales Certificados",
-      description: "Equipo altamente capacitado con años de experiencia en el sector"
+      title: t({ es: "Profesionales Certificados", en: "Certified Professionals" }),
+      description: t({ es: "Equipo altamente capacitado con años de experiencia en el sector", en: "Highly trained team with years of experience in the sector" })
     },
     {
       icon: Clock,
-      title: "Respuesta Rápida 24/7",
-      description: "Atendemos emergencias las 24 horas en San Salvador y La Libertad"
+      title: t({ es: "Respuesta Rápida 24/7", en: "Fast Response 24/7" }),
+      description: t({ es: "Atendemos emergencias las 24 horas en San Salvador y La Libertad", en: "We handle emergencies 24 hours in San Salvador and La Libertad" })
     },
     {
       icon: ThumbsUp,
-      title: "Satisfacción Garantizada",
-      description: "No descansamos hasta que tu problema esté completamente resuelto"
+      title: t({ es: "Satisfacción Garantizada", en: "Satisfaction Guaranteed" }),
+      description: t({ es: "No descansamos hasta que tu problema esté completamente resuelto", en: "We don't rest until your problem is completely solved" })
     }
   ];
 
@@ -34,10 +35,10 @@ export default function WhyChooseUs() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            ¿Por Qué Elegir PROMAN?
+            {t({ es: "¿Por Qué Elegir PROMAN?", en: "Why Choose PROMAN?" })}
           </h2>
           <p className="text-lg text-gray-200 max-w-2xl mx-auto">
-            Somos más que una empresa de servicios, somos tu socio de confianza
+            {t({ es: "Somos más que una empresa de servicios, somos tu socio de confianza", en: "We are more than a service company, we are your trusted partner" })}
           </p>
         </div>
 

@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -7,12 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { ArrowRight, Wrench, Zap, Home, Paintbrush, Hammer, Settings } from "lucide-react";
+import { useLanguage } from "@/components/LanguageContext";
 
 const iconMap = {
   Wrench, Zap, Home, Paintbrush, Hammer, Settings
 };
 
 export default function ServicesPreview() {
+  const { t } = useLanguage();
   const { data: services, isLoading } = useQuery({
     queryKey: ['services'],
     queryFn: () => base44.entities.Service.list('-created_date', 6),
@@ -24,10 +25,10 @@ export default function ServicesPreview() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-proman-navy mb-4">
-            Nuestros Servicios
+            {t({ es: "Nuestros Servicios", en: "Our Services" })}
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Ofrecemos soluciones integrales para todas tus necesidades de mantenimiento y construcción
+            {t({ es: "Ofrecemos soluciones integrales para todas tus necesidades de mantenimiento y construcción", en: "We offer comprehensive solutions for all your maintenance and construction needs" })}
           </p>
         </div>
 
@@ -65,7 +66,7 @@ export default function ServicesPreview() {
         <div className="text-center">
           <Link to={createPageUrl("Services")}>
             <Button size="lg" className="bg-proman-navy text-white hover:bg-opacity-90">
-              Ver Todos los Servicios
+              {t({ es: "Ver Todos los Servicios", en: "View All Services" })}
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </Link>

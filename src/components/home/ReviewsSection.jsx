@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -6,8 +5,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Star, Quote } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { useLanguage } from "@/components/LanguageContext";
 
 export default function ReviewsSection() {
+  const { t } = useLanguage();
   const { data: reviews, isLoading } = useQuery({
     queryKey: ['reviews'],
     queryFn: () => base44.entities.Review.list('-date', 6),
@@ -19,10 +20,10 @@ export default function ReviewsSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-proman-navy mb-4">
-            Lo Que Dicen Nuestros Clientes
+            {t({ es: "Lo Que Dicen Nuestros Clientes", en: "What Our Clients Say" })}
           </h2>
           <p className="text-lg text-gray-600">
-            Testimonios reales de personas que confían en PROMAN Services
+            {t({ es: "Testimonios reales de personas que confían en PROMAN Services", en: "Real testimonials from people who trust PROMAN Services" })}
           </p>
         </div>
 

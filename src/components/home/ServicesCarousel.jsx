@@ -1,42 +1,43 @@
-
 import React, { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/components/LanguageContext";
 
 export default function ServicesCarousel() {
+  const { t } = useLanguage();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
   const slides = [
   {
     image: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ef04efb2facc1f9d963736/21423264f_WhatsAppImage2025-10-14at122741PM2.jpg",
-    title: "Construcción y Estructuras",
-    description: "Instalación de techos metálicos y estructuras con precisión profesional"
+    title: t({ es: "Construcción y Estructuras", en: "Construction & Structures" }),
+    description: t({ es: "Instalación de techos metálicos y estructuras con precisión profesional", en: "Installation of metal roofs and structures with professional precision" })
   },
   {
     image: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ef04efb2facc1f9d963736/698a8782c_WhatsAppImage2025-10-14at122741PM.jpg",
-    title: "Pintura Exterior Premium",
-    description: "Acabados perfectos en fachadas residenciales y comerciales"
+    title: t({ es: "Pintura Exterior Premium", en: "Premium Exterior Painting" }),
+    description: t({ es: "Acabados perfectos en fachadas residenciales y comerciales", en: "Perfect finishes on residential and commercial facades" })
   },
   {
     image: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ef04efb2facc1f9d963736/393ddd769_WhatsAppImage2025-10-14at122740PM3.jpg",
-    title: "Fontanería Industrial",
-    description: "Reparación y fabricación de sistemas de tuberías especializadas"
+    title: t({ es: "Fontanería Industrial", en: "Industrial Plumbing" }),
+    description: t({ es: "Reparación y fabricación de sistemas de tuberías especializadas", en: "Repair and fabrication of specialized piping systems" })
   },
   {
     image: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ef04efb2facc1f9d963736/fc61c6058_WhatsAppImage2025-10-14at122738PM2.jpg",
-    title: "Remodelaciones Completas",
-    description: "Transformación total de espacios con nuestro equipo experto"
+    title: t({ es: "Remodelaciones Completas", en: "Complete Remodeling" }),
+    description: t({ es: "Transformación total de espacios con nuestro equipo experto", en: "Total space transformation with our expert team" })
   },
   {
     image: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ef04efb2facc1f9d963736/9f95904f9_WhatsAppImage2025-10-14at122738PM.jpg",
-    title: "Servicio 24/7 Emergencias",
-    description: "Disponibles para emergencias en cualquier momento del día"
+    title: t({ es: "Servicio 24/7 Emergencias", en: "24/7 Emergency Service" }),
+    description: t({ es: "Disponibles para emergencias en cualquier momento del día", en: "Available for emergencies at any time of the day" })
   },
   {
     image: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ef04efb2facc1f9d963736/8c3760594_WhatsAppImage2025-10-14at122737PM1.jpg",
-    title: "Instalaciones Técnicas",
-    description: "Sistemas de climatización y fontanería con tecnología avanzada"
+    title: t({ es: "Instalaciones Técnicas", en: "Technical Installations" }),
+    description: t({ es: "Sistemas de climatización y fontanería con tecnología avanzada", en: "HVAC and plumbing systems with advanced technology" })
   }];
 
 
@@ -70,10 +71,10 @@ export default function ServicesCarousel() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-8 md:mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-proman-navy mb-4">
-            Nuestro Trabajo Profesional
+            {t({ es: "Nuestro Trabajo Profesional", en: "Our Professional Work" })}
           </h2>
           <p className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto">
-            Más de 10 años brindando soluciones de calidad
+            {t({ es: "Más de 10 años brindando soluciones de calidad", en: "Over 10 years providing quality solutions" })}
           </p>
         </div>
 

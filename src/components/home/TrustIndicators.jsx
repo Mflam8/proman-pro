@@ -1,28 +1,29 @@
-
 import React from "react";
 import { CheckCircle, Award, Shield, Users } from "lucide-react";
+import { useLanguage } from "@/components/LanguageContext";
 
 export default function TrustIndicators() {
+  const { t } = useLanguage();
   const indicators = [
     {
       icon: CheckCircle,
-      title: "100% Satisfacción",
-      description: "Garantizamos calidad en cada proyecto"
+      title: t({ es: "100% Satisfacción", en: "100% Satisfaction" }),
+      description: t({ es: "Garantizamos calidad en cada proyecto", en: "We guarantee quality in every project" })
     },
     {
       icon: Award,
-      title: "Equipos Especializados",
-      description: "Tecnología de punta para mejores resultados"
+      title: t({ es: "Equipos Especializados", en: "Specialized Equipment" }),
+      description: t({ es: "Tecnología de punta para mejores resultados", en: "Cutting-edge technology for better results" })
     },
     {
       icon: Shield,
-      title: "Trabajo Garantizado",
-      description: "Respaldamos cada servicio que realizamos"
+      title: t({ es: "Trabajo Garantizado", en: "Guaranteed Work" }),
+      description: t({ es: "Respaldamos cada servicio que realizamos", en: "We back every service we provide" })
     },
     {
       icon: Users,
-      title: "Equipo Profesional",
-      description: "Técnicos certificados y experimentados"
+      title: t({ es: "Equipo Profesional", en: "Professional Team" }),
+      description: t({ es: "Técnicos certificados y experimentados", en: "Certified and experienced technicians" })
     }
   ];
 
