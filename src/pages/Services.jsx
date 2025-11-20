@@ -181,7 +181,7 @@ export default function Services() {
               <strong>{t({ es: "destapado de tuberías sin romper paredes", en: "pipe unclogging without breaking walls" })}</strong>, {t({ es: "ahorrándole tiempo y dinero. Realizamos", en: "saving you time and money. We perform" })} <strong>{t({ es: "instalaciones eléctricas", en: "electrical installations" })}</strong> {t({ es: "residenciales y comerciales cumpliendo con todas las normas de seguridad", en: "residential and commercial complying with all safety standards" })}.
             </p>
             <p>
-              {t({ es: "Atendemos", en: "We handle" })} <strong>{t({ es: "emergencias 24/7", en: "24/7 emergencies" })}</strong> {t({ es: "en San Salvador, La Libertad y zona occidental de El Salvador", en: "in San Salvador, La Libertad and western region of El Salvador" })}. 
+              {t({ es: "Atendemos", en: "We handle" })} <strong>{t({ es: "emergencias 24/7", en: "24/7 emergencies" })}</strong> {t({ es: "en San Salvador, La Libertad y zona occidental de El Salvador", en: "in San Salvador, La Libertad and western region of El Salvador" })}.{" "}
               {t({ es: "Contáctenos al", en: "Contact us at" })} <strong>6053-1213</strong> {t({ es: "para una cotización sin compromiso", en: "for a free quote" })}.
             </p>
           </div>
