@@ -87,10 +87,10 @@ export default function Gallery() {
               
               <CardContent className="p-6">
                 <h3 className="text-xl font-bold text-proman-navy mb-2">
-                  {project.title}
+                  {language === 'en' && project.title_en ? project.title_en : project.title}
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  {project.description}
+                  {language === 'en' && project.description_en ? project.description_en : project.description}
                 </p>
 
                 <div className="space-y-2 text-sm text-gray-500">
