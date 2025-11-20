@@ -80,9 +80,12 @@ export default function Services() {
       <div className="gradient-navy-yellow text-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            {t({ es: "Servicios Profesionales en San Salvador", en: "Professional Services in San Salvador" })}
+            {t({ es: "Servicios Profesionales en", en: "Professional Services in" })}
           </h1>
           <p className="text-xl text-gray-200 max-w-3xl mx-auto">
+            {t({ es: "San Salvador, La Libertad y Zona Occidental de El Salvador", en: "San Salvador, La Libertad and Western Region of El Salvador" })}
+          </p>
+          <p className="text-lg text-gray-200 max-w-3xl mx-auto mt-2">
             {t({ es: "Fontanería, Electricidad, Construcción y Remodelaciones con Garantía de Calidad", en: "Plumbing, Electrical, Construction and Remodeling with Quality Guarantee" })}
           </p>
         </div>
