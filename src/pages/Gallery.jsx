@@ -106,6 +106,13 @@ export default function Gallery() {
                       <span>{format(new Date(project.completion_date), "MMMM yyyy", { locale: language === 'es' ? es : enUS })}</span>
                     </div>
                   )}
+                  {project.budget && (
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-proman-navy">
+                        {t({ es: "Presupuesto:", en: "Budget:" })} ${project.budget.toLocaleString()}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {project.before_image_url && project.after_image_url && (
