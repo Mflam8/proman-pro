@@ -8,8 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Phone, MapPin, Clock, CheckCircle2, Mail, MessageCircle } from "lucide-react";
+import { useLanguage } from "@/components/LanguageContext";
 
 export default function Contact() {
+  const { t, language } = useLanguage();
   const [formData, setFormData] = useState({
     full_name: "",
     phone: "",
@@ -62,11 +64,11 @@ export default function Contact() {
   };
 
   const rubros = [
-    { value: "Hogar", label: "Hogar" },
-    { value: "Comercial", label: "Comercial" },
-    { value: "Restaurantes", label: "Restaurantes" },
-    { value: "Hospitales", label: "Hospitales" },
-    { value: "Emergencias", label: "Emergencias" }
+    { value: "Hogar", label: t({ es: "Hogar", en: "Home" }) },
+    { value: "Comercial", label: t({ es: "Comercial", en: "Commercial" }) },
+    { value: "Restaurantes", label: t({ es: "Restaurantes", en: "Restaurants" }) },
+    { value: "Hospitales", label: t({ es: "Hospitales", en: "Hospitals" }) },
+    { value: "Emergencias", label: t({ es: "Emergencias", en: "Emergencies" }) }
   ];
 
   const departamentos = [
@@ -78,18 +80,27 @@ export default function Contact() {
   return (
     <div className="min-h-screen bg-gray-50">
       <SEO 
-        title="Contacto - Solicita tu Servicio | PROMAN Services"
-        description="Contáctanos para servicios de fontanería, plomería, electricidad y construcción en San Salvador. Atención inmediata por WhatsApp o teléfono 6053-1213. Solicita tu cotización gratis."
-        keywords="contacto fontanero San Salvador, solicitar plomero, electricista urgente, cotización construcción, servicios de emergencia, fontanería La Libertad, WhatsApp PROMAN"
+        title={t({ 
+          es: "Contacto - Solicita tu Servicio | PROMAN Services",
+          en: "Contact - Request Your Service | PROMAN Services"
+        })}
+        description={t({ 
+          es: "Contáctanos para servicios de fontanería, plomería, electricidad y construcción en San Salvador. Atención inmediata por WhatsApp o teléfono 6053-1213. Solicita tu cotización gratis.",
+          en: "Contact us for plumbing, electrical and construction services in San Salvador. Immediate attention via WhatsApp or phone 6053-1213. Request your free quote."
+        })}
+        keywords={t({ 
+          es: "contacto fontanero San Salvador, solicitar plomero, electricista urgente, cotización construcción, servicios de emergencia, fontanería La Libertad, WhatsApp PROMAN",
+          en: "contact plumber San Salvador, request electrician, urgent electrician, construction quote, emergency services, La Libertad plumbing, PROMAN WhatsApp"
+        })}
       />
       {/* Hero Section */}
       <div className="gradient-navy-yellow text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            Solicita tu Servicio
+            {t({ es: "Solicita tu Servicio", en: "Request Your Service" })}
           </h1>
           <p className="text-xl text-gray-200 max-w-2xl mx-auto">
-            Déjanos tus datos y nuestro equipo te contactará para confirmar tu servicio
+            {t({ es: "Déjanos tus datos y nuestro equipo te contactará para confirmar tu servicio", en: "Leave us your information and our team will contact you to confirm your service" })}
           </p>
         </div>
       </div>
@@ -102,8 +113,8 @@ export default function Contact() {
               <div className="w-16 h-16 hexagon bg-proman-yellow mx-auto mb-4 flex items-center justify-center">
                 <Phone className="w-8 h-8 text-proman-navy" />
               </div>
-              <h3 className="font-bold text-proman-navy mb-2">Teléfono</h3>
-              <p className="text-gray-600 mb-2">Llámanos directamente</p>
+              <h3 className="font-bold text-proman-navy mb-2">{t({ es: "Teléfono", en: "Phone" })}</h3>
+              <p className="text-gray-600 mb-2">{t({ es: "Llámanos directamente", en: "Call us directly" })}</p>
               <a href="tel:60531213" className="text-proman-yellow font-semibold hover:underline">
                 6053-1213
               </a>
@@ -115,8 +126,8 @@ export default function Contact() {
               <div className="w-16 h-16 hexagon bg-proman-yellow mx-auto mb-4 flex items-center justify-center">
                 <MapPin className="w-8 h-8 text-proman-navy" />
               </div>
-              <h3 className="font-bold text-proman-navy mb-2">Cobertura</h3>
-              <p className="text-gray-600">San Salvador, La Libertad y Zona Occidental</p>
+              <h3 className="font-bold text-proman-navy mb-2">{t({ es: "Cobertura", en: "Coverage" })}</h3>
+              <p className="text-gray-600">{t({ es: "San Salvador, La Libertad y Zona Occidental", en: "San Salvador, La Libertad and Western Region" })}</p>
             </CardContent>
           </Card>
 
@@ -125,9 +136,9 @@ export default function Contact() {
               <div className="w-16 h-16 hexagon bg-proman-yellow mx-auto mb-4 flex items-center justify-center">
                 <Clock className="w-8 h-8 text-proman-navy" />
               </div>
-              <h3 className="font-bold text-proman-navy mb-2">Horario</h3>
-              <p className="text-gray-600">Lun - Sáb: 7:00 AM - 6:00 PM</p>
-              <p className="text-sm text-gray-500 mt-1">Emergencias 24/7</p>
+              <h3 className="font-bold text-proman-navy mb-2">{t({ es: "Horario", en: "Schedule" })}</h3>
+              <p className="text-gray-600">{t({ es: "Lun - Sáb: 7:00 AM - 6:00 PM", en: "Mon - Sat: 7:00 AM - 6:00 PM" })}</p>
+              <p className="text-sm text-gray-500 mt-1">{t({ es: "Emergencias 24/7", en: "24/7 Emergencies" })}</p>
             </CardContent>
           </Card>
         </div>
@@ -139,9 +150,9 @@ export default function Contact() {
           {/* Contact Form */}
           <Card className="border-2 border-gray-200 shadow-lg h-fit">
             <CardHeader className="bg-proman-navy text-white">
-              <CardTitle className="text-2xl">Solicita tu Servicio</CardTitle>
+              <CardTitle className="text-2xl">{t({ es: "Solicita tu Servicio", en: "Request Your Service" })}</CardTitle>
               <p className="text-sm text-gray-200 mt-1">
-                Completa el formulario y te contactaremos
+                {t({ es: "Completa el formulario y te contactaremos", en: "Complete the form and we will contact you" })}
               </p>
             </CardHeader>
             <CardContent className="p-6">
@@ -151,30 +162,30 @@ export default function Contact() {
                     <CheckCircle2 className="w-10 h-10 text-green-600" />
                   </div>
                   <h3 className="text-2xl font-bold text-green-800 mb-4">
-                    ¡Solicitud Enviada Exitosamente!
+                    {t({ es: "¡Solicitud Enviada Exitosamente!", en: "Request Sent Successfully!" })}
                   </h3>
                   <div className="max-w-md mx-auto space-y-4">
                     <p className="text-gray-700 leading-relaxed">
-                      Tu solicitud ha sido recibida. Nuestro equipo se comunicará contigo pronto para confirmar los detalles del servicio.
+                      {t({ es: "Tu solicitud ha sido recibida. Nuestro equipo se comunicará contigo pronto para confirmar los detalles del servicio.", en: "Your request has been received. Our team will contact you soon to confirm the service details." })}
                     </p>
                     <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
                       <p className="text-sm text-blue-800">
-                        <strong>📞 Tiempo de respuesta:</strong> Menos de 2 horas en horario laboral
+                        <strong>📞 {t({ es: "Tiempo de respuesta:", en: "Response time:" })}</strong> {t({ es: "Menos de 2 horas en horario laboral", en: "Less than 2 hours during business hours" })}
                       </p>
                     </div>
                     <div className="pt-4">
                       <p className="text-gray-600 mb-4">
-                        ¿Necesitas contactarnos de inmediato?
+                        {t({ es: "¿Necesitas contactarnos de inmediato?", en: "Need to contact us immediately?" })}
                       </p>
                       <div className="space-y-3">
                         <a href="tel:60531213" className="block">
                           <Button variant="outline" className="w-full border-2 border-proman-navy text-proman-navy hover:bg-proman-navy hover:text-white">
                             <Phone className="w-4 h-4 mr-2" />
-                            Llamar: 6053-1213
+                            {t({ es: "Llamar: 6053-1213", en: "Call: 6053-1213" })}
                           </Button>
                         </a>
                         <a 
-                          href="https://wa.me/50360531213?text=Hola,%20me%20interesa%20conocer%20más%20sobre%20los%20servicios%20de%20PROMAN"
+                          href={`https://wa.me/50360531213?text=${encodeURIComponent(t({ es: "Hola, me interesa conocer más sobre los servicios de PROMAN", en: "Hello, I want to know more about PROMAN services" }))}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="block"
@@ -192,20 +203,20 @@ export default function Contact() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-proman-navy mb-2">
-                      Nombre Completo *
+                      {t({ es: "Nombre Completo *", en: "Full Name *" })}
                     </label>
                     <Input
                       required
                       value={formData.full_name}
                       onChange={(e) => setFormData({...formData, full_name: e.target.value})}
-                      placeholder="Juan Pérez"
+                      placeholder={t({ es: "Juan Pérez", en: "John Doe" })}
                       disabled={submitCustomer.isPending}
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-proman-navy mb-2">
-                      Teléfono *
+                      {t({ es: "Teléfono *", en: "Phone *" })}
                     </label>
                     <Input
                       required
@@ -218,20 +229,20 @@ export default function Contact() {
 
                   <div>
                     <label className="block text-sm font-medium text-proman-navy mb-2">
-                      Email (Opcional)
+                      {t({ es: "Email (Opcional)", en: "Email (Optional)" })}
                     </label>
                     <Input
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      placeholder="tu@email.com"
+                      placeholder={t({ es: "tu@email.com", en: "your@email.com" })}
                       disabled={submitCustomer.isPending}
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-proman-navy mb-2">
-                      Departamento *
+                      {t({ es: "Departamento *", en: "Department *" })}
                     </label>
                     <Select
                       required
@@ -240,7 +251,7 @@ export default function Contact() {
                       disabled={submitCustomer.isPending}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecciona tu departamento" />
+                        <SelectValue placeholder={t({ es: "Selecciona tu departamento", en: "Select your department" })} />
                       </SelectTrigger>
                       <SelectContent>
                         {departamentos.map((dept) => (
@@ -252,7 +263,7 @@ export default function Contact() {
 
                   <div>
                     <label className="block text-sm font-medium text-proman-navy mb-2">
-                      Tipo de Servicio *
+                      {t({ es: "Tipo de Servicio *", en: "Service Type *" })}
                     </label>
                     <Select
                       required
@@ -261,7 +272,7 @@ export default function Contact() {
                       disabled={submitCustomer.isPending}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecciona el tipo de servicio" />
+                        <SelectValue placeholder={t({ es: "Selecciona el tipo de servicio", en: "Select service type" })} />
                       </SelectTrigger>
                       <SelectContent>
                         {rubros.map((rubro) => (
@@ -275,19 +286,19 @@ export default function Contact() {
 
                   <div>
                     <label className="block text-sm font-medium text-proman-navy mb-2">
-                      Servicio Específico
+                      {t({ es: "Servicio Específico", en: "Specific Service" })}
                     </label>
                     <Input
                       value={formData.service_type}
                       onChange={(e) => setFormData({...formData, service_type: e.target.value})}
-                      placeholder="Ej: Destapado de tuberías, instalación eléctrica..."
+                      placeholder={t({ es: "Ej: Destapado de tuberías, instalación eléctrica...", en: "Ex: Pipe unclogging, electrical installation..." })}
                       disabled={submitCustomer.isPending}
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-proman-navy mb-2">
-                      Horario Preferido
+                      {t({ es: "Horario Preferido", en: "Preferred Time" })}
                     </label>
                     <Select
                       value={formData.preferred_time}
@@ -295,24 +306,24 @@ export default function Contact() {
                       disabled={submitCustomer.isPending}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecciona tu horario preferido" />
+                        <SelectValue placeholder={t({ es: "Selecciona tu horario preferido", en: "Select your preferred time" })} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="mañana">Mañana (8:00 AM - 12:00 PM)</SelectItem>
-                        <SelectItem value="tarde">Tarde (12:00 PM - 4:00 PM)</SelectItem>
-                        <SelectItem value="vespertino">Vespertino (4:00 PM - 6:00 PM)</SelectItem>
+                        <SelectItem value="mañana">{t({ es: "Mañana (8:00 AM - 12:00 PM)", en: "Morning (8:00 AM - 12:00 PM)" })}</SelectItem>
+                        <SelectItem value="tarde">{t({ es: "Tarde (12:00 PM - 4:00 PM)", en: "Afternoon (12:00 PM - 4:00 PM)" })}</SelectItem>
+                        <SelectItem value="vespertino">{t({ es: "Vespertino (4:00 PM - 6:00 PM)", en: "Evening (4:00 PM - 6:00 PM)" })}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-proman-navy mb-2">
-                      Describe tu necesidad
+                      {t({ es: "Describe tu necesidad", en: "Describe your need" })}
                     </label>
                     <Textarea
                       value={formData.message}
                       onChange={(e) => setFormData({...formData, message: e.target.value})}
-                      placeholder="Cuéntanos los detalles de lo que necesitas..."
+                      placeholder={t({ es: "Cuéntanos los detalles de lo que necesitas...", en: "Tell us the details of what you need..." })}
                       rows={4}
                       disabled={submitCustomer.isPending}
                     />
@@ -323,7 +334,7 @@ export default function Contact() {
                     className="w-full bg-proman-yellow text-proman-navy hover:opacity-90 font-semibold text-lg py-6"
                     disabled={submitCustomer.isPending}
                   >
-                    {submitCustomer.isPending ? "Enviando..." : "Solicitar Servicio"}
+                    {submitCustomer.isPending ? t({ es: "Enviando...", en: "Sending..." }) : t({ es: "Solicitar Servicio", en: "Request Service" })}
                   </Button>
                 </form>
               )}
@@ -335,7 +346,7 @@ export default function Contact() {
             <Card className="border-2 border-proman-yellow shadow-lg">
               <CardHeader className="bg-proman-yellow">
                 <CardTitle className="text-2xl text-proman-navy">
-                  ¿Cómo Funciona?
+                  {t({ es: "¿Cómo Funciona?", en: "How Does It Work?" })}
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6">
@@ -349,10 +360,10 @@ export default function Contact() {
                     </div>
                     <div className="flex-1">
                       <h3 className="font-bold text-proman-navy mb-2 text-lg">
-                        Completa el Formulario
+                        {t({ es: "Completa el Formulario", en: "Complete the Form" })}
                       </h3>
                       <p className="text-gray-600 leading-relaxed">
-                        Llena todos los datos de tu solicitud. Mientras más detalles nos proporciones, mejor podremos prepararnos para atenderte.
+                        {t({ es: "Llena todos los datos de tu solicitud. Mientras más detalles nos proporciones, mejor podremos prepararnos para atenderte.", en: "Fill in all your request details. The more details you provide, the better we can prepare to serve you." })}
                       </p>
                     </div>
                   </div>
@@ -366,10 +377,10 @@ export default function Contact() {
                     </div>
                     <div className="flex-1">
                       <h3 className="font-bold text-proman-navy mb-2 text-lg">
-                        Te Contactamos
+                        {t({ es: "Te Contactamos", en: "We Contact You" })}
                       </h3>
                       <p className="text-gray-600 leading-relaxed">
-                        Nuestro equipo de servicio al cliente te llamará para confirmar los detalles, aclarar dudas y entender mejor tu necesidad.
+                        {t({ es: "Nuestro equipo de servicio al cliente te llamará para confirmar los detalles, aclarar dudas y entender mejor tu necesidad.", en: "Our customer service team will call you to confirm details, clarify doubts and better understand your needs." })}
                       </p>
                     </div>
                   </div>
@@ -383,10 +394,10 @@ export default function Contact() {
                     </div>
                     <div className="flex-1">
                       <h3 className="font-bold text-proman-navy mb-2 text-lg">
-                        Agendamos tu Servicio
+                        {t({ es: "Agendamos tu Servicio", en: "We Schedule Your Service" })}
                       </h3>
                       <p className="text-gray-600 leading-relaxed">
-                        Coordinamos fecha, hora y asignamos al técnico más adecuado para tu caso. Te enviaremos toda la información por WhatsApp.
+                        {t({ es: "Coordinamos fecha, hora y asignamos al técnico más adecuado para tu caso. Te enviaremos toda la información por WhatsApp.", en: "We coordinate date, time and assign the most suitable technician for your case. We will send you all the information via WhatsApp." })}
                       </p>
                     </div>
                   </div>
@@ -400,10 +411,10 @@ export default function Contact() {
                     </div>
                     <div className="flex-1">
                       <h3 className="font-bold text-proman-navy mb-2 text-lg">
-                        Realizamos el Trabajo
+                        {t({ es: "Realizamos el Trabajo", en: "We Do the Work" })}
                       </h3>
                       <p className="text-gray-600 leading-relaxed">
-                        Nuestro técnico llega puntual, realiza el servicio con profesionalismo y te mantiene informado del progreso en todo momento.
+                        {t({ es: "Nuestro técnico llega puntual, realiza el servicio con profesionalismo y te mantiene informado del progreso en todo momento.", en: "Our technician arrives on time, performs the service professionally and keeps you informed of progress at all times." })}
                       </p>
                     </div>
                   </div>
@@ -415,19 +426,19 @@ export default function Contact() {
             <Card className="border-2 border-gray-200 shadow-lg">
               <CardHeader className="bg-gray-50">
                 <CardTitle className="text-xl text-proman-navy">
-                  ¿Prefieres Contactarnos Directamente?
+                  {t({ es: "¿Prefieres Contactarnos Directamente?", en: "Prefer to Contact Us Directly?" })}
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6 space-y-4">
                 <a href="tel:60531213">
                   <Button variant="outline" className="w-full border-2 border-proman-navy text-proman-navy hover:bg-proman-navy hover:text-white text-lg py-6">
                     <Phone className="w-5 h-5 mr-2" />
-                    Llamar Ahora: 6053-1213
+                    {t({ es: "Llamar Ahora: 6053-1213", en: "Call Now: 6053-1213" })}
                   </Button>
                 </a>
                 
                 <a 
-                  href="https://wa.me/50360531213?text=Hola,%20me%20interesa%20conocer%20más%20sobre%20los%20servicios%20de%20PROMAN"
+                  href={`https://wa.me/50360531213?text=${encodeURIComponent(t({ es: "Hola, me interesa conocer más sobre los servicios de PROMAN", en: "Hello, I want to know more about PROMAN services" }))}`}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -439,7 +450,7 @@ export default function Contact() {
 
                 <div className="pt-4 border-t text-center">
                   <p className="text-sm text-gray-600">
-                    <strong>Tiempo de respuesta:</strong> Menos de 2 horas en horario laboral
+                    <strong>{t({ es: "Tiempo de respuesta:", en: "Response time:" })}</strong> {t({ es: "Menos de 2 horas en horario laboral", en: "Less than 2 hours during business hours" })}
                   </p>
                 </div>
               </CardContent>
