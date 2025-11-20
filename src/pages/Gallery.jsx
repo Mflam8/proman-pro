@@ -29,9 +29,18 @@ export default function Gallery() {
   return (
     <div className="min-h-screen bg-white">
       <SEO 
-        title="Galería de Proyectos - Trabajos Realizados | PROMAN Services"
-        description="Conoce nuestros proyectos de fontanería, construcción, electricidad y remodelación en San Salvador. Fotos reales de trabajos terminados con antes y después."
-        keywords="proyectos fontanería El Salvador, galería construcción, trabajos realizados plomería, antes y después remodelación, portafolio PROMAN, obras terminadas"
+        title={t({ 
+          es: "Galería de Proyectos - Trabajos Realizados | PROMAN Services",
+          en: "Project Gallery - Completed Work | PROMAN Services"
+        })}
+        description={t({ 
+          es: "Conoce nuestros proyectos de fontanería, construcción, electricidad y remodelación en San Salvador. Fotos reales de trabajos terminados con antes y después.",
+          en: "See our plumbing, construction, electrical and remodeling projects in San Salvador. Real photos of completed work with before and after."
+        })}
+        keywords={t({ 
+          es: "proyectos fontanería El Salvador, galería construcción, trabajos realizados plomería, antes y después remodelación, portafolio PROMAN, obras terminadas",
+          en: "plumbing projects El Salvador, construction gallery, completed plumbing work, remodeling before and after, PROMAN portfolio, completed projects"
+        })}
       />
       {/* Hero Section */}
       <div className="gradient-navy-yellow text-white py-20">
