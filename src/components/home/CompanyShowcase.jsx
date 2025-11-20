@@ -78,7 +78,7 @@ export default function CompanyShowcase() {
                 <div>
                   <h3 className="font-bold text-proman-navy mb-1">{t({ es: "Cobertura Total", en: "Full Coverage" })}</h3>
                   <p className="text-sm text-gray-600">
-                    {t({ es: "Atendemos San Salvador y La Libertad con disponibilidad 24/7", en: "We serve San Salvador and La Libertad with 24/7 availability" })}
+                    {t({ es: "Atendemos San Salvador, La Libertad y zona occidental con disponibilidad 24/7", en: "We serve San Salvador, La Libertad and western region with 24/7 availability" })}
                   </p>
                 </div>
               </div>
