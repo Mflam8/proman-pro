@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -17,7 +16,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { createPageUrl } from "@/utils";
 import {
-  Phone, MapPin, Clock, FileText, CheckCircle, AlertCircle, Calendar, DollarSign, User, Filter, Percent, Camera, MessageCircle, Star, Copy, ExternalLink, UserPlus, Edit2, Building, Home as HomeIcon, ClipboardCheck, FileCheck, ThumbsUp
+  Phone, MapPin, Clock, FileText, CheckCircle, AlertCircle, Calendar, DollarSign, User, Filter, Percent, Camera, MessageCircle, Star, Copy, ExternalLink, UserPlus, Edit2, Building, Home as HomeIcon, ClipboardCheck, FileCheck, ThumbsUp, FileDown
 } from "lucide-react";
 import { format, parseISO, addHours } from "date-fns";
 import { es } from "date-fns/locale";
@@ -1082,13 +1081,16 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
                                     <Button type="button" variant="outline" className="w-full"><MessageCircle className="w-4 h-4 mr-2" />Notificar Avance por WhatsApp</Button>
                                 </a>
                                 {inquiry.status === 'completado' && (
-                                    <div>
-                                        <Label className="text-sm font-medium">Enlace de Encuesta:</Label>
-                                        <div className="flex gap-2 mt-1">
-                                            <Input readOnly value={getSurveyLink(inquiry.id)} className="text-xs" />
-                                            <Button type="button" size="icon" onClick={() => navigator.clipboard.writeText(getSurveyLink(inquiry.id))}><Copy className="w-4 h-4" /></Button>
+                                    <>
+                                        <GenerateInvoiceButton inquiry={inquiry} />
+                                        <div>
+                                            <Label className="text-sm font-medium">Enlace de Encuesta:</Label>
+                                            <div className="flex gap-2 mt-1">
+                                                <Input readOnly value={getSurveyLink(inquiry.id)} className="text-xs" />
+                                                <Button type="button" size="icon" onClick={() => navigator.clipboard.writeText(getSurveyLink(inquiry.id))}><Copy className="w-4 h-4" /></Button>
+                                            </div>
                                         </div>
-                                    </div>
+                                    </>
                                 )}
                             </CardContent>
                         </Card>
@@ -1744,4 +1746,59 @@ function EmployeeSelectorCreate({ selectedDate, startTime, duration, onSelect, c
         onSelect={onSelect}
         currentAssignee={currentAssignee}
     />;
+}
+
+function GenerateInvoiceButton({ inquiry }) {
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [error, setError] = useState(null);
+    const queryClient = useQueryClient();
+
+    const handleGenerate = async () => {
+        setIsGenerating(true);
+        setError(null);
+        
+        try {
+            const response = await base44.functions.invoke('generateInvoice', {
+                inquiryId: inquiry.id
+            });
+
+            if (response.data.success) {
+                await queryClient.invalidateQueries({ queryKey: ['clientInquiries'] });
+                
+                // Abrir PDF en nueva pestaña
+                window.open(response.data.pdf_url, '_blank');
+            } else {
+                setError('Error al generar factura');
+            }
+        } catch (err) {
+            setError('Error al generar factura: ' + err.message);
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    return (
+        <div>
+            <Button 
+                type="button"
+                onClick={handleGenerate}
+                disabled={isGenerating}
+                className="w-full bg-proman-yellow text-proman-navy hover:opacity-90"
+            >
+                <FileDown className="w-4 h-4 mr-2" />
+                {isGenerating ? 'Generando Factura...' : 'Generar Factura (CANCELADO)'}
+            </Button>
+            {error && (
+                <p className="text-xs text-red-600 mt-1">{error}</p>
+            )}
+            {inquiry.quote_pdf_url && (
+                <a href={inquiry.quote_pdf_url} target="_blank" rel="noopener noreferrer" className="block mt-2">
+                    <Button type="button" variant="outline" size="sm" className="w-full text-xs">
+                        <ExternalLink className="w-3 h-3 mr-1" />
+                        Ver Última Factura
+                    </Button>
+                </a>
+            )}
+        </div>
+    );
 }
