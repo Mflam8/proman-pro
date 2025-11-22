@@ -550,11 +550,19 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
             
             await base44.entities.ClientInquiry.update(inquiry.id, { payment_status: newPaymentStatus });
             
+            // Actualizar total_spent del cliente
+            if (customer) {
+                await base44.entities.Customer.update(customer.id, {
+                    total_spent: (customer.total_spent || 0) + parseFloat(data.amount_paid)
+                });
+            }
+            
             return payment;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['payments', inquiry.id] });
             queryClient.invalidateQueries({ queryKey: ['clientInquiries'] });
+            queryClient.invalidateQueries({ queryKey: ['customers'] });
             setShowPaymentModal(false);
         },
     });
