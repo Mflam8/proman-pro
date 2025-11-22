@@ -530,6 +530,14 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
 
     const [showPaymentModal, setShowPaymentModal] = useState(false);
 
+    // Fetch inquiry actualizado en tiempo real
+    const { data: currentInquiry } = useQuery({
+        queryKey: ['inquiry', inquiry.id],
+        queryFn: () => base44.entities.ClientInquiry.filter({ id: inquiry.id }).then(res => res[0]),
+        initialData: inquiry,
+        refetchInterval: 3000, // Actualizar cada 3 segundos
+    });
+
     const createPayment = useMutation({
         mutationFn: async (data) => {
             const currentUser = await base44.auth.me();
@@ -581,14 +589,6 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
             quote_pdf_url: inquiry.quote_pdf_url || '',
         });
     }, [inquiry]);
-
-    // Fetch inquiry actualizado en tiempo real
-    const { data: currentInquiry } = useQuery({
-        queryKey: ['inquiry', inquiry.id],
-        queryFn: () => base44.entities.ClientInquiry.filter({ id: inquiry.id }).then(res => res[0]),
-        initialData: inquiry,
-        refetchInterval: 3000, // Actualizar cada 3 segundos
-    });
 
     const handleImageUpload = async (file, fieldName) => {
         if (!file) return;
