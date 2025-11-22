@@ -521,6 +521,48 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
         initialData: [],
     });
 
+    // Fetch payments
+    const { data: payments } = useQuery({
+        queryKey: ['payments', inquiry.id],
+        queryFn: () => base44.entities.Payment.filter({ inquiry_id: inquiry.id }, '-payment_date'),
+        initialData: [],
+    });
+
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+
+    const createPayment = useMutation({
+        mutationFn: async (data) => {
+            const currentUser = await base44.auth.me();
+            const paymentData = { ...data, recorded_by: currentUser.email, inquiry_id: inquiry.id };
+            const payment = await base44.entities.Payment.create(paymentData);
+            
+            // Actualizar el estado de pago del inquiry
+            const allPayments = await base44.entities.Payment.filter({ inquiry_id: inquiry.id });
+            const totalPaid = allPayments.reduce((sum, p) => sum + (p.amount_paid || 0), 0) + data.amount_paid;
+            const finalAmount = formData.final_amount || formData.quote_amount || 0;
+            
+            let newPaymentStatus = 'pendiente';
+            if (totalPaid >= finalAmount) {
+                newPaymentStatus = 'pagado';
+            } else if (totalPaid > 0) {
+                newPaymentStatus = 'parcial';
+            }
+            
+            await base44.entities.ClientInquiry.update(inquiry.id, { payment_status: newPaymentStatus });
+            
+            return payment;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['payments', inquiry.id] });
+            queryClient.invalidateQueries({ queryKey: ['clientInquiries'] });
+            setShowPaymentModal(false);
+        },
+    });
+
+    const totalPaid = payments.reduce((sum, p) => sum + (p.amount_paid || 0), 0);
+    const finalAmount = formData.final_amount || formData.quote_amount || 0;
+    const remainingAmount = finalAmount - totalPaid;
+
     useEffect(() => {
         setFormData({
             ...inquiry,
@@ -1124,6 +1166,77 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
                         </Card>
                     )}
 
+                    <Card className="border-2 border-green-500">
+                        <CardHeader className="bg-green-500 text-white">
+                            <div className="flex justify-between items-center">
+                                <CardTitle>💰 Pagos del Servicio</CardTitle>
+                                {canEdit && (
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        onClick={() => setShowPaymentModal(true)}
+                                        className="bg-white text-green-700 hover:bg-gray-100"
+                                    >
+                                        <Plus className="w-4 h-4 mr-1" />
+                                        Registrar Pago
+                                    </Button>
+                                )}
+                            </div>
+                        </CardHeader>
+                        <CardContent className="pt-4">
+                            <div className="bg-white rounded-lg p-4 mb-4 border-2 border-gray-200">
+                                <div className="grid grid-cols-3 gap-4 text-center">
+                                    <div>
+                                        <p className="text-xs text-gray-600 mb-1">Monto Total</p>
+                                        <p className="text-2xl font-bold text-proman-navy">${finalAmount.toFixed(2)}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-gray-600 mb-1">Pagado</p>
+                                        <p className="text-2xl font-bold text-green-600">${totalPaid.toFixed(2)}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-gray-600 mb-1">Pendiente</p>
+                                        <p className="text-2xl font-bold text-red-600">${remainingAmount.toFixed(2)}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {payments.length > 0 ? (
+                                <div className="space-y-2">
+                                    {payments.map((payment) => (
+                                        <div key={payment.id} className="bg-gray-50 rounded-lg p-3 border">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div className="flex items-center gap-2">
+                                                    <DollarSign className="w-5 h-5 text-green-600" />
+                                                    <span className="font-bold text-lg">${payment.amount_paid}</span>
+                                                </div>
+                                                <Badge className="bg-blue-100 text-blue-800">
+                                                    {payment.payment_method}
+                                                </Badge>
+                                            </div>
+                                            <div className="text-xs text-gray-600 space-y-1">
+                                                <div>📅 {format(new Date(payment.payment_date), "dd 'de' MMMM, yyyy", { locale: es })}</div>
+                                                {payment.transaction_id && <div>ID: {payment.transaction_id}</div>}
+                                                {payment.notes && <div className="italic">"{payment.notes}"</div>}
+                                                <div className="text-gray-500">Por: {payment.recorded_by}</div>
+                                            </div>
+                                            {payment.confirmation_url && (
+                                                <a href={payment.confirmation_url} target="_blank" rel="noopener noreferrer">
+                                                    <Button type="button" size="sm" variant="outline" className="w-full mt-2">
+                                                        <ExternalLink className="w-3 h-3 mr-1" />
+                                                        Ver Comprobante
+                                                    </Button>
+                                                </a>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-center text-gray-500 text-sm py-4">No hay pagos registrados</p>
+                            )}
+                        </CardContent>
+                    </Card>
+
                     {inquiry.satisfaction_rating && (
                         <Card>
                             <CardHeader><CardTitle>Resultado de Encuesta</CardTitle></CardHeader>
@@ -1145,6 +1258,21 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
                       {isUpdating || isUploading ? "Guardando..." : "Guardar Cambios"}
                   </Button>
               </div>
+            )}
+
+            {showPaymentModal && (
+                <Dialog open={showPaymentModal} onOpenChange={() => setShowPaymentModal(false)}>
+                    <DialogContent className="max-w-lg">
+                        <DialogHeader>
+                            <DialogTitle>Registrar Pago</DialogTitle>
+                        </DialogHeader>
+                        <QuickPaymentForm
+                            onSubmit={createPayment.mutate}
+                            isSubmitting={createPayment.isPending}
+                            onCancel={() => setShowPaymentModal(false)}
+                        />
+                    </DialogContent>
+                </Dialog>
             )}
         </form>
     );
@@ -1828,5 +1956,170 @@ function GenerateInvoiceButton({ inquiry }) {
                 </a>
             )}
         </div>
+    );
+}
+
+function QuickPaymentForm({ onSubmit, isSubmitting, onCancel }) {
+    const [formData, setFormData] = useState({
+        amount_paid: "",
+        payment_date: new Date().toISOString().split('T')[0],
+        payment_method: "efectivo",
+        transaction_id: "",
+        confirmation_url: "",
+        notes: ""
+    });
+    const [confirmationFile, setConfirmationFile] = useState(null);
+    const [isUploading, setIsUploading] = useState(false);
+
+    const handleFileUpload = async (file) => {
+        if (!file) return;
+        setIsUploading(true);
+        try {
+            const { file_url } = await base44.integrations.Core.UploadFile({ file });
+            setFormData(prev => ({ ...prev, confirmation_url: file_url }));
+        } catch (error) {
+            console.error("Upload failed", error);
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    React.useEffect(() => {
+        if (confirmationFile) {
+            handleFileUpload(confirmationFile);
+        }
+    }, [confirmationFile]);
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        onSubmit(formData);
+    };
+
+    return (
+        <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+                <div>
+                    <Label className="block text-sm font-medium text-proman-navy mb-2">
+                        Monto Pagado ($) *
+                    </Label>
+                    <Input
+                        type="number"
+                        step="0.01"
+                        required
+                        value={formData.amount_paid}
+                        onChange={(e) => setFormData({ ...formData, amount_paid: e.target.value })}
+                        placeholder="0.00"
+                    />
+                </div>
+
+                <div>
+                    <Label className="block text-sm font-medium text-proman-navy mb-2">
+                        Fecha de Pago *
+                    </Label>
+                    <Input
+                        type="date"
+                        required
+                        value={formData.payment_date}
+                        onChange={(e) => setFormData({ ...formData, payment_date: e.target.value })}
+                    />
+                </div>
+            </div>
+
+            <div>
+                <Label className="block text-sm font-medium text-proman-navy mb-2">
+                    Método de Pago *
+                </Label>
+                <Select
+                    value={formData.payment_method}
+                    onValueChange={(value) => setFormData({ ...formData, payment_method: value })}
+                    required
+                >
+                    <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar método" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="efectivo">Efectivo</SelectItem>
+                        <SelectItem value="transferencia">Transferencia</SelectItem>
+                        <SelectItem value="deposito">Depósito</SelectItem>
+                        <SelectItem value="tarjeta">Tarjeta</SelectItem>
+                        <SelectItem value="otro">Otro</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+
+            <div>
+                <Label className="block text-sm font-medium text-proman-navy mb-2">
+                    ID de Transacción (Opcional)
+                </Label>
+                <Input
+                    value={formData.transaction_id}
+                    onChange={(e) => setFormData({ ...formData, transaction_id: e.target.value })}
+                    placeholder="Ej: TRANS-12345"
+                />
+            </div>
+
+            <div>
+                <Label className="block text-sm font-medium text-proman-navy mb-2">
+                    Comprobante de Pago (Opcional)
+                </Label>
+                <div className="border-2 border-dashed rounded-lg p-4 text-center">
+                    {formData.confirmation_url ? (
+                        <div className="space-y-2">
+                            <img 
+                                src={formData.confirmation_url} 
+                                alt="Comprobante" 
+                                className="max-h-32 mx-auto rounded"
+                            />
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setFormData({ ...formData, confirmation_url: "" })}
+                            >
+                                Cambiar imagen
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="space-y-2">
+                            <Camera className="w-8 h-8 text-gray-400 mx-auto" />
+                            <p className="text-sm text-gray-600">Subir captura o recibo</p>
+                            <Input
+                                type="file"
+                                accept="image/*,application/pdf"
+                                onChange={(e) => setConfirmationFile(e.target.files[0])}
+                                disabled={isUploading}
+                                className="cursor-pointer"
+                            />
+                            {isUploading && <p className="text-xs text-blue-600">Subiendo...</p>}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            <div>
+                <Label className="block text-sm font-medium text-proman-navy mb-2">
+                    Notas (Opcional)
+                </Label>
+                <Textarea
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    rows={3}
+                    placeholder="Información adicional sobre el pago..."
+                />
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4">
+                <Button type="button" variant="outline" onClick={onCancel}>
+                    Cancelar
+                </Button>
+                <Button
+                    type="submit"
+                    className="bg-proman-yellow text-proman-navy hover:opacity-90"
+                    disabled={isSubmitting || isUploading}
+                >
+                    {isSubmitting ? "Registrando..." : "Registrar Pago"}
+                </Button>
+            </div>
+        </form>
     );
 }
