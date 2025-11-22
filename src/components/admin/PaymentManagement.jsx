@@ -335,8 +335,9 @@ function PaymentForm({ inquiries, customers, onSubmit, isSubmitting, onCancel })
     ? customers.find(c => c.id === selectedInquiry.customer_id)
     : null;
 
+  // Mostrar todos los trabajos excepto los nuevos y pendientes de evaluación
   const completedInquiries = inquiries.filter(i => 
-    i.status === 'completado' || i.status === 'en_proceso'
+    i.status !== 'nuevo' && i.status !== 'evaluacion_pendiente' && i.status !== 'evaluacion_agendada'
   );
 
   const handleFileUpload = async (file) => {
