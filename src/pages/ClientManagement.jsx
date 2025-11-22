@@ -561,6 +561,7 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['payments', inquiry.id] });
+            queryClient.invalidateQueries({ queryKey: ['inquiry', inquiry.id] });
             queryClient.invalidateQueries({ queryKey: ['clientInquiries'] });
             queryClient.invalidateQueries({ queryKey: ['customers'] });
             setShowPaymentModal(false);
@@ -568,7 +569,7 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
     });
 
     const totalPaid = payments.reduce((sum, p) => sum + (p.amount_paid || 0), 0);
-    const finalAmount = formData.final_amount || formData.quote_amount || 0;
+    const finalAmount = currentInquiry?.final_amount || currentInquiry?.quote_amount || formData.final_amount || formData.quote_amount || 0;
     const remainingAmount = finalAmount - totalPaid;
 
     useEffect(() => {
@@ -580,6 +581,14 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
             quote_pdf_url: inquiry.quote_pdf_url || '',
         });
     }, [inquiry]);
+
+    // Fetch inquiry actualizado en tiempo real
+    const { data: currentInquiry } = useQuery({
+        queryKey: ['inquiry', inquiry.id],
+        queryFn: () => base44.entities.ClientInquiry.filter({ id: inquiry.id }).then(res => res[0]),
+        initialData: inquiry,
+        refetchInterval: 3000, // Actualizar cada 3 segundos
+    });
 
     const handleImageUpload = async (file, fieldName) => {
         if (!file) return;
@@ -1156,8 +1165,9 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
                             )}
 
                             <div className="pt-2 border-t">
-                                <InfoRow label="Ubicación del Trabajo" value={inquiry.location} />
-                                <InfoRow label="Servicio" value={`${inquiry.rubro} - ${inquiry.service_type}`} />
+                                <InfoRow label="Ubicación del Trabajo" value={currentInquiry?.location || inquiry.location} />
+                                <InfoRow label="Servicio" value={`${currentInquiry?.rubro || inquiry.rubro} - ${currentInquiry?.service_type || inquiry.service_type}`} />
+                                <InfoRow label="Estado Actual" value={statusConfig[currentInquiry?.status || inquiry.status]?.label || 'N/A'} />
                                 <InfoRow label="Recibido" value={format(new Date(inquiry.created_date), "dd MMM yyyy, HH:mm", { locale: es })} />
                                 {inquiry.message && <div className="pt-2"><p className="text-gray-600 mt-1 italic">"{inquiry.message}"</p></div>}
                             </div>
