@@ -698,6 +698,12 @@ function CustomerFormModal({ customer, isOpen, onClose, onSubmit, isSubmitting }
                     onChange={(e) => updateAddress(index, 'reference', e.target.value)}
                   />
 
+                  <Input
+                    placeholder="Enlace de ubicación (Google Maps/Waze)"
+                    value={address.map_url || ''}
+                    onChange={(e) => updateAddress(index, 'map_url', e.target.value)}
+                  />
+
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
@@ -881,11 +887,32 @@ function CustomerDetailModal({ customer, jobs, isOpen, onClose, onEdit, onUpdate
                       {addr.is_primary && (
                         <Badge className="bg-green-100 text-green-800 text-xs">Principal</Badge>
                       )}
+                      {addr.map_url && (
+                        <a 
+                          href={addr.map_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          <MapPin className="w-4 h-4" />
+                        </a>
+                      )}
                     </div>
                     <p className="text-sm text-gray-600">{addr.address}</p>
                     <p className="text-sm text-gray-500">{addr.location}</p>
                     {addr.reference && (
                       <p className="text-xs text-gray-400 mt-1">Ref: {addr.reference}</p>
+                    )}
+                    {addr.map_url && (
+                      <a 
+                        href={addr.map_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-1"
+                      >
+                        <MapPin className="w-3 h-3" />
+                        Ver en mapa
+                      </a>
                     )}
                   </div>
                 ))}
