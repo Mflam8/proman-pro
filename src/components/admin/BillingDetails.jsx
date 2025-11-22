@@ -32,11 +32,17 @@ export default function BillingDetails({ inquiryId, canEdit = true }) {
   });
 
   const createItem = useMutation({
-    mutationFn: (data) => base44.entities.DetalleFacturaTrabajo.create({
-      ...data,
-      inquiry_id: inquiryId,
-      monto_total_item: data.cantidad * data.precio_unitario
-    }),
+    mutationFn: (data) => {
+      const precioBase = data.cantidad * data.precio_unitario;
+      const aplicarInteres = data.tipo_item === 'servicio' || data.tipo_item === 'mano_de_obra';
+      const montoTotal = aplicarInteres ? precioBase * 1.13 : precioBase;
+      
+      return base44.entities.DetalleFacturaTrabajo.create({
+        ...data,
+        inquiry_id: inquiryId,
+        monto_total_item: montoTotal
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['billingItems', inquiryId] });
       queryClient.invalidateQueries({ queryKey: ['clientInquiries'] });
@@ -47,10 +53,16 @@ export default function BillingDetails({ inquiryId, canEdit = true }) {
   });
 
   const updateItem = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.DetalleFacturaTrabajo.update(id, {
-      ...data,
-      monto_total_item: data.cantidad * data.precio_unitario
-    }),
+    mutationFn: ({ id, data }) => {
+      const precioBase = data.cantidad * data.precio_unitario;
+      const aplicarInteres = data.tipo_item === 'servicio' || data.tipo_item === 'mano_de_obra';
+      const montoTotal = aplicarInteres ? precioBase * 1.13 : precioBase;
+      
+      return base44.entities.DetalleFacturaTrabajo.update(id, {
+        ...data,
+        monto_total_item: montoTotal
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['billingItems', inquiryId] });
       queryClient.invalidateQueries({ queryKey: ['clientInquiries'] });
@@ -160,8 +172,15 @@ export default function BillingDetails({ inquiryId, canEdit = true }) {
                             />
                           )}
                           <div className="flex-1">
-                            <p className="text-sm text-gray-600 mt-1">
-                              {item.cantidad} x ${item.precio_unitario.toFixed(2)} = 
+                            {!item.descripcion.startsWith('http') && (
+                              <p className="font-medium text-gray-900 mb-1">{item.descripcion}</p>
+                            )}
+                            <p className="text-sm text-gray-600">
+                              {item.cantidad} x ${item.precio_unitario.toFixed(2)}
+                              {(item.tipo_item === 'servicio' || item.tipo_item === 'mano_de_obra') && (
+                                <span className="text-xs text-blue-600 ml-1">(+13%)</span>
+                              )}
+                              {' = '}
                               <span className="font-semibold ml-1">${item.monto_total_item.toFixed(2)}</span>
                             </p>
                             {item.descripcion && item.descripcion.startsWith('http') && (
@@ -249,10 +268,19 @@ function BillingItemForm({ item, onSubmit, onCancel, isSubmitting }) {
     tipo_item: item?.tipo_item || 'servicio',
     descripcion: item?.descripcion || '',
     cantidad: item?.cantidad || 1,
-    precio_unitario: item?.precio_unitario || 0
+    precio_unitario: item?.precio_unitario || 0,
+    service_id: item?.service_id || ''
   });
   const [imageFile, setImageFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+
+  // Fetch services for servicio type
+  const { data: services } = useQuery({
+    queryKey: ['services'],
+    queryFn: () => base44.entities.Service.list(),
+    enabled: formData.tipo_item === 'servicio',
+    initialData: [],
+  });
 
   React.useEffect(() => {
     const uploadImage = async () => {
@@ -275,7 +303,10 @@ function BillingItemForm({ item, onSubmit, onCancel, isSubmitting }) {
     onSubmit(formData);
   };
 
-  const montoTotal = formData.cantidad * formData.precio_unitario;
+  // Para servicios, agregar 13% automáticamente
+  const aplicarInteres = formData.tipo_item === 'servicio' || formData.tipo_item === 'mano_de_obra';
+  const precioBase = formData.cantidad * formData.precio_unitario;
+  const montoTotal = aplicarInteres ? precioBase * 1.13 : precioBase;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 pt-4">
@@ -285,7 +316,7 @@ function BillingItemForm({ item, onSubmit, onCancel, isSubmitting }) {
         </Label>
         <Select
           value={formData.tipo_item}
-          onValueChange={(v) => setFormData({ ...formData, tipo_item: v })}
+          onValueChange={(v) => setFormData({ ...formData, tipo_item: v, descripcion: '', precio_unitario: 0, service_id: '' })}
           required
         >
           <SelectTrigger>
@@ -301,46 +332,113 @@ function BillingItemForm({ item, onSubmit, onCancel, isSubmitting }) {
         </Select>
       </div>
 
-      <div>
-        <Label className="block text-sm font-medium text-proman-navy mb-2">
-          Imagen del Item (Factura/Recibo) *
-        </Label>
-        <div className="border-2 border-dashed rounded-lg p-4 text-center">
-          {formData.descripcion ? (
-            <div className="space-y-2">
-              <img 
-                src={formData.descripcion} 
-                alt="Factura" 
-                className="max-h-40 mx-auto rounded border"
-              />
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => setFormData({ ...formData, descripcion: '' })}
-              >
-                Cambiar imagen
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <Camera className="w-8 h-8 text-gray-400 mx-auto" />
-              <p className="text-sm text-gray-600">Subir imagen de factura o recibo</p>
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={(e) => setImageFile(e.target.files[0])}
-                disabled={isUploading}
-                className="cursor-pointer"
-              />
-              {isUploading && <p className="text-xs text-blue-600">Subiendo...</p>}
-            </div>
+      {formData.tipo_item === 'servicio' ? (
+        <div>
+          <Label className="block text-sm font-medium text-proman-navy mb-2">
+            Seleccionar Servicio del Catálogo *
+          </Label>
+          <Select
+            value={formData.service_id}
+            onValueChange={(serviceId) => {
+              const service = services.find(s => s.id === serviceId);
+              if (service) {
+                setFormData(prev => ({
+                  ...prev,
+                  service_id: serviceId,
+                  descripcion: service.service_name,
+                  precio_unitario: service.base_price || 0
+                }));
+              }
+            }}
+            required
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Seleccionar servicio" />
+            </SelectTrigger>
+            <SelectContent>
+              {services.map(service => (
+                <SelectItem key={service.id} value={service.id}>
+                  {service.service_name} - ${service.base_price || 0}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {formData.descripcion && (
+            <p className="text-sm text-gray-600 mt-2">
+              <strong>Servicio seleccionado:</strong> {formData.descripcion}
+            </p>
           )}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
+            <p className="text-xs text-blue-800">
+              ℹ️ <strong>Nota:</strong> A los servicios se les agregará automáticamente un 13% de interés
+            </p>
+          </div>
         </div>
-        <p className="text-xs text-gray-500 mt-1">
-          Esta imagen se podrá compartir por WhatsApp con el cliente
-        </p>
-      </div>
+      ) : formData.tipo_item === 'mano_de_obra' ? (
+        <div>
+          <Label className="block text-sm font-medium text-proman-navy mb-2">
+            Descripción de Mano de Obra *
+          </Label>
+          <Textarea
+            value={formData.descripcion}
+            onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+            placeholder="Ej: Instalación especializada, Trabajo nocturno, etc."
+            rows={3}
+            required
+          />
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
+            <p className="text-xs text-blue-800">
+              ℹ️ <strong>Nota:</strong> A la mano de obra se le agregará automáticamente un 13% de interés
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div>
+          <Label className="block text-sm font-medium text-proman-navy mb-2">
+            Imagen del Item (Factura/Recibo) *
+          </Label>
+          <div className="border-2 border-dashed rounded-lg p-4 text-center">
+            {formData.descripcion && formData.descripcion.startsWith('http') ? (
+              <div className="space-y-2">
+                <img 
+                  src={formData.descripcion} 
+                  alt="Factura" 
+                  className="max-h-40 mx-auto rounded border"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setFormData({ ...formData, descripcion: '' })}
+                >
+                  Cambiar imagen
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Camera className="w-8 h-8 text-gray-400 mx-auto" />
+                <p className="text-sm text-gray-600">Subir imagen de factura o recibo</p>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setImageFile(e.target.files[0])}
+                  disabled={isUploading}
+                  className="cursor-pointer"
+                />
+                {isUploading && <p className="text-xs text-blue-600">Subiendo...</p>}
+              </div>
+            )}
+          </div>
+          <p className="text-xs text-gray-500 mt-1">
+            Esta imagen se podrá compartir por WhatsApp con el cliente
+          </p>
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-2">
+            <p className="text-xs text-yellow-800">
+              ℹ️ <strong>Nota:</strong> A los materiales NO se les agrega el 13% porque ya lo cobra el proveedor
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4">
         <div>
@@ -373,9 +471,23 @@ function BillingItemForm({ item, onSubmit, onCancel, isSubmitting }) {
       </div>
 
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-        <div className="flex justify-between items-center">
-          <span className="text-sm font-medium text-blue-900">Monto Total del Item:</span>
-          <span className="text-xl font-bold text-blue-900">${montoTotal.toFixed(2)}</span>
+        <div className="space-y-2">
+          {aplicarInteres && (
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-700">Subtotal:</span>
+              <span className="font-medium">${precioBase.toFixed(2)}</span>
+            </div>
+          )}
+          {aplicarInteres && (
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-700">Interés (13%):</span>
+              <span className="font-medium">+${(precioBase * 0.13).toFixed(2)}</span>
+            </div>
+          )}
+          <div className="flex justify-between items-center border-t pt-2">
+            <span className="text-sm font-medium text-blue-900">Monto Total del Item:</span>
+            <span className="text-xl font-bold text-blue-900">${montoTotal.toFixed(2)}</span>
+          </div>
         </div>
       </div>
 
