@@ -25,6 +25,7 @@ import ServiceManagement from "../components/admin/ServiceManagement";
 import CustomerManagement from "../components/admin/CustomerManagement";
 import EquipmentManagement from "../components/admin/EquipmentManagement";
 import PaymentManagement from "../components/admin/PaymentManagement";
+import BillingDetails from "../components/admin/BillingDetails";
 
 const statusConfig = {
   nuevo: { label: "Nuevo", color: "bg-blue-100 text-blue-800", icon: AlertCircle },
@@ -576,8 +577,16 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
         },
     });
 
+    // Fetch billing items to calculate final amount
+    const { data: billingItems } = useQuery({
+        queryKey: ['billingItems', inquiry.id],
+        queryFn: () => base44.entities.DetalleFacturaTrabajo.filter({ inquiry_id: inquiry.id }),
+        initialData: [],
+    });
+
     const totalPaid = payments.reduce((sum, p) => sum + (p.amount_paid || 0), 0);
-    const finalAmount = currentInquiry?.final_amount || currentInquiry?.quote_amount || formData.final_amount || formData.quote_amount || 0;
+    const calculatedFinalAmount = billingItems.reduce((sum, item) => sum + (item.monto_total_item || 0), 0);
+    const finalAmount = calculatedFinalAmount > 0 ? calculatedFinalAmount : (currentInquiry?.final_amount || currentInquiry?.quote_amount || formData.final_amount || formData.quote_amount || 0);
     const remainingAmount = finalAmount - totalPaid;
 
     useEffect(() => {
@@ -1173,6 +1182,8 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
                             </div>
                         </CardContent>
                     </Card>
+
+                    <BillingDetails inquiryId={inquiry.id} canEdit={canEdit} />
 
                     {canEdit && (
                         <Card>
