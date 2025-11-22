@@ -1073,8 +1073,21 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
                                             <span className="text-gray-600 font-medium">Direcciones:</span>
                                             {customer.addresses.map((addr, idx) => (
                                                 <div key={idx} className="ml-4 mt-1 text-xs text-gray-600">
-                                                    <span className="font-medium">{addr.label}:</span> {addr.location}
-                                                    {addr.is_primary && <Badge className="ml-2 text-xs bg-green-100 text-green-800">Principal</Badge>}
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-medium">{addr.label}:</span> {addr.location}
+                                                        {addr.is_primary && <Badge className="ml-2 text-xs bg-green-100 text-green-800">Principal</Badge>}
+                                                        {addr.map_url && (
+                                                            <a 
+                                                                href={addr.map_url} 
+                                                                target="_blank" 
+                                                                rel="noopener noreferrer"
+                                                                className="text-blue-600 hover:underline"
+                                                                onClick={(e) => e.stopPropagation()}
+                                                            >
+                                                                <MapPin className="w-3 h-3" />
+                                                            </a>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>
