@@ -24,6 +24,7 @@ import EmployeeManagement from "../components/admin/EmployeeManagement";
 import ServiceManagement from "../components/admin/ServiceManagement";
 import CustomerManagement from "../components/admin/CustomerManagement";
 import EquipmentManagement from "../components/admin/EquipmentManagement";
+import PaymentManagement from "../components/admin/PaymentManagement";
 
 const statusConfig = {
   nuevo: { label: "Nuevo", color: "bg-blue-100 text-blue-800", icon: AlertCircle },
@@ -242,6 +243,9 @@ export default function ClientManagement() {
                 <TabsTrigger value="servicios" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
                   🛠️ Gestión de Servicios
                 </TabsTrigger>
+                <TabsTrigger value="pagos" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
+                  💰 Gestión de Pagos
+                </TabsTrigger>
                 <TabsTrigger value="inventario" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
                   📦 Inventario
                 </TabsTrigger>
@@ -437,6 +441,10 @@ export default function ClientManagement() {
             <>
               <TabsContent value="servicios">
                 <ServiceManagement />
+              </TabsContent>
+
+              <TabsContent value="pagos">
+                <PaymentManagement />
               </TabsContent>
 
               <TabsContent value="inventario">
@@ -900,6 +908,26 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
 
                                 <div className="grid grid-cols-2 gap-4 pt-4 border-t">
                                     <InputField label="Monto Cotización ($)" name="quote_amount" type="number" value={formData.quote_amount} onChange={(e) => setFormData(p => ({...p, quote_amount: e.target.value}))} disabled={isUpdating} />
+                                    <InputField label="Monto Final ($)" name="final_amount" type="number" value={formData.final_amount} onChange={(e) => setFormData(p => ({...p, final_amount: e.target.value}))} disabled={isUpdating} />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <Label className="block text-sm font-medium text-proman-navy mb-1">Estado de Pago</Label>
+                                        <Select
+                                            value={formData.payment_status || 'pendiente'}
+                                            onValueChange={(v) => setFormData(p => ({...p, payment_status: v}))}
+                                            disabled={isUpdating}
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Estado de pago" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="pendiente">Pendiente</SelectItem>
+                                                <SelectItem value="parcial">Parcial</SelectItem>
+                                                <SelectItem value="pagado">Pagado</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
                                     <div>
                                         <Label className="block text-sm font-medium text-proman-navy mb-1">Técnico Asignado</Label>
                                         <Input 
