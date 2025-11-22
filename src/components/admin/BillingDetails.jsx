@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Plus, Edit2, Trash2, DollarSign, Package, Truck, Wrench, FileText } from "lucide-react";
+import { Plus, Edit2, Trash2, DollarSign, Package, Truck, Wrench, FileText, Camera } from "lucide-react";
 
 const tipoItemConfig = {
   servicio: { label: "Servicio", icon: Wrench, color: "bg-blue-100 text-blue-800" },
@@ -150,13 +150,30 @@ export default function BillingDetails({ inquiryId, canEdit = true }) {
                   <div className="space-y-2">
                     {typeItems.map((item) => (
                       <div key={item.id} className="bg-white rounded p-3 border">
-                        <div className="flex justify-between items-start">
+                        <div className="flex justify-between items-start gap-3">
+                          {item.descripcion && item.descripcion.startsWith('http') && (
+                            <img 
+                              src={item.descripcion} 
+                              alt="Factura" 
+                              className="w-20 h-20 object-cover rounded border cursor-pointer"
+                              onClick={() => window.open(item.descripcion, '_blank')}
+                            />
+                          )}
                           <div className="flex-1">
-                            <p className="font-medium text-gray-900">{item.descripcion}</p>
                             <p className="text-sm text-gray-600 mt-1">
                               {item.cantidad} x ${item.precio_unitario.toFixed(2)} = 
                               <span className="font-semibold ml-1">${item.monto_total_item.toFixed(2)}</span>
                             </p>
+                            {item.descripcion && item.descripcion.startsWith('http') && (
+                              <a 
+                                href={item.descripcion} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-xs text-blue-600 hover:underline mt-1 inline-block"
+                              >
+                                Ver imagen completa
+                              </a>
+                            )}
                           </div>
                           {canEdit && (
                             <div className="flex gap-2 ml-2">
@@ -234,6 +251,24 @@ function BillingItemForm({ item, onSubmit, onCancel, isSubmitting }) {
     cantidad: item?.cantidad || 1,
     precio_unitario: item?.precio_unitario || 0
   });
+  const [imageFile, setImageFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  React.useEffect(() => {
+    const uploadImage = async () => {
+      if (!imageFile) return;
+      setIsUploading(true);
+      try {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file: imageFile });
+        setFormData(prev => ({ ...prev, descripcion: file_url }));
+      } catch (error) {
+        console.error("Error uploading image", error);
+      } finally {
+        setIsUploading(false);
+      }
+    };
+    uploadImage();
+  }, [imageFile]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -268,15 +303,43 @@ function BillingItemForm({ item, onSubmit, onCancel, isSubmitting }) {
 
       <div>
         <Label className="block text-sm font-medium text-proman-navy mb-2">
-          Descripción *
+          Imagen del Item (Factura/Recibo) *
         </Label>
-        <Textarea
-          value={formData.descripcion}
-          onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-          placeholder="Ej: Tubería PVC 1/2 pulgada, Transporte a Sonsonate, etc."
-          rows={3}
-          required
-        />
+        <div className="border-2 border-dashed rounded-lg p-4 text-center">
+          {formData.descripcion ? (
+            <div className="space-y-2">
+              <img 
+                src={formData.descripcion} 
+                alt="Factura" 
+                className="max-h-40 mx-auto rounded border"
+              />
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setFormData({ ...formData, descripcion: '' })}
+              >
+                Cambiar imagen
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Camera className="w-8 h-8 text-gray-400 mx-auto" />
+              <p className="text-sm text-gray-600">Subir imagen de factura o recibo</p>
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setImageFile(e.target.files[0])}
+                disabled={isUploading}
+                className="cursor-pointer"
+              />
+              {isUploading && <p className="text-xs text-blue-600">Subiendo...</p>}
+            </div>
+          )}
+        </div>
+        <p className="text-xs text-gray-500 mt-1">
+          Esta imagen se podrá compartir por WhatsApp con el cliente
+        </p>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -323,10 +386,10 @@ function BillingItemForm({ item, onSubmit, onCancel, isSubmitting }) {
         <Button
           type="submit"
           className="bg-proman-yellow text-proman-navy hover:opacity-90"
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? 'Guardando...' : item ? 'Actualizar' : 'Agregar'}
-        </Button>
+          disabled={isSubmitting || isUploading || !formData.descripcion}
+          >
+          {isSubmitting || isUploading ? 'Guardando...' : item ? 'Actualizar' : 'Agregar'}
+          </Button>
       </div>
     </form>
   );
