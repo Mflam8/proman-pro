@@ -1437,16 +1437,22 @@ function InquiryCreateForm({ customers, onSubmit, isSubmitting, onCancel }) {
                                         <div className="font-bold text-proman-navy">{customer.full_name}</div>
                                         <div className="text-sm text-gray-600">{customer.phone}</div>
                                         <div className="flex gap-2 mt-1">
-                                            <Badge className={
-                                                customer.customer_type === "residencial" ? "bg-blue-100 text-blue-800" :
-                                                customer.customer_type === "comercial" ? "bg-indigo-100 text-indigo-800" :
-                                                "bg-purple-100 text-purple-800"
-                                            }>
-                                                {customer.customer_type}
-                                            </Badge>
-                                            {customer.is_vip && (
-                                                <Badge className="bg-yellow-100 text-yellow-800">VIP</Badge>
-                                            )}
+                                           <Badge className={
+                                               customer.customer_type === "residencial" ? "bg-blue-100 text-blue-800" :
+                                               customer.customer_type === "comercial" ? "bg-indigo-100 text-indigo-800" :
+                                               "bg-purple-100 text-purple-800"
+                                           }>
+                                               {customer.customer_type}
+                                           </Badge>
+                                           {customer.is_vip && (
+                                               <Badge className="bg-yellow-100 text-yellow-800">VIP</Badge>
+                                           )}
+                                           {customer.is_emergency && (
+                                               <Badge className="bg-red-100 text-red-800">
+                                                   <AlertCircle className="w-3 h-3 mr-1" />
+                                                   EMERGENCIA
+                                               </Badge>
+                                           )}
                                         </div>
                                     </div>
                                     <div className="text-xs text-gray-500 text-right">
@@ -1562,6 +1568,12 @@ function InquiryCreateForm({ customers, onSubmit, isSubmitting, onCancel }) {
                             <div>📞 {selectedCustomer.phone}</div>
                             {selectedCustomer.email && <div>📧 {selectedCustomer.email}</div>}
                             <div>🏢 {selectedCustomer.customer_type}</div>
+                            {(selectedCustomer.is_emergency || formData.rubro === 'Emergencias') && (
+                                <Badge className="bg-red-100 text-red-800 mt-1">
+                                    <AlertCircle className="w-3 h-3 mr-1" />
+                                    EMERGENCIA
+                                </Badge>
+                            )}
                         </div>
                     </div>
                     <Button 
