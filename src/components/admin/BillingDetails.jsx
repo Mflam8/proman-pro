@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Plus, Edit2, Trash2, DollarSign, Package, Truck, Wrench, FileText, Camera } from "lucide-react";
+import { Plus, Edit2, Trash2, DollarSign, Package, Truck, Wrench, FileText, Camera, FileDown } from "lucide-react";
 
 const tipoItemConfig = {
   servicio: { label: "Servicio", icon: Wrench, color: "bg-blue-100 text-blue-800" },
@@ -19,9 +19,10 @@ const tipoItemConfig = {
   otro: { label: "Otro", icon: FileText, color: "bg-gray-100 text-gray-800" }
 };
 
-export default function BillingDetails({ inquiryId, canEdit = true }) {
+export default function BillingDetails({ inquiryId, canEdit = true, inquiry = null }) {
   const [showItemModal, setShowItemModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [isGenerating, setIsGenerating] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: items, isLoading } = useQuery({
@@ -91,6 +92,29 @@ export default function BillingDetails({ inquiryId, canEdit = true }) {
     otro: items.filter(i => i.tipo_item === 'otro')
   };
 
+  const handleGenerateInvoice = async () => {
+    if (!inquiry) return;
+    setIsGenerating(true);
+    
+    try {
+      const response = await base44.functions.invoke('generateInvoice', {
+        inquiryId: inquiry.id
+      });
+
+      if (response.data.success) {
+        await queryClient.invalidateQueries({ queryKey: ['clientInquiries'] });
+        await queryClient.invalidateQueries({ queryKey: ['inquiry', inquiry.id] });
+        
+        window.open(response.data.pdf_url, '_blank');
+      }
+    } catch (err) {
+      console.error('Error generating invoice:', err);
+      alert('Error al generar factura: ' + err.message);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
     <Card className="border-2 border-proman-yellow">
       <CardHeader className="bg-proman-yellow/10">
@@ -100,6 +124,17 @@ export default function BillingDetails({ inquiryId, canEdit = true }) {
             Detalles de Facturación
           </CardTitle>
           <div className="flex gap-2">
+            {canEdit && items.length > 0 && (
+              <Button
+                size="sm"
+                onClick={handleGenerateInvoice}
+                disabled={isGenerating}
+                className="bg-proman-navy text-white hover:opacity-90"
+              >
+                <FileDown className="w-4 h-4 mr-1" />
+                {isGenerating ? 'Generando...' : 'Factura PDF'}
+              </Button>
+            )}
             {canEdit && (
               <Button
                 size="sm"

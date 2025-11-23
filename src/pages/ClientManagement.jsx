@@ -1183,7 +1183,7 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
                         </CardContent>
                     </Card>
 
-                    <BillingDetails inquiryId={inquiry.id} canEdit={canEdit} />
+                    <BillingDetails inquiryId={inquiry.id} canEdit={canEdit} inquiry={selectedInquiry} />
 
                     {canEdit && (
                         <Card>
