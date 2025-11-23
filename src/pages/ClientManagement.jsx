@@ -946,7 +946,13 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <Label className="block text-sm font-medium text-proman-navy mb-2">Estado</Label>
-                                        <Select value={formData.status} onValueChange={(v) => setFormData(p => ({...p, status: v}))} disabled={isUpdating}>
+                                        <Select value={formData.status} onValueChange={(v) => {
+                                            setFormData(p => ({
+                                                ...p, 
+                                                status: v,
+                                                progress_percentage: v === 'completado' ? 100 : p.progress_percentage
+                                            }));
+                                        }} disabled={isUpdating}>
                                             <SelectTrigger><SelectValue /></SelectTrigger>
                                             <SelectContent>
                                                 {Object.entries(statusConfig).map(([k, v]) => (
