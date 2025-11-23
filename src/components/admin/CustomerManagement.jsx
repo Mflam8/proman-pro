@@ -555,6 +555,31 @@ function CustomerFormModal({ customer, isOpen, onClose, onSubmit, isSubmitting }
               </div>
             </div>
 
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h4 className="font-semibold text-proman-navy mb-3 text-sm">📄 Información Fiscal (Opcional)</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-proman-navy mb-2">Razón Social / Nombre Fiscal</label>
+                  <Input
+                    value={formData.fiscal_name || ''}
+                    onChange={(e) => setFormData({...formData, fiscal_name: e.target.value})}
+                    placeholder="Para crédito fiscal"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-proman-navy mb-2">NIT / RFC</label>
+                  <Input
+                    value={formData.nit || ''}
+                    onChange={(e) => setFormData({...formData, nit: e.target.value})}
+                    placeholder="####-######-###-#"
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-blue-700 mt-2">
+                💡 Completa estos campos si el cliente necesita factura con crédito fiscal
+              </p>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-proman-navy mb-2">Estado del Cliente *</label>
@@ -870,6 +895,27 @@ function CustomerDetailModal({ customer, jobs, isOpen, onClose, onEdit, onUpdate
                 <span className="font-medium">Contacto preferido:</span>
                 <Badge variant="outline">{customer.preferred_contact}</Badge>
               </div>
+              {(customer.fiscal_name || customer.nit) && (
+                <div className="pt-3 mt-3 border-t">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge className="bg-purple-100 text-purple-800">
+                      📄 Datos Fiscales
+                    </Badge>
+                  </div>
+                  {customer.fiscal_name && (
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-medium">Razón Social:</span>
+                      <span className="text-proman-navy">{customer.fiscal_name}</span>
+                    </div>
+                  )}
+                  {customer.nit && (
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">NIT:</span>
+                      <span className="text-proman-navy">{customer.nit}</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </CardContent>
           </Card>
 
