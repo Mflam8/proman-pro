@@ -99,19 +99,21 @@ export default function BillingDetails({ inquiryId, canEdit = true }) {
             <DollarSign className="w-5 h-5" />
             Detalles de Facturación
           </CardTitle>
-          {canEdit && (
-            <Button
-              size="sm"
-              onClick={() => {
-                setEditingItem(null);
-                setShowItemModal(true);
-              }}
-              className="bg-proman-yellow text-proman-navy hover:opacity-90"
-            >
-              <Plus className="w-4 h-4 mr-1" />
-              Agregar Item
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {canEdit && (
+              <Button
+                size="sm"
+                onClick={() => {
+                  setEditingItem(null);
+                  setShowItemModal(true);
+                }}
+                className="bg-proman-yellow text-proman-navy hover:opacity-90"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Agregar Item
+              </Button>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="pt-4">
