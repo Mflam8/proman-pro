@@ -599,6 +599,16 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
         });
     }, [inquiry]);
 
+    // Sincronizar final_amount calculado con formData
+    useEffect(() => {
+        if (calculatedFinalAmount > 0 && calculatedFinalAmount !== formData.final_amount) {
+            setFormData(prev => ({
+                ...prev,
+                final_amount: calculatedFinalAmount
+            }));
+        }
+    }, [calculatedFinalAmount]);
+
     const handleImageUpload = async (file, fieldName) => {
         if (!file) return;
         setIsUploading(true);
@@ -622,49 +632,56 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const { id, ...updateData } = formData;
         
-        // Guardar en el log si cambió el progreso, notas o fotos
-        const progressChanged = 
-            formData.progress_percentage !== inquiry.progress_percentage ||
-            formData.work_notes_done !== inquiry.work_notes_done ||
-            formData.work_notes_pending !== inquiry.work_notes_pending ||
-            formData.before_image_url !== inquiry.before_image_url ||
-            formData.after_image_url !== inquiry.after_image_url;
+        try {
+            const { id, ...updateData } = formData;
+            
+            // Guardar en el log si cambió el progreso, notas o fotos
+            const progressChanged = 
+                formData.progress_percentage !== inquiry.progress_percentage ||
+                formData.work_notes_done !== inquiry.work_notes_done ||
+                formData.work_notes_pending !== inquiry.work_notes_pending ||
+                formData.before_image_url !== inquiry.before_image_url ||
+                formData.after_image_url !== inquiry.after_image_url;
 
-        if (progressChanged) {
-            try {
-                const currentUser = await base44.auth.me();
-                
-                // Recolectar solo las fotos NUEVAS que se subieron en esta actualización
-                const newBeforePhotos = [];
-                const newAfterPhotos = [];
-                
-                if (formData.before_image_url && formData.before_image_url !== inquiry.before_image_url) {
-                    newBeforePhotos.push(formData.before_image_url);
+            if (progressChanged) {
+                try {
+                    const currentUser = await base44.auth.me();
+                    
+                    // Recolectar solo las fotos NUEVAS que se subieron en esta actualización
+                    const newBeforePhotos = [];
+                    const newAfterPhotos = [];
+                    
+                    if (formData.before_image_url && formData.before_image_url !== inquiry.before_image_url) {
+                        newBeforePhotos.push(formData.before_image_url);
+                    }
+                    if (formData.after_image_url && formData.after_image_url !== inquiry.after_image_url) {
+                        newAfterPhotos.push(formData.after_image_url);
+                    }
+                    
+                    await base44.entities.ProgressLog.create({
+                        inquiry_id: id,
+                        progress_percentage: formData.progress_percentage || 0,
+                        work_done: formData.work_notes_done || '',
+                        work_pending: formData.work_notes_pending || '',
+                        next_follow_up_date: formData.next_follow_up_date || null,
+                        before_photos: newBeforePhotos,
+                        after_photos: newAfterPhotos,
+                        updated_by: currentUser.email,
+                        notes: formData.notes || ''
+                    });
+                    await queryClient.invalidateQueries({ queryKey: ['progressLogs', id] });
+                } catch (error) {
+                    console.error("Error creating progress log", error);
+                    alert("Error guardando historial de progreso: " + error.message);
                 }
-                if (formData.after_image_url && formData.after_image_url !== inquiry.after_image_url) {
-                    newAfterPhotos.push(formData.after_image_url);
-                }
-                
-                await base44.entities.ProgressLog.create({
-                    inquiry_id: id,
-                    progress_percentage: formData.progress_percentage || 0,
-                    work_done: formData.work_notes_done || '',
-                    work_pending: formData.work_notes_pending || '',
-                    next_follow_up_date: formData.next_follow_up_date || null,
-                    before_photos: newBeforePhotos,
-                    after_photos: newAfterPhotos,
-                    updated_by: currentUser.email,
-                    notes: formData.notes || ''
-                });
-                queryClient.invalidateQueries({ queryKey: ['progressLogs', id] });
-            } catch (error) {
-                console.error("Error creating progress log", error);
             }
-        }
 
-        onUpdate({ id, data: updateData });
+            await onUpdate({ id, data: updateData });
+        } catch (error) {
+            console.error("Error updating inquiry", error);
+            alert("Error guardando cambios: " + error.message);
+        }
     };
 
     const handleChangeCustomer = async (newCustomerId) => {
