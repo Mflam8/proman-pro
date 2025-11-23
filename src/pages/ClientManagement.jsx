@@ -944,8 +944,28 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
                             </CardHeader>
                             <CardContent className="space-y-4 pt-4">
                                 <div className="grid grid-cols-2 gap-4">
-                                    <SelectField label="Estado" name="status" value={formData.status} onChange={(v) => setFormData(p => ({...p, status: v}))} options={Object.entries(statusConfig).map(([k, v]) => ({ value: k, label: v.label }))} disabled={isUpdating} />
-                                    <SelectField label="Prioridad" name="priority" value={formData.priority} onChange={(v) => setFormData(p => ({...p, priority: v}))} options={Object.entries(priorityConfig).map(([k, v]) => ({ value: k, label: v.label }))} disabled={isUpdating} />
+                                    <div>
+                                        <Label className="block text-sm font-medium text-proman-navy mb-2">Estado</Label>
+                                        <Select value={formData.status} onValueChange={(v) => setFormData(p => ({...p, status: v}))} disabled={isUpdating}>
+                                            <SelectTrigger><SelectValue /></SelectTrigger>
+                                            <SelectContent>
+                                                {Object.entries(statusConfig).map(([k, v]) => (
+                                                    <SelectItem key={k} value={k}>{v.label}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div>
+                                        <Label className="block text-sm font-medium text-proman-navy mb-2">Prioridad</Label>
+                                        <Select value={formData.priority} onValueChange={(v) => setFormData(p => ({...p, priority: v}))} disabled={isUpdating}>
+                                            <SelectTrigger><SelectValue /></SelectTrigger>
+                                            <SelectContent>
+                                                {Object.entries(priorityConfig).map(([k, v]) => (
+                                                    <SelectItem key={k} value={k}>{v.label}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
                                 </div>
 
                                 <div className="border-t pt-4">
