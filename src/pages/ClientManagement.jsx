@@ -95,8 +95,8 @@ export default function ClientManagement() {
   
   const updateInquiry = useMutation({
     mutationFn: ({ id, data }) => base44.entities.ClientInquiry.update(id, data),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['clientInquiries'] });
+    onSuccess: async (result, variables) => {
+      await queryClient.refetchQueries({ queryKey: ['clientInquiries'] });
       await queryClient.invalidateQueries({ queryKey: ['employeeSchedules'] }); 
       await queryClient.invalidateQueries({ queryKey: ['customers'] });
       
