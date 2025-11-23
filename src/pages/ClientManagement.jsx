@@ -407,9 +407,9 @@ export default function ClientManagement() {
                           <div className="mt-4">
                             <div className="flex justify-between items-center mb-1">
                                 <span className="text-xs font-semibold text-gray-500">PROGRESO</span>
-                                <span className="text-sm font-bold text-proman-navy">{inquiry.progress_percentage || 0}%</span>
+                                <span className="text-sm font-bold text-proman-navy">{currentInquiry?.progress_percentage || 0}%</span>
                             </div>
-                            <Progress value={inquiry.progress_percentage || 0} className="w-full h-2" />
+                            <Progress value={currentInquiry?.progress_percentage || 0} className="w-full h-2" />
                           </div>
 
                         </div>
