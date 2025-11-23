@@ -1974,6 +1974,7 @@ function GenerateInvoiceButton({ inquiry }) {
 
             if (response.data.success) {
                 await queryClient.invalidateQueries({ queryKey: ['clientInquiries'] });
+                await queryClient.invalidateQueries({ queryKey: ['inquiry', inquiry.id] });
                 
                 // Abrir PDF en nueva pestaña
                 window.open(response.data.pdf_url, '_blank');
@@ -1996,7 +1997,7 @@ function GenerateInvoiceButton({ inquiry }) {
                 className="w-full bg-proman-yellow text-proman-navy hover:opacity-90"
             >
                 <FileDown className="w-4 h-4 mr-2" />
-                {isGenerating ? 'Generando Factura...' : 'Generar Factura (CANCELADO)'}
+                {isGenerating ? 'Generando Factura...' : 'Generar Factura con IVA'}
             </Button>
             {error && (
                 <p className="text-xs text-red-600 mt-1">{error}</p>
@@ -2005,7 +2006,7 @@ function GenerateInvoiceButton({ inquiry }) {
                 <a href={inquiry.quote_pdf_url} target="_blank" rel="noopener noreferrer" className="block mt-2">
                     <Button type="button" variant="outline" size="sm" className="w-full text-xs">
                         <ExternalLink className="w-3 h-3 mr-1" />
-                        Ver Última Factura
+                        Ver Última Factura Generada
                     </Button>
                 </a>
             )}
