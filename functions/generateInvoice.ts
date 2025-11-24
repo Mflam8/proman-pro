@@ -125,58 +125,47 @@ Deno.serve(async (req) => {
         // Items
         doc.setTextColor(...navyColor);
         doc.setFont(undefined, 'normal');
+        doc.setFontSize(9);
         
-        let totalExentas = 0;
-        let totalAfectas = 0;
+        let totalSumas = 0;
 
         if (billingItems.length > 0) {
             for (const item of billingItems) {
-                const esAfecto = item.tipo_item === 'servicio' || item.tipo_item === 'mano_de_obra';
-                const precioBase = item.cantidad * item.precio_unitario;
+                const totalItem = item.cantidad * item.precio_unitario;
                 
-                if (yPos > 250) {
+                if (yPos > 240) {
                     doc.addPage();
                     yPos = 20;
                 }
 
                 // Cantidad
-                doc.text(item.cantidad.toString(), 23, yPos + 5);
+                doc.text(item.cantidad.toString(), 18, yPos + 5);
                 
-                // Descripción
+                // Descripción (centrada en columna más amplia)
                 let descripcion = item.descripcion;
                 if (descripcion.startsWith('http')) {
-                    descripcion = `Material - Ver imagen adjunta`;
+                    descripcion = `Material`;
                 }
-                const descLines = doc.splitTextToSize(descripcion, 80);
-                doc.text(descLines, 40, yPos + 5);
+                const descLines = doc.splitTextToSize(descripcion, 90);
+                doc.text(descLines, 35, yPos + 5);
                 
                 // Precio unitario
-                doc.text(`$${item.precio_unitario.toFixed(2)}`, 125, yPos + 5);
+                doc.text(`$${item.precio_unitario.toFixed(2)}`, 148, yPos + 5);
                 
-                // Ventas exentas o afectas
-                if (esAfecto) {
-                    doc.text(`$${precioBase.toFixed(2)}`, 170, yPos + 5);
-                    totalAfectas += precioBase;
-                } else {
-                    doc.text(`$${precioBase.toFixed(2)}`, 148, yPos + 5);
-                    totalExentas += precioBase;
-                }
+                // Total
+                doc.text(`$${totalItem.toFixed(2)}`, 180, yPos + 5);
+                totalSumas += totalItem;
                 
                 yPos += Math.max(descLines.length * 5, 8);
-                
-                // Línea separadora
-                doc.setDrawColor(200, 200, 200);
-                doc.line(20, yPos, 190, yPos);
-                yPos += 2;
             }
         } else {
             // Si no hay items, usar el monto final
             const montoFinal = inquiry.final_amount || inquiry.quote_amount || 0;
-            doc.text('1', 23, yPos + 5);
-            doc.text(`Servicio de ${inquiry.service_type || 'Reparación'}`, 40, yPos + 5);
-            doc.text(`$${montoFinal.toFixed(2)}`, 125, yPos + 5);
-            doc.text(`$${(montoFinal / 1.13).toFixed(2)}`, 170, yPos + 5);
-            totalAfectas = montoFinal / 1.13;
+            doc.text('1', 18, yPos + 5);
+            doc.text(`${inquiry.service_type || 'Servicio de reparación'}`, 35, yPos + 5);
+            doc.text(`$${montoFinal.toFixed(2)}`, 148, yPos + 5);
+            doc.text(`$${montoFinal.toFixed(2)}`, 180, yPos + 5);
+            totalSumas = montoFinal;
             yPos += 10;
         }
 
