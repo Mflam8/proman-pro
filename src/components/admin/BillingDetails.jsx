@@ -9,14 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Plus, Edit2, Trash2, DollarSign, Package, Truck, Wrench, FileText, Camera, FileDown } from "lucide-react";
+import { Plus, Edit2, Trash2, DollarSign, Wrench, FileText, FileDown } from "lucide-react";
 
 const tipoItemConfig = {
   servicio: { label: "Servicio", icon: Wrench, color: "bg-blue-100 text-blue-800" },
-  material: { label: "Material", icon: Package, color: "bg-green-100 text-green-800" },
-  transporte: { label: "Transporte", icon: Truck, color: "bg-purple-100 text-purple-800" },
-  mano_de_obra: { label: "Mano de Obra", icon: Wrench, color: "bg-orange-100 text-orange-800" },
-  otro: { label: "Otro", icon: FileText, color: "bg-gray-100 text-gray-800" }
+  mano_de_obra: { label: "Mano de Obra", icon: Wrench, color: "bg-orange-100 text-orange-800" }
 };
 
 export default function BillingDetails({ inquiryId, canEdit = true, inquiry = null }) {
@@ -86,10 +83,7 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
 
   const itemsByType = {
     servicio: items.filter(i => i.tipo_item === 'servicio'),
-    material: items.filter(i => i.tipo_item === 'material'),
-    transporte: items.filter(i => i.tipo_item === 'transporte'),
-    mano_de_obra: items.filter(i => i.tipo_item === 'mano_de_obra'),
-    otro: items.filter(i => i.tipo_item === 'otro')
+    mano_de_obra: items.filter(i => i.tipo_item === 'mano_de_obra')
   };
 
   const handleGenerateInvoice = async () => {
@@ -121,7 +115,7 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
         <div className="flex justify-between items-center">
           <CardTitle className="flex items-center gap-2">
             <DollarSign className="w-5 h-5" />
-            Detalles de Facturación
+            Facturación al Cliente
           </CardTitle>
           <div className="flex gap-2">
             {canEdit && items.length > 0 && (
@@ -154,7 +148,7 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
       <CardContent className="pt-4">
         <div className="bg-proman-navy text-white rounded-lg p-4 mb-4">
           <div className="flex justify-between items-center">
-            <span className="text-lg font-medium">Monto Total de Facturación:</span>
+            <span className="text-lg font-medium">Total a Cobrar al Cliente:</span>
             <span className="text-3xl font-bold">${totalAmount.toFixed(2)}</span>
           </div>
         </div>
@@ -164,7 +158,7 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
         ) : items.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <FileText className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-            <p>No hay items de facturación registrados</p>
+            <p>No hay servicios facturables registrados</p>
             {canEdit && (
               <Button
                 size="sm"
