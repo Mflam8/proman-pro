@@ -75,22 +75,33 @@ Deno.serve(async (req) => {
         // DATOS DEL CLIENTE
         // ======================
         doc.setTextColor(...navyColor);
-        doc.setFontSize(10);
+        doc.setFontSize(9);
         doc.setFont(undefined, 'bold');
-        doc.text('CLIENTE:', 20, 45);
         
-        doc.setFont(undefined, 'normal');
         const clientName = customer?.full_name || inquiry.client_name || 'N/A';
         const clientPhone = customer?.phone || inquiry.phone || 'N/A';
-        doc.text(clientName, 45, 45);
-        doc.text(`Tel: ${clientPhone}`, 20, 52);
-        
-        doc.text('DIRECCIÓN:', 120, 45);
-        doc.text(inquiry.location || 'N/A', 148, 45);
-        
-        doc.text('FECHA:', 120, 52);
+        const direccion = inquiry.location || 'N/A';
         const fechaCreacion = new Date(inquiry.created_date);
-        doc.text(fechaCreacion.toLocaleDateString('es-SV'), 138, 52);
+        const fechaFormato = fechaCreacion.toLocaleDateString('es-SV', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        
+        doc.text('NOMBRE DEL CLIENTE:', 15, 40);
+        doc.setFont(undefined, 'normal');
+        doc.text(clientName, 60, 40);
+        
+        doc.setFont(undefined, 'bold');
+        doc.text('DIRECCIÓN:', 115, 40);
+        doc.setFont(undefined, 'normal');
+        doc.text(direccion, 140, 40);
+        
+        doc.setFont(undefined, 'bold');
+        doc.text('TELEFONO:', 15, 47);
+        doc.setFont(undefined, 'normal');
+        doc.text(clientPhone, 38, 47);
+        
+        doc.setFont(undefined, 'bold');
+        doc.text('FECHA:', 115, 47);
+        doc.setFont(undefined, 'normal');
+        doc.text(fechaFormato, 132, 47);
 
         // ======================
         // TABLA DE ITEMS
