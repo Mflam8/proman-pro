@@ -327,117 +327,259 @@ function EditUserModal({ user, isOpen, onClose }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Configurar Usuario: {getDisplayName(user)}</DialogTitle>
+          <DialogTitle className="flex items-center gap-3">
+            <img
+              src={user.profile_picture_url || `https://ui-avatars.com/api/?name=${getDisplayName(user)}&background=fdc80c&color=252a5c`}
+              alt={getDisplayName(user)}
+              className="w-10 h-10 rounded-full border-2 border-proman-yellow"
+            />
+            {getDisplayName(user)}
+          </DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4">
-          <Card className="border-2 border-proman-yellow">
-            <CardHeader>
-              <CardTitle className="text-base">✏️ Configuración del Empleado</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-proman-navy mb-2">
-                  Nombre Oficial del Empleado <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  type="text"
-                  value={employeeName}
-                  onChange={(e) => setEmployeeName(e.target.value)}
-                  placeholder="Juan Pérez García"
-                />
-                {user.full_name && employeeName !== user.full_name && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Nombre de cuenta original: {user.full_name}
-                  </p>
-                )}
-              </div>
+        {/* Tabs */}
+        <div className="flex gap-2 border-b mb-4">
+          <button
+            onClick={() => setActiveTab('info')}
+            className={`px-4 py-2 font-medium text-sm transition-colors ${
+              activeTab === 'info'
+                ? 'border-b-2 border-proman-yellow text-proman-navy'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            ✏️ Información
+          </button>
+          <button
+            onClick={() => setActiveTab('calendar')}
+            className={`px-4 py-2 font-medium text-sm transition-colors ${
+              activeTab === 'calendar'
+                ? 'border-b-2 border-proman-yellow text-proman-navy'
+                : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            📅 Calendario de Trabajos
+          </button>
+        </div>
 
-              <div>
-                <label className="block text-sm font-medium text-proman-navy mb-2">
-                  Tipo de Empleado
-                </label>
-                <Select value={employeeType} onValueChange={setEmployeeType}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Empleado">Empleado</SelectItem>
-                    <SelectItem value="Supervisor">Supervisor</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+        {activeTab === 'info' && (
+          <div className="space-y-4">
+            <Card className="border-2 border-proman-yellow">
+              <CardHeader>
+                <CardTitle className="text-base">✏️ Configuración del Empleado</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-proman-navy mb-2">
+                    Nombre Oficial del Empleado <span className="text-red-500">*</span>
+                  </label>
+                  <Input
+                    type="text"
+                    value={employeeName}
+                    onChange={(e) => setEmployeeName(e.target.value)}
+                    placeholder="Juan Pérez García"
+                  />
+                  {user.full_name && employeeName !== user.full_name && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Nombre de cuenta original: {user.full_name}
+                    </p>
+                  )}
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-proman-navy mb-2">
-                  Fecha de Contratación
-                </label>
-                <Input
-                  type="date"
-                  value={hireDate}
-                  onChange={(e) => setHireDate(e.target.value)}
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium text-proman-navy mb-2">
+                    Tipo de Empleado
+                  </label>
+                  <Select value={employeeType} onValueChange={setEmployeeType}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Empleado">Empleado</SelectItem>
+                      <SelectItem value="Supervisor">Supervisor</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded p-3">
-                <p className="text-sm text-blue-800">
-                  <strong>ℹ️ Nota:</strong> Para cambiar permisos de administrador, edita el campo "Role" desde Dashboard → Data → User (admin o user).
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-2 border-gray-200">
-            <CardHeader>
-              <CardTitle className="text-base">📸 Foto de Perfil</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {uploadedImageUrl && (
-                <div className="flex justify-center">
-                  <img 
-                    src={uploadedImageUrl} 
-                    alt="Preview" 
-                    className="w-32 h-32 rounded-full border-4 border-proman-yellow object-cover"
+                <div>
+                  <label className="block text-sm font-medium text-proman-navy mb-2">
+                    Fecha de Contratación
+                  </label>
+                  <Input
+                    type="date"
+                    value={hireDate}
+                    onChange={(e) => setHireDate(e.target.value)}
                   />
                 </div>
-              )}
-              
-              <div>
-                <label className="block text-sm font-medium text-proman-navy mb-2">
-                  Subir Foto Oficial del Empleado
-                </label>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setImageFile(e.target.files[0])}
-                  disabled={isUploading}
-                />
-                {isUploading && <p className="text-sm text-gray-500 mt-2">Subiendo imagen...</p>}
-              </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded p-3">
-                <p className="text-sm text-blue-800">
-                  <strong>📸 Importante:</strong> Esta debe ser la foto oficial del empleado con uniforme de PROMAN.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+                <div className="bg-blue-50 border border-blue-200 rounded p-3">
+                  <p className="text-sm text-blue-800">
+                    <strong>ℹ️ Nota:</strong> Para cambiar permisos de administrador, edita el campo "Role" desde Dashboard → Data → User (admin o user).
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
 
-          <div className="flex justify-end gap-3 pt-4">
-            <Button variant="outline" onClick={onClose}>
-              Cancelar
-            </Button>
-            <Button 
-              onClick={handleSave} 
-              className="bg-proman-yellow text-proman-navy hover:opacity-90"
-              disabled={isSaving || isUploading || !employeeName.trim()}
-            >
-              {isSaving ? "Guardando..." : "Guardar Cambios"}
-            </Button>
+            <Card className="border-2 border-gray-200">
+              <CardHeader>
+                <CardTitle className="text-base">📸 Foto de Perfil</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {uploadedImageUrl && (
+                  <div className="flex justify-center">
+                    <img 
+                      src={uploadedImageUrl} 
+                      alt="Preview" 
+                      className="w-32 h-32 rounded-full border-4 border-proman-yellow object-cover"
+                    />
+                  </div>
+                )}
+                
+                <div>
+                  <label className="block text-sm font-medium text-proman-navy mb-2">
+                    Subir Foto Oficial del Empleado
+                  </label>
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setImageFile(e.target.files[0])}
+                    disabled={isUploading}
+                  />
+                  {isUploading && <p className="text-sm text-gray-500 mt-2">Subiendo imagen...</p>}
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded p-3">
+                  <p className="text-sm text-blue-800">
+                    <strong>📸 Importante:</strong> Esta debe ser la foto oficial del empleado con uniforme de PROMAN.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="flex justify-end gap-3 pt-4">
+              <Button variant="outline" onClick={onClose}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleSave} 
+                className="bg-proman-yellow text-proman-navy hover:opacity-90"
+                disabled={isSaving || isUploading || !employeeName.trim()}
+              >
+                {isSaving ? "Guardando..." : "Guardar Cambios"}
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
+
+        {activeTab === 'calendar' && (
+          <div className="space-y-4">
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-4">
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-proman-navy">
+                    {assignedJobs.filter(j => j.scheduled_date).length}
+                  </div>
+                  <div className="text-xs text-gray-600">Trabajos Programados</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-blue-600">
+                    {assignedJobs.filter(j => j.status !== 'completado').length}
+                  </div>
+                  <div className="text-xs text-gray-600">Pendientes</div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-green-600">
+                    {assignedJobs.filter(j => j.status === 'completado').length}
+                  </div>
+                  <div className="text-xs text-gray-600">Completados</div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Calendar Navigation */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon" onClick={() => setCalendarDate(subWeeks(calendarDate, 1))}>
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <Button variant="outline" onClick={() => setCalendarDate(new Date())}>Hoy</Button>
+                <Button variant="outline" size="icon" onClick={() => setCalendarDate(addWeeks(calendarDate, 1))}>
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+              <span className="font-semibold text-proman-navy">
+                {format(weekStart, "d MMM", { locale: es })} - {format(addDays(weekStart, 6), "d MMM yyyy", { locale: es })}
+              </span>
+            </div>
+
+            {/* Week Grid */}
+            <div className="grid grid-cols-7 gap-2">
+              {weekDays.map(day => {
+                const dateKey = format(day, 'yyyy-MM-dd');
+                const dayJobs = jobsByDay[dateKey] || [];
+                const isToday = isSameDay(day, new Date());
+                const totalHours = dayJobs.reduce((sum, j) => sum + (j.estimated_duration_hours || 0), 0);
+                
+                return (
+                  <div 
+                    key={dateKey} 
+                    className={`border rounded-lg p-2 min-h-[200px] ${isToday ? 'bg-proman-yellow/20 border-proman-yellow' : 'bg-gray-50'}`}
+                  >
+                    <div className="text-center mb-2">
+                      <div className="text-xs text-gray-500">{format(day, "EEE", { locale: es })}</div>
+                      <div className={`text-lg font-bold ${isToday ? 'text-proman-navy' : 'text-gray-700'}`}>
+                        {format(day, "d")}
+                      </div>
+                      {totalHours > 0 && (
+                        <Badge className="text-xs bg-blue-100 text-blue-800">{totalHours}h</Badge>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-1">
+                      {dayJobs.map(job => (
+                        <div 
+                          key={job.id}
+                          className={`p-1.5 rounded text-white text-xs ${statusColors[job.status] || 'bg-gray-500'}`}
+                        >
+                          <div className="font-semibold truncate">{getCustomerName(job)}</div>
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-2.5 h-2.5" />
+                            {job.scheduled_start_time || '--:--'}
+                            {job.estimated_duration_hours && ` (${job.estimated_duration_hours}h)`}
+                          </div>
+                          <div className="truncate opacity-90">{job.service_type}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Legend */}
+            <div className="flex flex-wrap gap-3 justify-center pt-2">
+              <span className="text-xs text-gray-500">Estados:</span>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded bg-blue-500"></div>
+                <span className="text-xs">Nuevo</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded bg-blue-600"></div>
+                <span className="text-xs">En proceso</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded bg-green-600"></div>
+                <span className="text-xs">Completado</span>
+              </div>
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
