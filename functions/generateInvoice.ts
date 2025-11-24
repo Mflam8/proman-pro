@@ -47,7 +47,11 @@ Deno.serve(async (req) => {
 
         // Obtener items de facturación (solo servicios y mano de obra)
         const allBillingItems = await base44.asServiceRole.entities.DetalleFacturaTrabajo.filter({ inquiry_id: inquiryId });
-        const billingItems = allBillingItems.filter(item => item.tipo_item === 'servicio' || item.tipo_item === 'mano_de_obra');
+        // Los datos vienen en item.data.tipo_item o item.tipo_item dependiendo del contexto
+        const billingItems = allBillingItems.filter(item => {
+            const tipoItem = item.data?.tipo_item || item.tipo_item;
+            return tipoItem === 'servicio' || tipoItem === 'mano_de_obra';
+        });
 
         // Cargar logo
         const logoBase64 = await loadImageAsBase64(LOGO_URL);
