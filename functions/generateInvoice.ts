@@ -182,31 +182,16 @@ Deno.serve(async (req) => {
         // ======================
         // TOTALES
         // ======================
-        yPos += 10;
-        
-        doc.setFont(undefined, 'bold');
-        doc.setFontSize(9);
-        doc.setTextColor(...navyColor);
-        
-        // SUMAS
-        doc.text('SUMAS:', 135, yPos);
-        doc.text(`$${montoFinal.toFixed(2)}`, 187, yPos, { align: 'right' });
-        yPos += 8;
-        
-        // SUB-TOTAL
-        const subtotal = montoFinal / 1.13;
-        doc.text('SUB-TOTAL:', 135, yPos);
-        doc.text(`$${subtotal.toFixed(2)}`, 187, yPos, { align: 'right' });
         yPos += 15;
         
-        // VENTA TOTAL (cuadro amarillo)
+        // TOTAL (cuadro amarillo)
         doc.setFillColor(...yellowColor);
         doc.rect(130, yPos - 7, 60, 12, 'F');
         doc.setTextColor(...navyColor);
         doc.setFontSize(11);
         doc.setFont(undefined, 'bold');
-        doc.text('VENTA TOTAL:', 135, yPos);
-        doc.text(montoFinal.toFixed(2), 187, yPos, { align: 'right' });
+        doc.text('TOTAL:', 135, yPos);
+        doc.text(`$${montoFinal.toFixed(2)}`, 187, yPos, { align: 'right' });
 
         // ======================
         // PIE DE PÁGINA CON LOGO
