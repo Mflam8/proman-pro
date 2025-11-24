@@ -435,6 +435,16 @@ export default function ClientManagement() {
                                         <Star className="w-3 h-3 mr-1"/> {inquiry.satisfaction_rating}/5
                                     </Badge>
                                 )}
+                                {inquiry.payment_status === 'pendiente' && (
+                                    <Badge className="bg-red-100 text-red-800">
+                                        <DollarSign className="w-3 h-3 mr-1"/> Pendiente de Pago
+                                    </Badge>
+                                )}
+                                {inquiry.payment_status === 'parcial' && (
+                                    <Badge className="bg-orange-100 text-orange-800">
+                                        <DollarSign className="w-3 h-3 mr-1"/> Pago Parcial
+                                    </Badge>
+                                )}
                               </div>
                             </div>
                           </div>
