@@ -31,8 +31,7 @@ Deno.serve(async (req) => {
             customer = customers[0];
         }
 
-        // Obtener items de facturación
-        const billingItems = await base44.asServiceRole.entities.DetalleFacturaTrabajo.filter({ inquiry_id: inquiryId });
+        // Los items de facturación se guardan internamente pero no se muestran en la factura comercial
 
         const doc = new jsPDF();
         
@@ -122,55 +121,23 @@ Deno.serve(async (req) => {
 
         yPos += 8;
 
-        // Items
+        // Items - Solo se muestra el servicio general, sin desglose de materiales
         doc.setTextColor(...navyColor);
         doc.setFont(undefined, 'normal');
         doc.setFontSize(9);
         
-        let totalSumas = 0;
-
-        if (billingItems.length > 0) {
-            for (const item of billingItems) {
-                const totalItem = item.cantidad * item.precio_unitario;
-                
-                if (yPos > 240) {
-                    doc.addPage();
-                    yPos = 20;
-                }
-
-                // Cantidad
-                doc.text(item.cantidad.toString(), 18, yPos + 5);
-                
-                // Descripción (centrada en columna más amplia)
-                let descripcion = item.descripcion;
-                if (descripcion.startsWith('http')) {
-                    descripcion = `Material`;
-                }
-                const descLines = doc.splitTextToSize(descripcion, 90);
-                doc.text(descLines, 35, yPos + 5);
-                
-                // Precio unitario
-                doc.text(`$${item.precio_unitario.toFixed(2)}`, 148, yPos + 5);
-                
-                // Total
-                doc.text(`$${totalItem.toFixed(2)}`, 180, yPos + 5);
-                totalSumas += totalItem;
-                
-                yPos += Math.max(descLines.length * 5, 8);
-            }
-        } else {
-            // Si no hay items, usar el monto final
-            const montoFinal = inquiry.final_amount || inquiry.quote_amount || 0;
-            doc.text('1', 18, yPos + 5);
-            doc.text(`${inquiry.service_type || 'Servicio de reparación'}`, 35, yPos + 5);
-            doc.text(`$${montoFinal.toFixed(2)}`, 148, yPos + 5);
-            doc.text(`$${montoFinal.toFixed(2)}`, 180, yPos + 5);
-            totalSumas = montoFinal;
-            yPos += 10;
-        }
+        const montoFinal = inquiry.final_amount || inquiry.quote_amount || 0;
+        const servicioDescripcion = inquiry.service_type || 'Servicio de reparación';
+        
+        doc.text('1', 18, yPos + 5);
+        doc.text(servicioDescripcion, 35, yPos + 5);
+        doc.text(`$${montoFinal.toFixed(2)}`, 148, yPos + 5);
+        doc.text(`$${montoFinal.toFixed(2)}`, 180, yPos + 5);
+        
+        yPos += 10;
 
         // ======================
-        // TOTALES
+        // TOTALES (sin IVA - factura comercial simple)
         // ======================
         yPos += 10;
         const totalesX = 145;
@@ -184,7 +151,7 @@ Deno.serve(async (req) => {
         
         // SUMAS
         doc.text('SUMAS:', totalesX, yPos);
-        doc.text(`$${totalSumas.toFixed(2)}`, 190, yPos, { align: 'right' });
+        doc.text(`$${montoFinal.toFixed(2)}`, 190, yPos, { align: 'right' });
         yPos += 7;
         
         // Línea
@@ -192,10 +159,9 @@ Deno.serve(async (req) => {
         doc.setLineWidth(0.3);
         doc.line(totalesX, yPos - 2, 195, yPos - 2);
         
-        // SUB-TOTAL (13% calculado implícito)
-        const subtotal = totalSumas / 1.13;
+        // SUB-TOTAL
         doc.text('SUB-TOTAL:', totalesX, yPos);
-        doc.text(`$${subtotal.toFixed(2)}`, 190, yPos, { align: 'right' });
+        doc.text(`$${montoFinal.toFixed(2)}`, 190, yPos, { align: 'right' });
         yPos += 12;
         
         // VENTA TOTAL (destacado en amarillo)
@@ -204,7 +170,7 @@ Deno.serve(async (req) => {
         doc.setTextColor(...navyColor);
         doc.setFontSize(11);
         doc.text('VENTA TOTAL:', totalesX, yPos);
-        doc.text(`${totalSumas.toFixed(2)}`, 190, yPos, { align: 'right' });
+        doc.text(`${montoFinal.toFixed(2)}`, 190, yPos, { align: 'right' });
 
         // ======================
         // PIE DE PÁGINA
