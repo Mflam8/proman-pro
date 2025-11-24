@@ -26,6 +26,7 @@ import CustomerManagement from "../components/admin/CustomerManagement";
 import EquipmentManagement from "../components/admin/EquipmentManagement";
 import PaymentManagement from "../components/admin/PaymentManagement";
 import BillingDetails from "../components/admin/BillingDetails";
+import WorkExpenses from "../components/admin/WorkExpenses";
 
 const statusConfig = {
   nuevo: { label: "Nuevo", color: "bg-blue-100 text-blue-800", icon: AlertCircle },
@@ -1230,6 +1231,8 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
                     </Card>
 
                     <BillingDetails inquiryId={inquiry.id} canEdit={canEdit} inquiry={inquiry} />
+
+                    <WorkExpenses inquiryId={inquiry.id} canEdit={canEdit} />
 
                     {canEdit && (
                         <Card>

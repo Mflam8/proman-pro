@@ -401,7 +401,7 @@ function BillingItemForm({ item, onSubmit, onCancel, isSubmitting }) {
             </p>
           )}
         </div>
-      ) : formData.tipo_item === 'mano_de_obra' ? (
+      ) : (
         <div>
           <Label className="block text-sm font-medium text-proman-navy mb-2">
             Descripción de Mano de Obra *
@@ -413,52 +413,6 @@ function BillingItemForm({ item, onSubmit, onCancel, isSubmitting }) {
             rows={3}
             required
           />
-        </div>
-      ) : (
-        <div>
-          <Label className="block text-sm font-medium text-proman-navy mb-2">
-            Imagen del Item (Factura/Recibo) *
-          </Label>
-          <div className="border-2 border-dashed rounded-lg p-4 text-center">
-            {formData.descripcion && formData.descripcion.startsWith('http') ? (
-              <div className="space-y-2">
-                <img 
-                  src={formData.descripcion} 
-                  alt="Factura" 
-                  className="max-h-40 mx-auto rounded border"
-                />
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setFormData({ ...formData, descripcion: '' })}
-                >
-                  Cambiar imagen
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <Camera className="w-8 h-8 text-gray-400 mx-auto" />
-                <p className="text-sm text-gray-600">Subir imagen de factura o recibo</p>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setImageFile(e.target.files[0])}
-                  disabled={isUploading}
-                  className="cursor-pointer"
-                />
-                {isUploading && <p className="text-xs text-blue-600">Subiendo...</p>}
-              </div>
-            )}
-          </div>
-          <p className="text-xs text-gray-500 mt-1">
-            Esta imagen se podrá compartir por WhatsApp con el cliente
-          </p>
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-2">
-            <p className="text-xs text-yellow-800">
-              ℹ️ <strong>Nota:</strong> A los materiales NO se les agrega el 13% porque ya lo cobra el proveedor
-            </p>
-          </div>
         </div>
       )}
 
