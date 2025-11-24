@@ -25,6 +25,7 @@ import ServiceManagement from "../components/admin/ServiceManagement";
 import CustomerManagement from "../components/admin/CustomerManagement";
 import EquipmentManagement from "../components/admin/EquipmentManagement";
 import PaymentManagement from "../components/admin/PaymentManagement";
+import ReportsManagement from "../components/admin/ReportsManagement";
 import BillingDetails from "../components/admin/BillingDetails";
 import WorkExpenses from "../components/admin/WorkExpenses";
 
@@ -254,6 +255,9 @@ export default function ClientManagement() {
                 <TabsTrigger value="empleados" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
                   👤 Gestión de Empleados
                 </TabsTrigger>
+                <TabsTrigger value="reportes" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
+                  📊 Reportes
+                </TabsTrigger>
               </>
             )}
           </TabsList>
@@ -455,6 +459,10 @@ export default function ClientManagement() {
 
               <TabsContent value="empleados">
                 <EmployeeManagement />
+              </TabsContent>
+
+              <TabsContent value="reportes">
+                <ReportsManagement />
               </TabsContent>
             </>
           )}
