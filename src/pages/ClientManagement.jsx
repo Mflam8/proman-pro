@@ -498,9 +498,13 @@ export default function ClientManagement() {
             )}
           </TabsContent>
 
-          <TabsContent value="clientes">
-            <CustomerManagement />
-          </TabsContent>
+          <TabsContent value="calendario">
+                        <ScheduleCalendar onSelectJob={(job) => setSelectedInquiry(job)} />
+                      </TabsContent>
+
+                      <TabsContent value="clientes">
+                        <CustomerManagement />
+                      </TabsContent>
 
           {isAdmin && (
             <>
