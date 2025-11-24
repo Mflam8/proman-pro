@@ -277,6 +277,29 @@ export default function ClientManagement() {
           </TabsList>
 
           <TabsContent value="trabajos">
+            {/* Bot Activity Alert */}
+            {isAdmin && (customers.filter(c => c.created_by === 'system' || c.notes?.includes('WhatsApp')).length > 0 || 
+              inquiries.filter(i => i.created_by === 'system' || i.notes?.includes('WhatsApp')).length > 0) && (
+              <Card className="mb-6 border-2 border-green-500 bg-green-50">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center">
+                      <Bot className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-green-800">🤖 Actividad del Bot de WhatsApp</h3>
+                      <p className="text-sm text-green-700">
+                        El bot ha capturado automáticamente: 
+                        <strong> {customers.filter(c => c.created_by === 'system' || c.notes?.includes('WhatsApp')).length} cliente(s)</strong> y 
+                        <strong> {inquiries.filter(i => i.created_by === 'system' || i.notes?.includes('WhatsApp')).length} trabajo(s)</strong> desde WhatsApp
+                      </p>
+                    </div>
+                    <Badge className="bg-green-600 text-white">Bot Activo</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
               <Card><CardContent className="p-4"><div className="text-2xl font-bold text-proman-navy">{stats.total}</div><div className="text-sm text-gray-600">Total</div></CardContent></Card>
               <Card><CardContent className="p-4"><div className="text-2xl font-bold text-blue-600">{stats.nuevo}</div><div className="text-sm text-gray-600">Nuevos</div></CardContent></Card>
