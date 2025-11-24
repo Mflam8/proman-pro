@@ -31,51 +31,52 @@ Deno.serve(async (req) => {
             customer = customers[0];
         }
 
-        // Los items de facturación se guardan internamente pero no se muestran en la factura comercial
-
         const doc = new jsPDF();
         
         // Colores PROMAN
         const navyColor = [37, 42, 92];
         const yellowColor = [253, 200, 12];
-        const lightBg = [245, 245, 250];
 
         // ======================
-        // ENCABEZADO
+        // ENCABEZADO AZUL MARINO
         // ======================
         doc.setFillColor(...navyColor);
-        doc.rect(0, 0, 210, 30, 'F');
+        doc.rect(0, 0, 210, 35, 'F');
         
-        // Logo y datos empresa
+        // Logo en la izquierda (simulado con texto blanco)
         doc.setTextColor(255, 255, 255);
-        doc.setFontSize(10);
+        doc.setFontSize(20);
         doc.setFont(undefined, 'bold');
-        doc.text('PROMAN SERVICES, S.A. DE C.V.', 15, 10);
-        
-        doc.setFontSize(8);
+        doc.text('PROMAN', 15, 15);
+        doc.setFontSize(10);
         doc.setFont(undefined, 'normal');
-        doc.text('Email: admin@proman.services', 15, 15);
-        doc.text('Contáctenos: 6053-1213', 15, 19);
-        doc.text('Dirección: 17Av. Norte #1721, San Salvador', 15, 23);
+        doc.text('services', 15, 20);
 
-        // Cuadro de factura
+        // Información de empresa
+        doc.setFontSize(9);
+        doc.setFont(undefined, 'bold');
+        doc.text('PROMAN SERVICES, S.A. DE C.V.', 60, 12);
+        doc.setFont(undefined, 'normal');
+        doc.setFontSize(8);
+        doc.text('Email: admin@proman.services', 60, 17);
+        doc.text('Contáctenos: 6053-1213', 60, 21);
+        doc.text('Dirección: 17Av. Norte #1721, San Salvador', 60, 25);
+
+        // Cuadro amarillo de factura (derecha)
         doc.setFillColor(...yellowColor);
-        doc.rect(145, 8, 55, 15, 'F');
+        doc.rect(150, 10, 50, 15, 'F');
         doc.setTextColor(...navyColor);
         doc.setFontSize(10);
         doc.setFont(undefined, 'bold');
-        doc.text('FACTURA', 172.5, 13, { align: 'center' });
-        doc.text('COMERCIAL', 172.5, 17.5, { align: 'center' });
-        doc.setFontSize(9);
+        doc.text('FACTURA', 175, 15, { align: 'center' });
+        doc.text('COMERCIAL', 175, 19, { align: 'center' });
         const facturaNum = inquiry.id.substring(0, 8).toUpperCase();
-        doc.text(`No. ${facturaNum}`, 172.5, 21.5, { align: 'center' });
+        doc.text(`No. ${facturaNum}`, 175, 23, { align: 'center' });
 
         // ======================
-        // DATOS DEL CLIENTE
+        // DATOS DEL CLIENTE (fondo blanco)
         // ======================
-        doc.setTextColor(...navyColor);
-        doc.setFontSize(9);
-        doc.setFont(undefined, 'bold');
+        let yPos = 45;
         
         const clientName = customer?.full_name || inquiry.client_name || 'N/A';
         const clientPhone = customer?.phone || inquiry.phone || 'N/A';
@@ -83,45 +84,53 @@ Deno.serve(async (req) => {
         const fechaCreacion = new Date(inquiry.created_date);
         const fechaFormato = fechaCreacion.toLocaleDateString('es-SV', { day: '2-digit', month: '2-digit', year: 'numeric' });
         
-        doc.text('NOMBRE DEL CLIENTE:', 15, 40);
+        doc.setTextColor(...navyColor);
+        doc.setFontSize(9);
+        doc.setFont(undefined, 'bold');
+        
+        // Primera línea
+        doc.text('NOMBRE DEL CLIENTE:', 15, yPos);
         doc.setFont(undefined, 'normal');
-        doc.text(clientName, 60, 40);
+        doc.text(clientName, 60, yPos);
         
         doc.setFont(undefined, 'bold');
-        doc.text('DIRECCIÓN:', 115, 40);
+        doc.text('DIRECCIÓN:', 120, yPos);
         doc.setFont(undefined, 'normal');
-        doc.text(direccion, 140, 40);
+        doc.text(direccion, 150, yPos);
+        
+        yPos += 6;
+        
+        // Segunda línea
+        doc.setFont(undefined, 'bold');
+        doc.text('TELEFONO:', 15, yPos);
+        doc.setFont(undefined, 'normal');
+        doc.text(clientPhone, 38, yPos);
         
         doc.setFont(undefined, 'bold');
-        doc.text('TELEFONO:', 15, 47);
+        doc.text('FECHA:', 120, yPos);
         doc.setFont(undefined, 'normal');
-        doc.text(clientPhone, 38, 47);
-        
-        doc.setFont(undefined, 'bold');
-        doc.text('FECHA:', 115, 47);
-        doc.setFont(undefined, 'normal');
-        doc.text(fechaFormato, 132, 47);
+        doc.text(fechaFormato, 150, yPos);
 
         // ======================
-        // TABLA DE ITEMS
+        // TABLA
         // ======================
-        let yPos = 58;
+        yPos += 12;
         
-        // Encabezado de tabla
+        // Encabezado de tabla (azul marino)
         doc.setFillColor(...navyColor);
         doc.rect(15, yPos, 180, 8, 'F');
         
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(9);
         doc.setFont(undefined, 'bold');
-        doc.text('CANT.', 18, yPos + 5.5);
+        doc.text('CANT.', 20, yPos + 5.5);
         doc.text('DESCRIPCIÓN', 75, yPos + 5.5, { align: 'center' });
-        doc.text('P. UNIT.', 148, yPos + 5.5);
+        doc.text('P. UNIT.', 150, yPos + 5.5);
         doc.text('V. TOTALES', 180, yPos + 5.5);
 
-        yPos += 8;
+        yPos += 10;
 
-        // Items - Solo se muestra el servicio general, sin desglose de materiales
+        // Items - Solo el servicio general
         doc.setTextColor(...navyColor);
         doc.setFont(undefined, 'normal');
         doc.setFontSize(9);
@@ -129,70 +138,72 @@ Deno.serve(async (req) => {
         const montoFinal = inquiry.final_amount || inquiry.quote_amount || 0;
         const servicioDescripcion = inquiry.service_type || 'Servicio de reparación';
         
-        doc.text('1', 18, yPos + 5);
-        doc.text(servicioDescripcion, 35, yPos + 5);
-        doc.text(`$${montoFinal.toFixed(2)}`, 148, yPos + 5);
-        doc.text(`$${montoFinal.toFixed(2)}`, 180, yPos + 5);
+        doc.text('1', 20, yPos);
+        doc.text(servicioDescripcion, 35, yPos);
+        doc.text(`$${montoFinal.toFixed(2)}`, 150, yPos);
+        doc.text(`$${montoFinal.toFixed(2)}`, 180, yPos);
         
-        yPos += 10;
+        yPos += 8;
+
+        // Línea separadora
+        doc.setDrawColor(200, 200, 200);
+        doc.setLineWidth(0.3);
+        doc.line(15, yPos, 195, yPos);
 
         // ======================
-        // TOTALES (sin IVA - factura comercial simple)
+        // TOTALES
         // ======================
         yPos += 10;
-        const totalesX = 145;
         
         doc.setFont(undefined, 'bold');
-        doc.setFontSize(10);
-        
-        // Línea superior
-        doc.setDrawColor(200, 200, 200);
-        doc.line(15, yPos - 5, 195, yPos - 5);
+        doc.setFontSize(9);
+        doc.setTextColor(...navyColor);
         
         // SUMAS
-        doc.text('SUMAS:', totalesX, yPos);
+        doc.text('SUMAS:', 150, yPos);
         doc.text(`$${montoFinal.toFixed(2)}`, 190, yPos, { align: 'right' });
-        yPos += 7;
+        yPos += 8;
         
         // Línea
-        doc.setDrawColor(220, 220, 220);
-        doc.setLineWidth(0.3);
-        doc.line(totalesX, yPos - 2, 195, yPos - 2);
+        doc.setDrawColor(200, 200, 200);
+        doc.line(150, yPos - 2, 195, yPos - 2);
         
         // SUB-TOTAL
-        doc.text('SUB-TOTAL:', totalesX, yPos);
-        doc.text(`$${montoFinal.toFixed(2)}`, 190, yPos, { align: 'right' });
-        yPos += 12;
+        const subtotal = montoFinal / 1.13;
+        doc.text('SUB-TOTAL:', 150, yPos);
+        doc.text(`$${subtotal.toFixed(2)}`, 190, yPos, { align: 'right' });
+        yPos += 15;
         
-        // VENTA TOTAL (destacado en amarillo)
+        // VENTA TOTAL (cuadro amarillo)
         doc.setFillColor(...yellowColor);
-        doc.rect(totalesX - 5, yPos - 6, 55, 11, 'F');
+        doc.rect(145, yPos - 6, 50, 10, 'F');
         doc.setTextColor(...navyColor);
-        doc.setFontSize(11);
-        doc.text('VENTA TOTAL:', totalesX, yPos);
-        doc.text(`${montoFinal.toFixed(2)}`, 190, yPos, { align: 'right' });
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'bold');
+        doc.text('VENTA TOTAL:', 150, yPos);
+        doc.text(montoFinal.toFixed(2), 190, yPos, { align: 'right' });
 
         // ======================
         // PIE DE PÁGINA
         // ======================
-        yPos += 20;
+        yPos = 260;
         
-        // Logo y mensaje final
-        doc.setFontSize(14);
+        // Logo con opacidad (simulado con color gris)
+        doc.setTextColor(150, 150, 150);
+        doc.setFontSize(24);
         doc.setFont(undefined, 'bold');
-        doc.setTextColor(...navyColor);
-        doc.text('PROMAN', 105, yPos + 55, { align: 'center' });
-        
-        doc.setFontSize(7);
+        doc.text('PROMAN', 105, yPos, { align: 'center' });
+        doc.setFontSize(10);
         doc.setFont(undefined, 'normal');
-        doc.setTextColor(120, 120, 120);
-        doc.text('SERVICES', 105, yPos + 60, { align: 'center' });
-        doc.text('Generando soluciones en tu ambiente de trabajo', 105, yPos + 64, { align: 'center' });
+        doc.text('services', 105, yPos + 5, { align: 'center' });
         
+        yPos += 12;
+        
+        // Mensaje final
+        doc.setTextColor(...navyColor);
         doc.setFontSize(10);
         doc.setFont(undefined, 'bold');
-        doc.setTextColor(...navyColor);
-        doc.text('¡Gracias por confiar en PROMAN SERVICES!', 105, yPos + 72, { align: 'center' });
+        doc.text('¡Gracias por confiar en PROMAN SERVICES!', 105, yPos, { align: 'center' });
 
         // Convertir a buffer y subir
         const pdfBytes = doc.output('arraybuffer');
