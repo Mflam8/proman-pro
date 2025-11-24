@@ -1,6 +1,20 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import { jsPDF } from 'npm:jspdf@2.5.1';
 
+const LOGO_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ef04efb2facc1f9d963736/135f5bee2_21558763_235265087000605_2527538411050239409_n-Editado.png';
+
+async function loadImageAsBase64(url) {
+    try {
+        const response = await fetch(url);
+        const arrayBuffer = await response.arrayBuffer();
+        const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+        return `data:image/png;base64,${base64}`;
+    } catch (error) {
+        console.error('Error loading image:', error);
+        return null;
+    }
+}
+
 Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
@@ -31,6 +45,9 @@ Deno.serve(async (req) => {
             customer = customers[0];
         }
 
+        // Cargar logo
+        const logoBase64 = await loadImageAsBase64(LOGO_URL);
+
         const doc = new jsPDF();
         
         // Colores
@@ -45,31 +62,23 @@ Deno.serve(async (req) => {
         
         // Cuadro blanco para logo (izquierda)
         doc.setFillColor(255, 255, 255);
-        doc.rect(10, 8, 50, 20, 'F');
+        doc.rect(10, 5, 55, 25, 'F');
         
-        // Logo simulado dentro del cuadro blanco
-        doc.setTextColor(...navyColor);
-        doc.setFontSize(18);
-        doc.setFont(undefined, 'bold');
-        doc.text('PROMAN', 35, 15, { align: 'center' });
-        doc.setFontSize(8);
-        doc.setFont(undefined, 'normal');
-        doc.text('services', 35, 20, { align: 'center' });
-        doc.setFontSize(6);
-        doc.setFont(undefined, 'italic');
-        const slogan = '"Generando soluciones en tu ambiente de trabajo"';
-        doc.text(slogan, 35, 24, { align: 'center' });
+        // Logo real
+        if (logoBase64) {
+            doc.addImage(logoBase64, 'PNG', 12, 6, 51, 23);
+        }
 
         // Información de empresa (centro)
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(10);
         doc.setFont(undefined, 'bold');
-        doc.text('PROMAN SERVICES, S.A. DE C.V.', 105, 12, { align: 'center' });
+        doc.text('PROMAN SERVICES, S.A. DE C.V.', 115, 12, { align: 'center' });
         doc.setFont(undefined, 'normal');
         doc.setFontSize(8);
-        doc.text('Email: admin@proman.services', 105, 17, { align: 'center' });
-        doc.text('Contáctenos: 6053-1213', 105, 21, { align: 'center' });
-        doc.text('Dirección: 17Av. Norte #1721, San Salvador', 105, 25, { align: 'center' });
+        doc.text('Email: admin@proman.services', 115, 17, { align: 'center' });
+        doc.text('Contáctenos: 6053-1213', 115, 21, { align: 'center' });
+        doc.text('Dirección: 17Av. Norte #1721, San Salvador', 115, 25, { align: 'center' });
 
         // Cuadro amarillo de factura (derecha)
         doc.setFillColor(...yellowColor);
@@ -125,7 +134,6 @@ Deno.serve(async (req) => {
         // TABLA
         // ======================
         yPos += 12;
-        const tableStartY = yPos;
         
         // Encabezado de tabla (azul marino con bordes)
         doc.setFillColor(...navyColor);
@@ -172,7 +180,7 @@ Deno.serve(async (req) => {
         yPos += itemHeight;
 
         // ======================
-        // TOTALES (alineados a la derecha)
+        // TOTALES
         // ======================
         yPos += 10;
         
@@ -201,26 +209,20 @@ Deno.serve(async (req) => {
         doc.text(montoFinal.toFixed(2), 187, yPos, { align: 'right' });
 
         // ======================
-        // PIE DE PÁGINA
+        // PIE DE PÁGINA CON LOGO
         // ======================
-        yPos = 250;
-        
-        // Logo con opacidad (simulado con gris claro)
-        doc.setTextColor(180, 180, 180);
-        doc.setFontSize(26);
-        doc.setFont(undefined, 'bold');
-        doc.text('PROMAN', 105, yPos, { align: 'center' });
-        doc.setFontSize(11);
-        doc.setFont(undefined, 'normal');
-        doc.text('services', 105, yPos + 6, { align: 'center' });
-        
-        yPos += 15;
+        if (logoBase64) {
+            // Logo con opacidad en el centro inferior
+            doc.setGState(new doc.GState({ opacity: 0.6 }));
+            doc.addImage(logoBase64, 'PNG', 65, 235, 80, 35);
+            doc.setGState(new doc.GState({ opacity: 1 }));
+        }
         
         // Mensaje final
         doc.setTextColor(...navyColor);
         doc.setFontSize(11);
         doc.setFont(undefined, 'bold');
-        doc.text('¡Gracias por confiar en PROMAN SERVICES!', 105, yPos, { align: 'center' });
+        doc.text('¡Gracias por confiar en PROMAN SERVICES!', 105, 278, { align: 'center' });
 
         // Convertir a buffer y subir
         const pdfBytes = doc.output('arraybuffer');
