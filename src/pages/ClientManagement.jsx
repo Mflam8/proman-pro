@@ -28,6 +28,7 @@ import PaymentManagement from "../components/admin/PaymentManagement";
 import ReportsManagement from "../components/admin/ReportsManagement";
 import BillingDetails from "../components/admin/BillingDetails";
 import WorkExpenses from "../components/admin/WorkExpenses";
+import ScheduleCalendar from "../components/admin/ScheduleCalendar";
 
 const statusConfig = {
   nuevo: { label: "Nuevo", color: "bg-blue-100 text-blue-800", icon: AlertCircle },
