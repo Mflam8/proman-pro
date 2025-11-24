@@ -39,35 +39,37 @@ Deno.serve(async (req) => {
         // Colores PROMAN
         const navyColor = [37, 42, 92];
         const yellowColor = [253, 200, 12];
-        const grayColor = [240, 240, 240];
+        const lightBg = [245, 245, 250];
 
         // ======================
         // ENCABEZADO
         // ======================
         doc.setFillColor(...navyColor);
-        doc.rect(0, 0, 210, 35, 'F');
+        doc.rect(0, 0, 210, 30, 'F');
         
-        // Logo y nombre empresa
+        // Logo y datos empresa
         doc.setTextColor(255, 255, 255);
-        doc.setFontSize(24);
+        doc.setFontSize(10);
         doc.setFont(undefined, 'bold');
-        doc.text('PROMAN SERVICES', 20, 15);
+        doc.text('PROMAN SERVICES, S.A. DE C.V.', 15, 10);
         
-        doc.setFontSize(9);
+        doc.setFontSize(8);
         doc.setFont(undefined, 'normal');
-        doc.text('Generando soluciones en tu ambiente de trabajo', 20, 22);
-        doc.text('Tel: 6053-1213 | 17 Av. Norte #1721, San Salvador', 20, 27);
+        doc.text('Email: admin@proman.services', 15, 15);
+        doc.text('Contáctenos: 6053-1213', 15, 19);
+        doc.text('Dirección: 17Av. Norte #1721, San Salvador', 15, 23);
 
-        // Número de factura
+        // Cuadro de factura
         doc.setFillColor(...yellowColor);
-        doc.rect(150, 10, 50, 20, 'F');
+        doc.rect(145, 8, 55, 15, 'F');
         doc.setTextColor(...navyColor);
         doc.setFontSize(10);
         doc.setFont(undefined, 'bold');
-        doc.text('FACTURA', 175, 17, { align: 'center' });
-        doc.setFontSize(14);
+        doc.text('FACTURA', 172.5, 13, { align: 'center' });
+        doc.text('COMERCIAL', 172.5, 17.5, { align: 'center' });
+        doc.setFontSize(9);
         const facturaNum = inquiry.id.substring(0, 8).toUpperCase();
-        doc.text(`No. ${facturaNum}`, 175, 25, { align: 'center' });
+        doc.text(`No. ${facturaNum}`, 172.5, 21.5, { align: 'center' });
 
         // ======================
         // DATOS DEL CLIENTE
