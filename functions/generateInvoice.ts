@@ -172,58 +172,39 @@ Deno.serve(async (req) => {
         // ======================
         // TOTALES
         // ======================
-        yPos += 5;
-        const totalesX = 130;
+        yPos += 10;
+        const totalesX = 145;
         
         doc.setFont(undefined, 'bold');
         doc.setFontSize(10);
         
-        // SUMAS
-        const sumas = totalExentas + totalAfectas;
-        doc.text('SUMAS:', totalesX, yPos);
-        doc.text(`$${sumas.toFixed(2)}`, 185, yPos, { align: 'right' });
-        yPos += 6;
+        // Línea superior
+        doc.setDrawColor(200, 200, 200);
+        doc.line(15, yPos - 5, 195, yPos - 5);
         
-        // IVA Retenido
-        doc.text('(-) IVA RETENIDO:', totalesX, yPos);
-        doc.text('$0.00', 185, yPos, { align: 'right' });
-        yPos += 6;
+        // SUMAS
+        doc.text('SUMAS:', totalesX, yPos);
+        doc.text(`$${totalSumas.toFixed(2)}`, 190, yPos, { align: 'right' });
+        yPos += 7;
         
         // Línea
-        doc.setDrawColor(...navyColor);
-        doc.setLineWidth(0.5);
-        doc.line(totalesX, yPos, 190, yPos);
-        yPos += 6;
+        doc.setDrawColor(220, 220, 220);
+        doc.setLineWidth(0.3);
+        doc.line(totalesX, yPos - 2, 195, yPos - 2);
         
-        // SUB-TOTAL
+        // SUB-TOTAL (13% calculado implícito)
+        const subtotal = totalSumas / 1.13;
         doc.text('SUB-TOTAL:', totalesX, yPos);
-        doc.text(`$${sumas.toFixed(2)}`, 185, yPos, { align: 'right' });
-        yPos += 6;
+        doc.text(`$${subtotal.toFixed(2)}`, 190, yPos, { align: 'right' });
+        yPos += 12;
         
-        // Ventas exentas
-        doc.text('VENTAS EXENTAS:', totalesX, yPos);
-        doc.text(`$${totalExentas.toFixed(2)}`, 185, yPos, { align: 'right' });
-        yPos += 6;
-        
-        // Ventas no sujetas
-        doc.text('VENTAS NO SUJETAS:', totalesX, yPos);
-        doc.text('$0.00', 185, yPos, { align: 'right' });
-        yPos += 6;
-        
-        // IVA (13%)
-        const iva = totalAfectas * 0.13;
-        doc.text('(+) IVA (13%):', totalesX, yPos);
-        doc.text(`$${iva.toFixed(2)}`, 185, yPos, { align: 'right' });
-        yPos += 8;
-        
-        // VENTA TOTAL
+        // VENTA TOTAL (destacado en amarillo)
         doc.setFillColor(...yellowColor);
-        doc.rect(totalesX - 5, yPos - 4, 65, 10, 'F');
+        doc.rect(totalesX - 5, yPos - 6, 55, 11, 'F');
         doc.setTextColor(...navyColor);
-        doc.setFontSize(12);
-        doc.text('VENTA TOTAL:', totalesX, yPos + 3);
-        const ventaTotal = sumas + iva;
-        doc.text(`$${ventaTotal.toFixed(2)}`, 185, yPos + 3, { align: 'right' });
+        doc.setFontSize(11);
+        doc.text('VENTA TOTAL:', totalesX, yPos);
+        doc.text(`${totalSumas.toFixed(2)}`, 190, yPos, { align: 'right' });
 
         // ======================
         // PIE DE PÁGINA
