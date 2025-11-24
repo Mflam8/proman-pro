@@ -594,6 +594,7 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
     useEffect(() => {
         setFormData({
             ...inquiry,
+            progress_percentage: inquiry.progress_percentage || 0,
             scheduled_date: inquiry.scheduled_date || '',
             scheduled_start_time: inquiry.scheduled_start_time || '',
             estimated_duration_hours: inquiry.estimated_duration_hours || '',
