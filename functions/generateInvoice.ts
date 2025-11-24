@@ -177,6 +177,9 @@ Deno.serve(async (req) => {
         // Si hay items de facturación, usarlos
         if (billingItems.length > 0) {
             for (const item of billingItems) {
+                // Acceder a los datos correctamente (pueden estar en item.data o directamente en item)
+                const itemData = item.data || item;
+                
                 doc.rect(20, yPos, 25, itemHeight, 'D');
                 doc.rect(45, yPos, 90, itemHeight, 'D');
                 doc.rect(135, yPos, 25, itemHeight, 'D');
@@ -186,13 +189,13 @@ Deno.serve(async (req) => {
                 doc.setFont(undefined, 'normal');
                 doc.setFontSize(9);
                 
-                const cantidad = item.cantidad || 1;
-                const precioUnit = item.precio_unitario || 0;
-                const montoItem = item.monto_total_item || (cantidad * precioUnit);
+                const cantidad = itemData.cantidad || 1;
+                const precioUnit = itemData.precio_unitario || 0;
+                const montoItem = itemData.monto_total_item || (cantidad * precioUnit);
                 totalFactura += montoItem;
                 
                 doc.text(cantidad.toString(), 32.5, yPos + 6, { align: 'center' });
-                doc.text(item.descripcion || 'Servicio', 47, yPos + 6);
+                doc.text(itemData.descripcion || 'Servicio', 47, yPos + 6);
                 doc.text(`$${precioUnit.toFixed(2)}`, 157, yPos + 6, { align: 'right' });
                 doc.text(`$${montoItem.toFixed(2)}`, 187, yPos + 6, { align: 'right' });
                 
