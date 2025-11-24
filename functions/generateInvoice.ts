@@ -106,29 +106,32 @@ Deno.serve(async (req) => {
         doc.setTextColor(...navyColor);
         doc.setFontSize(9);
         
-        // Primera línea
+        // Primera línea - Nombre y Fecha
         doc.setFont(undefined, 'bold');
         doc.text('NOMBRE DEL CLIENTE:', 20, yPos);
         doc.setFont(undefined, 'normal');
         doc.text(clientName, 62, yPos);
         
         doc.setFont(undefined, 'bold');
-        doc.text('DIRECCIÓN:', 135, yPos);
+        doc.text('FECHA:', 135, yPos);
         doc.setFont(undefined, 'normal');
-        doc.text(direccion, 162, yPos);
+        doc.text(fechaFormato, 155, yPos);
         
         yPos += 7;
         
-        // Segunda línea
+        // Segunda línea - Teléfono
         doc.setFont(undefined, 'bold');
         doc.text('TELEFONO:', 20, yPos);
         doc.setFont(undefined, 'normal');
         doc.text(clientPhone, 45, yPos);
         
+        yPos += 7;
+        
+        // Tercera línea - Dirección
         doc.setFont(undefined, 'bold');
-        doc.text('FECHA:', 135, yPos);
+        doc.text('DIRECCIÓN:', 20, yPos);
         doc.setFont(undefined, 'normal');
-        doc.text(fechaFormato, 162, yPos);
+        doc.text(direccion, 48, yPos);
 
         // ======================
         // TABLA
