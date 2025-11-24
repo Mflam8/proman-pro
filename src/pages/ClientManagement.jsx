@@ -531,16 +531,17 @@ export default function ClientManagement() {
                     <DialogTitle className="text-2xl">Detalles de Solicitud</DialogTitle>
                 </DialogHeader>
                 <InquiryDetailForm 
-                    inquiry={selectedInquiry}
-                    customer={getCustomerForInquiry(selectedInquiry)}
-                    customers={customers}
-                    onUpdate={updateInquiry.mutate}
-                    isUpdating={updateInquiry.isPending}
-                    isAdmin={isAdmin}
-                    isSupervisor={isSupervisor}
-                    getSurveyLink={getSurveyLink}
-                    getWhatsAppUpdateLink={getWhatsAppUpdateLink}
-                />
+                                        inquiry={selectedInquiry}
+                                        customer={getCustomerForInquiry(selectedInquiry)}
+                                        customers={customers}
+                                        onUpdate={updateInquiry.mutate}
+                                        isUpdating={updateInquiry.isPending}
+                                        isAdmin={isAdmin}
+                                        isSupervisor={isSupervisor}
+                                        getSurveyLink={getSurveyLink}
+                                        getWhatsAppUpdateLink={getWhatsAppUpdateLink}
+                                        onDelete={deleteInquiry.mutate}
+                                    />
             </DialogContent>
         </Dialog>
       )}
