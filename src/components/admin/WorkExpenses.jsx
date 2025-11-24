@@ -250,8 +250,8 @@ export default function WorkExpenses({ inquiryId, canEdit = true }) {
 function ExpenseForm({ item, onSubmit, onCancel, isSubmitting }) {
   const [formData, setFormData] = useState({
     tipo_gasto: item?.tipo_gasto || 'material',
-    descripcion: item?.descripcion || '',
-    cantidad: item?.cantidad || 1,
+    descripcion: item?.proveedor || item?.descripcion || '',
+    cantidad: 1,
     precio_unitario: item?.precio_unitario || 0,
     proveedor: item?.proveedor || '',
     fecha_gasto: item?.fecha_gasto || new Date().toISOString().split('T')[0],
@@ -278,10 +278,16 @@ function ExpenseForm({ item, onSubmit, onCancel, isSubmitting }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    // Usar proveedor como descripción si no hay descripción
+    const submitData = {
+      ...formData,
+      descripcion: formData.proveedor || formData.tipo_gasto,
+      cantidad: 1
+    };
+    onSubmit(submitData);
   };
 
-  const montoTotal = formData.cantidad * formData.precio_unitario;
+  const montoTotal = formData.precio_unitario;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 pt-4">
@@ -305,19 +311,6 @@ function ExpenseForm({ item, onSubmit, onCancel, isSubmitting }) {
             ))}
           </SelectContent>
         </Select>
-      </div>
-
-      <div>
-        <Label className="block text-sm font-medium text-gray-700 mb-2">
-          Descripción *
-        </Label>
-        <Textarea
-          value={formData.descripcion}
-          onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-          placeholder="Ej: Tubería PVC 1/2 pulgada, Gasolina para transporte, etc."
-          rows={2}
-          required
-        />
       </div>
 
       <div>
@@ -380,34 +373,18 @@ function ExpenseForm({ item, onSubmit, onCancel, isSubmitting }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label className="block text-sm font-medium text-gray-700 mb-2">
-            Cantidad *
-          </Label>
-          <Input
-            type="number"
-            step="0.01"
-            min="0"
-            value={formData.cantidad}
-            onChange={(e) => setFormData({ ...formData, cantidad: parseFloat(e.target.value) || 0 })}
-            required
-          />
-        </div>
-
-        <div>
-          <Label className="block text-sm font-medium text-gray-700 mb-2">
-            Precio Unitario ($) *
-          </Label>
-          <Input
-            type="number"
-            step="0.01"
-            min="0"
-            value={formData.precio_unitario}
-            onChange={(e) => setFormData({ ...formData, precio_unitario: parseFloat(e.target.value) || 0 })}
-            required
-          />
-        </div>
+      <div>
+        <Label className="block text-sm font-medium text-gray-700 mb-2">
+          Monto ($) *
+        </Label>
+        <Input
+          type="number"
+          step="0.01"
+          min="0"
+          value={formData.precio_unitario}
+          onChange={(e) => setFormData({ ...formData, precio_unitario: parseFloat(e.target.value) || 0 })}
+          required
+        />
       </div>
 
       <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
