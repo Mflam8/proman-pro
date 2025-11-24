@@ -637,8 +637,10 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
         try {
             const { id, ...updateData } = formData;
             
-            // Asegurar que progress_percentage se incluya explícitamente
-            updateData.progress_percentage = formData.progress_percentage || 0;
+            // Asegurar que progress_percentage se incluya explícitamente como número
+            updateData.progress_percentage = Number(formData.progress_percentage) || 0;
+            
+            console.log('Guardando progreso:', updateData.progress_percentage);
             
             // Guardar en el log si cambió el progreso, notas o fotos
             const progressChanged = 
