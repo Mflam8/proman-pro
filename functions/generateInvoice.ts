@@ -106,20 +106,19 @@ Deno.serve(async (req) => {
         // ======================
         // TABLA DE ITEMS
         // ======================
-        let yPos = 65;
+        let yPos = 58;
         
         // Encabezado de tabla
         doc.setFillColor(...navyColor);
-        doc.rect(20, yPos, 170, 8, 'F');
+        doc.rect(15, yPos, 180, 8, 'F');
         
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(9);
         doc.setFont(undefined, 'bold');
-        doc.text('CANT.', 23, yPos + 5.5);
-        doc.text('DESCRIPCIÓN', 40, yPos + 5.5);
-        doc.text('P. UNIT.', 125, yPos + 5.5);
-        doc.text('V. EXENTAS', 148, yPos + 5.5);
-        doc.text('V. AFECTAS', 170, yPos + 5.5);
+        doc.text('CANT.', 18, yPos + 5.5);
+        doc.text('DESCRIPCIÓN', 75, yPos + 5.5, { align: 'center' });
+        doc.text('P. UNIT.', 148, yPos + 5.5);
+        doc.text('V. TOTALES', 180, yPos + 5.5);
 
         yPos += 8;
 
