@@ -35,7 +35,7 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
   const createItem = useMutation({
     mutationFn: (data) => {
       const precioBase = data.cantidad * data.precio_unitario;
-      const aplicarInteres = data.tipo_item === 'servicio' || data.tipo_item === 'mano_de_obra';
+      const aplicarInteres = (data.tipo_item === 'servicio' || data.tipo_item === 'mano_de_obra') && data.incluir_iva;
       const montoTotal = aplicarInteres ? precioBase * 1.13 : precioBase;
       
       return base44.entities.DetalleFacturaTrabajo.create({
@@ -56,7 +56,7 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
   const updateItem = useMutation({
     mutationFn: ({ id, data }) => {
       const precioBase = data.cantidad * data.precio_unitario;
-      const aplicarInteres = data.tipo_item === 'servicio' || data.tipo_item === 'mano_de_obra';
+      const aplicarInteres = (data.tipo_item === 'servicio' || data.tipo_item === 'mano_de_obra') && data.incluir_iva;
       const montoTotal = aplicarInteres ? precioBase * 1.13 : precioBase;
       
       return base44.entities.DetalleFacturaTrabajo.update(id, {
@@ -214,8 +214,8 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
                             )}
                             <p className="text-sm text-gray-600">
                               {item.cantidad} x ${item.precio_unitario.toFixed(2)}
-                              {(item.tipo_item === 'servicio' || item.tipo_item === 'mano_de_obra') && (
-                                <span className="text-xs text-blue-600 ml-1">(+13%)</span>
+                              {(item.tipo_item === 'servicio' || item.tipo_item === 'mano_de_obra') && item.incluir_iva && (
+                                <span className="text-xs text-blue-600 ml-1">(+13% IVA)</span>
                               )}
                               {' = '}
                               <span className="font-semibold ml-1">${item.monto_total_item.toFixed(2)}</span>
@@ -306,7 +306,8 @@ function BillingItemForm({ item, onSubmit, onCancel, isSubmitting }) {
     descripcion: item?.descripcion || '',
     cantidad: item?.cantidad || 1,
     precio_unitario: item?.precio_unitario || 0,
-    service_id: item?.service_id || ''
+    service_id: item?.service_id || '',
+    incluir_iva: item?.incluir_iva !== undefined ? item.incluir_iva : true
   });
   const [imageFile, setImageFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -340,8 +341,8 @@ function BillingItemForm({ item, onSubmit, onCancel, isSubmitting }) {
     onSubmit(formData);
   };
 
-  // Para servicios, agregar 13% automáticamente
-  const aplicarInteres = formData.tipo_item === 'servicio' || formData.tipo_item === 'mano_de_obra';
+  // Para servicios, agregar 13% solo si se selecciona incluir IVA
+  const aplicarInteres = (formData.tipo_item === 'servicio' || formData.tipo_item === 'mano_de_obra') && formData.incluir_iva;
   const precioBase = formData.cantidad * formData.precio_unitario;
   const montoTotal = aplicarInteres ? precioBase * 1.13 : precioBase;
 
@@ -405,11 +406,6 @@ function BillingItemForm({ item, onSubmit, onCancel, isSubmitting }) {
               <strong>Servicio seleccionado:</strong> {formData.descripcion}
             </p>
           )}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
-            <p className="text-xs text-blue-800">
-              ℹ️ <strong>Nota:</strong> A los servicios se les agregará automáticamente un 13% de interés
-            </p>
-          </div>
         </div>
       ) : formData.tipo_item === 'mano_de_obra' ? (
         <div>
@@ -423,11 +419,6 @@ function BillingItemForm({ item, onSubmit, onCancel, isSubmitting }) {
             rows={3}
             required
           />
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
-            <p className="text-xs text-blue-800">
-              ℹ️ <strong>Nota:</strong> A la mano de obra se le agregará automáticamente un 13% de interés
-            </p>
-          </div>
         </div>
       ) : (
         <div>
@@ -507,23 +498,40 @@ function BillingItemForm({ item, onSubmit, onCancel, isSubmitting }) {
         </div>
       </div>
 
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-        <div className="space-y-2">
-          {aplicarInteres && (
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-700">Subtotal:</span>
-              <span className="font-medium">${precioBase.toFixed(2)}</span>
+      {(formData.tipo_item === 'servicio' || formData.tipo_item === 'mano_de_obra') && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={formData.incluir_iva}
+              onChange={(e) => setFormData({ ...formData, incluir_iva: e.target.checked })}
+              className="w-4 h-4 text-proman-navy focus:ring-proman-yellow rounded"
+            />
+            <div>
+              <span className="text-sm font-medium text-blue-900">Incluir IVA (13%)</span>
+              <p className="text-xs text-blue-700 mt-0.5">
+                Marca esta opción si deseas agregar el 13% de IVA al precio
+              </p>
             </div>
-          )}
+          </label>
+        </div>
+      )}
+
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+        <div className="space-y-2">
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-gray-700">Subtotal:</span>
+            <span className="font-medium">${precioBase.toFixed(2)}</span>
+          </div>
           {aplicarInteres && (
             <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-700">Interés (13%):</span>
-              <span className="font-medium">+${(precioBase * 0.13).toFixed(2)}</span>
+              <span className="text-gray-700">IVA (13%):</span>
+              <span className="font-medium text-blue-600">+${(precioBase * 0.13).toFixed(2)}</span>
             </div>
           )}
           <div className="flex justify-between items-center border-t pt-2">
-            <span className="text-sm font-medium text-blue-900">Monto Total del Item:</span>
-            <span className="text-xl font-bold text-blue-900">${montoTotal.toFixed(2)}</span>
+            <span className="text-sm font-medium text-proman-navy">Monto Total del Item:</span>
+            <span className="text-xl font-bold text-proman-navy">${montoTotal.toFixed(2)}</span>
           </div>
         </div>
       </div>
