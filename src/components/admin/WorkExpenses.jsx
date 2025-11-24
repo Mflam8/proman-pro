@@ -163,14 +163,11 @@ export default function WorkExpenses({ inquiryId, canEdit = true }) {
                             />
                           )}
                           <div className="flex-1">
-                            <p className="font-medium text-gray-900 mb-1">{gasto.descripcion}</p>
                             {gasto.proveedor && (
-                              <p className="text-xs text-gray-500 mb-1">Proveedor: {gasto.proveedor}</p>
+                              <p className="font-medium text-gray-900 mb-1">{gasto.proveedor}</p>
                             )}
                             <p className="text-sm text-gray-600">
-                              {gasto.cantidad} x ${gasto.precio_unitario.toFixed(2)}
-                              {' = '}
-                              <span className="font-semibold">${gasto.monto_total.toFixed(2)}</span>
+                              <span className="font-semibold">${gasto.monto_total?.toFixed(2) || gasto.precio_unitario?.toFixed(2) || '0.00'}</span>
                             </p>
                             {gasto.fecha_gasto && (
                               <p className="text-xs text-gray-500 mt-1">
@@ -401,7 +398,7 @@ function ExpenseForm({ item, onSubmit, onCancel, isSubmitting }) {
         <Button
           type="submit"
           className="bg-orange-500 text-white hover:bg-orange-600"
-          disabled={isSubmitting || isUploading || !formData.descripcion}
+          disabled={isSubmitting || isUploading || formData.precio_unitario <= 0}
         >
           {isSubmitting || isUploading ? 'Guardando...' : item ? 'Actualizar' : 'Agregar'}
         </Button>
