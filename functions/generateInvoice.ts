@@ -209,11 +209,24 @@ Deno.serve(async (req) => {
         // ======================
         // PIE DE PÁGINA
         // ======================
-        doc.setFontSize(8);
+        yPos += 20;
+        
+        // Logo y mensaje final
+        doc.setFontSize(14);
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(...navyColor);
+        doc.text('PROMAN', 105, yPos + 55, { align: 'center' });
+        
+        doc.setFontSize(7);
         doc.setFont(undefined, 'normal');
-        doc.setTextColor(100, 100, 100);
-        doc.text('LLENAR SI LA OPERACIÓN ES SUPERIOR A $200.00', 20, 275);
-        doc.text('Gracias por confiar en PROMAN Services', 105, 285, { align: 'center' });
+        doc.setTextColor(120, 120, 120);
+        doc.text('SERVICES', 105, yPos + 60, { align: 'center' });
+        doc.text('Generando soluciones en tu ambiente de trabajo', 105, yPos + 64, { align: 'center' });
+        
+        doc.setFontSize(10);
+        doc.setFont(undefined, 'bold');
+        doc.setTextColor(...navyColor);
+        doc.text('¡Gracias por confiar en PROMAN SERVICES!', 105, yPos + 72, { align: 'center' });
 
         // Convertir a buffer y subir
         const pdfBytes = doc.output('arraybuffer');
