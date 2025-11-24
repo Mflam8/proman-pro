@@ -22,12 +22,15 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
   const [isGenerating, setIsGenerating] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: items, isLoading } = useQuery({
+  const { data: allItems, isLoading } = useQuery({
     queryKey: ['billingItems', inquiryId],
     queryFn: () => base44.entities.DetalleFacturaTrabajo.filter({ inquiry_id: inquiryId }),
     enabled: !!inquiryId,
     initialData: [],
   });
+
+  // Filtrar solo servicios y mano de obra (excluir materiales, transporte, etc.)
+  const items = allItems.filter(i => i.tipo_item === 'servicio' || i.tipo_item === 'mano_de_obra');
 
   const createItem = useMutation({
     mutationFn: (data) => {
