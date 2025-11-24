@@ -45,6 +45,10 @@ Deno.serve(async (req) => {
             customer = customers[0];
         }
 
+        // Obtener items de facturación (solo servicios y mano de obra)
+        const allBillingItems = await base44.asServiceRole.entities.DetalleFacturaTrabajo.filter({ inquiry_id: inquiryId });
+        const billingItems = allBillingItems.filter(item => item.tipo_item === 'servicio' || item.tipo_item === 'mano_de_obra');
+
         // Cargar logo
         const logoBase64 = await loadImageAsBase64(LOGO_URL);
 
@@ -158,30 +162,60 @@ Deno.serve(async (req) => {
 
         yPos += 8;
 
-        // Item (con bordes)
+        // Items (con bordes)
         doc.setFillColor(255, 255, 255);
         doc.setDrawColor(200, 200, 200);
         doc.setLineWidth(0.3);
         
         const itemHeight = 10;
-        doc.rect(20, yPos, 25, itemHeight, 'D');
-        doc.rect(45, yPos, 90, itemHeight, 'D');
-        doc.rect(135, yPos, 25, itemHeight, 'D');
-        doc.rect(160, yPos, 30, itemHeight, 'D');
-        
-        doc.setTextColor(...navyColor);
-        doc.setFont(undefined, 'normal');
-        doc.setFontSize(9);
-        
-        const montoFinal = inquiry.final_amount || inquiry.quote_amount || 0;
-        const servicioDescripcion = inquiry.service_type || 'Servicio de reparación';
-        
-        doc.text('1', 32.5, yPos + 6, { align: 'center' });
-        doc.text(servicioDescripcion, 47, yPos + 6);
-        doc.text(`$${montoFinal.toFixed(2)}`, 157, yPos + 6, { align: 'right' });
-        doc.text(`$${montoFinal.toFixed(2)}`, 187, yPos + 6, { align: 'right' });
-        
-        yPos += itemHeight;
+        let totalFactura = 0;
+
+        // Si hay items de facturación, usarlos
+        if (billingItems.length > 0) {
+            for (const item of billingItems) {
+                doc.rect(20, yPos, 25, itemHeight, 'D');
+                doc.rect(45, yPos, 90, itemHeight, 'D');
+                doc.rect(135, yPos, 25, itemHeight, 'D');
+                doc.rect(160, yPos, 30, itemHeight, 'D');
+                
+                doc.setTextColor(...navyColor);
+                doc.setFont(undefined, 'normal');
+                doc.setFontSize(9);
+                
+                const cantidad = item.cantidad || 1;
+                const precioUnit = item.precio_unitario || 0;
+                const montoItem = item.monto_total_item || (cantidad * precioUnit);
+                totalFactura += montoItem;
+                
+                doc.text(cantidad.toString(), 32.5, yPos + 6, { align: 'center' });
+                doc.text(item.descripcion || 'Servicio', 47, yPos + 6);
+                doc.text(`$${precioUnit.toFixed(2)}`, 157, yPos + 6, { align: 'right' });
+                doc.text(`$${montoItem.toFixed(2)}`, 187, yPos + 6, { align: 'right' });
+                
+                yPos += itemHeight;
+            }
+        } else {
+            // Fallback: usar datos del inquiry
+            doc.rect(20, yPos, 25, itemHeight, 'D');
+            doc.rect(45, yPos, 90, itemHeight, 'D');
+            doc.rect(135, yPos, 25, itemHeight, 'D');
+            doc.rect(160, yPos, 30, itemHeight, 'D');
+            
+            doc.setTextColor(...navyColor);
+            doc.setFont(undefined, 'normal');
+            doc.setFontSize(9);
+            
+            const montoFinal = inquiry.final_amount || inquiry.quote_amount || 0;
+            const servicioDescripcion = inquiry.service_type || 'Servicio de reparación';
+            totalFactura = montoFinal;
+            
+            doc.text('1', 32.5, yPos + 6, { align: 'center' });
+            doc.text(servicioDescripcion, 47, yPos + 6);
+            doc.text(`$${montoFinal.toFixed(2)}`, 157, yPos + 6, { align: 'right' });
+            doc.text(`$${montoFinal.toFixed(2)}`, 187, yPos + 6, { align: 'right' });
+            
+            yPos += itemHeight;
+        }
 
         // ======================
         // TOTALES
@@ -195,7 +229,7 @@ Deno.serve(async (req) => {
         doc.setFontSize(11);
         doc.setFont(undefined, 'bold');
         doc.text('TOTAL:', 135, yPos);
-        doc.text(`$${montoFinal.toFixed(2)}`, 187, yPos, { align: 'right' });
+        doc.text(`$${totalFactura.toFixed(2)}`, 187, yPos, { align: 'right' });
 
         // ======================
         // PIE DE PÁGINA CON LOGO
