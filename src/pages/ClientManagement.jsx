@@ -1415,12 +1415,25 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
             </div>
             
             {canEdit && (
-              <div className="flex justify-end pt-4">
-                  <Button type="submit" className="bg-proman-yellow text-proman-navy hover:opacity-90" disabled={isUpdating || isUploading}>
-                      {isUpdating || isUploading ? "Guardando..." : "Guardar Cambios"}
-                  </Button>
-              </div>
-            )}
+                              <div className="flex justify-between pt-4">
+                                  {isAdmin && (
+                                      <Button 
+                                          type="button" 
+                                          variant="destructive"
+                                          onClick={() => {
+                                              if (window.confirm('¿Estás seguro de eliminar este trabajo? Esta acción no se puede deshacer.')) {
+                                                  onDelete(inquiry.id);
+                                              }
+                                          }}
+                                      >
+                                          Eliminar Trabajo
+                                      </Button>
+                                  )}
+                                  <Button type="submit" className="bg-proman-yellow text-proman-navy hover:opacity-90 ml-auto" disabled={isUpdating || isUploading}>
+                                      {isUpdating || isUploading ? "Guardando..." : "Guardar Cambios"}
+                                  </Button>
+                              </div>
+                            )}
 
             {showPaymentModal && (
                 <Dialog open={showPaymentModal} onOpenChange={() => setShowPaymentModal(false)}>
