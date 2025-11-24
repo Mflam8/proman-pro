@@ -114,6 +114,14 @@ export default function ClientManagement() {
     },
   });
 
+  const deleteInquiry = useMutation({
+    mutationFn: (id) => base44.entities.ClientInquiry.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clientInquiries'] });
+      setSelectedInquiry(null);
+    },
+  });
+
   const createInquiry = useMutation({
     mutationFn: async (data) => {
       const newInquiry = await base44.entities.ClientInquiry.create(data);
