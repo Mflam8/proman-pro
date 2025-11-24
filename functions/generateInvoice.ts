@@ -112,23 +112,27 @@ Deno.serve(async (req) => {
         doc.setFont(undefined, 'normal');
         doc.text(fechaFormato, 155, yPos);
         
-        // Nombre del cliente (valor directo)
+        // Nombre del cliente
         doc.setFont(undefined, 'bold');
-        doc.text(clientName, 20, yPos);
-        
-        yPos += 7;
-        
-        // Teléfono (valor directo)
+        doc.text('Nombre:', 20, yPos);
         doc.setFont(undefined, 'normal');
-        doc.text(clientPhone, 20, yPos);
+        doc.text(clientName, 42, yPos);
         
         yPos += 7;
         
-        // Dirección con etiqueta
+        // Teléfono
+        doc.setFont(undefined, 'bold');
+        doc.text('Teléfono:', 20, yPos);
+        doc.setFont(undefined, 'normal');
+        doc.text(clientPhone, 44, yPos);
+        
+        yPos += 7;
+        
+        // Dirección
         doc.setFont(undefined, 'bold');
         doc.text('Dirección:', 20, yPos);
         doc.setFont(undefined, 'normal');
-        doc.text(direccion, 43, yPos);
+        doc.text(direccion, 46, yPos);
 
         // ======================
         // TABLA
