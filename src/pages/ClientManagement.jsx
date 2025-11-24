@@ -554,7 +554,7 @@ export default function ClientManagement() {
   );
 }
 
-function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating, isAdmin, isSupervisor, getSurveyLink, getWhatsAppUpdateLink }) {
+function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating, isAdmin, isSupervisor, getSurveyLink, getWhatsAppUpdateLink, onDelete }) {
     const canEdit = isAdmin || isSupervisor;
     const [showCustomerEdit, setShowCustomerEdit] = useState(false);
     const [customerSearch, setCustomerSearch] = useState("");
