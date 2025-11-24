@@ -224,11 +224,25 @@ export default function ClientManagement() {
               {isAdmin ? 'Administra trabajos, clientes y empleados' : 'Gestiona trabajos y clientes'}
             </p>
           </div>
-          {mainTab === "trabajos" && (
-            <Button onClick={() => setShowCreateModal(true)} className="bg-proman-yellow text-proman-navy hover:opacity-90">
-                Nuevo Trabajo
-            </Button>
-          )}
+          <div className="flex gap-3">
+            {isAdmin && (
+              <a 
+                href={base44.agents.getWhatsAppConnectURL('proman_assistant')} 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                <Button className="bg-green-500 hover:bg-green-600 text-white">
+                  <Bot className="w-4 h-4 mr-2" />
+                  Conectar WhatsApp Bot
+                </Button>
+              </a>
+            )}
+            {mainTab === "trabajos" && (
+              <Button onClick={() => setShowCreateModal(true)} className="bg-proman-yellow text-proman-navy hover:opacity-90">
+                  Nuevo Trabajo
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
