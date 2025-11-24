@@ -259,11 +259,14 @@ export default function ClientManagement() {
         <Tabs value={mainTab} onValueChange={setMainTab} className="mb-6">
           <TabsList className="bg-gray-100">
             <TabsTrigger value="trabajos" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
-              📋 Gestión de Trabajos
-            </TabsTrigger>
-            <TabsTrigger value="clientes" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
-              👥 Gestión de Clientes
-            </TabsTrigger>
+                              📋 Gestión de Trabajos
+                            </TabsTrigger>
+                            <TabsTrigger value="calendario" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
+                              📅 Calendario
+                            </TabsTrigger>
+                            <TabsTrigger value="clientes" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
+                              👥 Gestión de Clientes
+                            </TabsTrigger>
             {isAdmin && (
               <>
                 <TabsTrigger value="servicios" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
