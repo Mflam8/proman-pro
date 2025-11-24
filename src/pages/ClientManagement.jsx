@@ -738,13 +738,25 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
                         </CardHeader>
                         <CardContent className="space-y-4 pt-4">
                             <div>
-                                <label className="block text-sm font-medium text-proman-navy mb-2">Porcentaje de Avance: {formData.progress_percentage || 0}%</label>
+                                <label className="block text-sm font-medium text-proman-navy mb-2">
+                                    Porcentaje de Avance: <span className="text-xl font-bold text-blue-600">{formData.progress_percentage || 0}%</span>
+                                </label>
                                 <Slider
-                                    value={[formData.progress_percentage || 0]}
-                                    onValueChange={(val) => setFormData(prev => ({...prev, progress_percentage: val[0]}))}
-                                    max={100} step={10}
+                                    value={[Number(formData.progress_percentage) || 0]}
+                                    onValueChange={(val) => {
+                                        console.log('Slider changed to:', val[0]);
+                                        setFormData(prev => ({...prev, progress_percentage: Number(val[0])}));
+                                    }}
+                                    max={100} 
+                                    step={10}
                                     disabled={isUpdating || !canEdit}
+                                    className="mt-2"
                                 />
+                                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                    <span>0%</span>
+                                    <span>50%</span>
+                                    <span>100%</span>
+                                </div>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-proman-navy mb-2">¿Qué se realizó?</label>
