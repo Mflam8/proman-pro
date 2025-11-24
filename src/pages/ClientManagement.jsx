@@ -16,7 +16,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { createPageUrl } from "@/utils";
 import {
-  Phone, MapPin, Clock, FileText, CheckCircle, AlertCircle, Calendar, DollarSign, User, Filter, Percent, Camera, MessageCircle, Star, Copy, ExternalLink, UserPlus, Edit2, Building, Home as HomeIcon, ClipboardCheck, FileCheck, ThumbsUp, FileDown, Plus
+  Phone, MapPin, Clock, FileText, CheckCircle, AlertCircle, Calendar, DollarSign, User, Filter, Percent, Camera, MessageCircle, Star, Copy, ExternalLink, UserPlus, Edit2, Building, Home as HomeIcon, ClipboardCheck, FileCheck, ThumbsUp, FileDown, Plus, Bot
 } from "lucide-react";
 import { format, parseISO, addHours } from "date-fns";
 import { es } from "date-fns/locale";
