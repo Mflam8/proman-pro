@@ -243,7 +243,51 @@ function EditUserModal({ user, isOpen, onClose }) {
   const [employeeType, setEmployeeType] = useState(user.employee_type || 'Empleado');
   const [hireDate, setHireDate] = useState(user.hire_date || '');
   const [isSaving, setIsSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState('info'); // 'info' or 'calendar'
+  const [calendarDate, setCalendarDate] = useState(new Date());
   const queryClient = useQueryClient();
+
+  // Fetch jobs assigned to this employee
+  const { data: assignedJobs } = useQuery({
+    queryKey: ['employeeJobs', user.email],
+    queryFn: () => base44.entities.ClientInquiry.filter({ assigned_to: user.email }),
+    initialData: [],
+  });
+
+  const { data: customers } = useQuery({
+    queryKey: ['customers'],
+    queryFn: () => base44.entities.Customer.list(),
+    initialData: [],
+  });
+
+  // Get jobs for calendar view
+  const weekStart = startOfWeek(calendarDate, { weekStartsOn: 1 });
+  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+
+  const jobsByDay = useMemo(() => {
+    const grouped = {};
+    weekDays.forEach(day => {
+      const dateKey = format(day, 'yyyy-MM-dd');
+      grouped[dateKey] = assignedJobs.filter(job => job.scheduled_date === dateKey)
+        .sort((a, b) => (a.scheduled_start_time || '').localeCompare(b.scheduled_start_time || ''));
+    });
+    return grouped;
+  }, [assignedJobs, weekDays]);
+
+  const getCustomerName = (job) => {
+    if (job.customer_id) {
+      const customer = customers.find(c => c.id === job.customer_id);
+      return customer?.full_name || job.client_name || "Sin nombre";
+    }
+    return job.client_name || "Sin nombre";
+  };
+
+  const statusColors = {
+    nuevo: "bg-blue-500",
+    evaluacion_agendada: "bg-indigo-500",
+    en_proceso: "bg-blue-600",
+    completado: "bg-green-600"
+  };
 
   React.useEffect(() => {
     const uploadImage = async () => {
