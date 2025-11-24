@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,8 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { User, UserPlus, Mail, Calendar, Edit2, Shield, AlertCircle } from "lucide-react";
-import { format } from "date-fns";
+import { User, UserPlus, Mail, Calendar, Edit2, Shield, AlertCircle, ChevronLeft, ChevronRight, Clock, MapPin, Wrench } from "lucide-react";
+import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import EmployeeAvailability from "./EmployeeAvailability";
 
