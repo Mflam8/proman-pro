@@ -114,9 +114,9 @@ Deno.serve(async (req) => {
         
         // Nombre del cliente
         doc.setFont(undefined, 'bold');
-        doc.text('Nombre:', 20, yPos);
+        doc.text('Nombre del cliente:', 20, yPos);
         doc.setFont(undefined, 'normal');
-        doc.text(clientName, 42, yPos);
+        doc.text(clientName, 58, yPos);
         
         yPos += 7;
         
