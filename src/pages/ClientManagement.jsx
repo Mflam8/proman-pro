@@ -672,7 +672,7 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
 
     const totalPaid = payments.reduce((sum, p) => sum + (p.amount_paid || 0), 0);
     const calculatedFinalAmount = billingItems.reduce((sum, item) => sum + (item.monto_total_item || 0), 0);
-    const finalAmount = calculatedFinalAmount > 0 ? calculatedFinalAmount : (currentInquiry?.final_amount || currentInquiry?.quote_amount || formData.final_amount || formData.quote_amount || 0);
+    const finalAmount = parseFloat(calculatedFinalAmount > 0 ? calculatedFinalAmount : (currentInquiry?.final_amount || currentInquiry?.quote_amount || formData.final_amount || formData.quote_amount || 0)) || 0;
     const remainingAmount = finalAmount - totalPaid;
 
     useEffect(() => {
