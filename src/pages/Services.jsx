@@ -1,14 +1,8 @@
 import React from "react";
-import { useQuery } from "@tanstack/react-query";
-import { base44 } from "@/api/base44Client";
 import SEO from "../components/SEO";
 import { Card, CardContent } from "@/components/ui/card";
-import { Home, Building2, UtensilsCrossed, Hospital, AlertCircle, Wrench, Zap, Hammer, PaintBucket, Droplets, Settings } from "lucide-react";
+import { Home, Building2, UtensilsCrossed, Hospital, AlertCircle, Wrench, Zap, Hammer, PaintBucket, Droplets } from "lucide-react";
 import { useLanguage } from "@/components/LanguageContext";
-
-const iconMap = {
-  Wrench, Zap, Home, Paintbrush: PaintBucket, Hammer, Settings, Droplets
-};
 
 const getRubros = (t) => [
   {
@@ -76,12 +70,6 @@ export default function Services() {
   const rubros = getRubros(t);
   const serviciosDetallados = getServiciosDetallados(t);
 
-  const { data: servicesFromDB, isLoading } = useQuery({
-    queryKey: ['services'],
-    queryFn: () => base44.entities.Service.filter({ is_active: true }),
-    initialData: [],
-  });
-
   return (
     <div className="min-h-screen bg-white">
       <SEO 
@@ -146,60 +134,6 @@ export default function Services() {
             );
           })}
         </div>
-
-        {/* Servicios del Catálogo */}
-        {servicesFromDB.length > 0 && (
-          <div className="border-t pt-16 mb-16">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-proman-navy mb-4">
-                {t({ es: "Catálogo de Servicios", en: "Service Catalog" })}
-              </h2>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                {t({ es: "Servicios especializados con precios y características detalladas", en: "Specialized services with detailed pricing and features" })}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {servicesFromDB.map((service) => {
-                const IconComponent = iconMap[service.icon] || Wrench;
-                return (
-                  <Card key={service.id} className="group hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-proman-yellow">
-                    <CardContent className="p-6">
-                      <div className="w-14 h-14 hexagon bg-proman-yellow flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                        <IconComponent className="w-7 h-7 text-proman-navy" />
-                      </div>
-                      <h3 className="text-xl font-bold text-proman-navy mb-2 group-hover:text-proman-yellow transition-colors">
-                        {t({ es: service.service_name, en: service.service_name_en || service.service_name })}
-                      </h3>
-                      <p className="text-gray-600 mb-4 text-sm">
-                        {t({ es: service.description, en: service.description_en || service.description })}
-                      </p>
-                      {service.features && service.features.length > 0 && (
-                        <ul className="space-y-1 mb-4">
-                          {service.features.slice(0, 4).map((feature, idx) => {
-                            const featureEn = service.features_en?.[idx];
-                            return (
-                              <li key={idx} className="text-sm text-gray-500 flex items-center">
-                                <span className="w-1.5 h-1.5 rounded-full bg-proman-yellow mr-2"></span>
-                                {t({ es: feature, en: featureEn || feature })}
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      )}
-                      {service.base_price && (
-                        <div className="pt-3 border-t">
-                          <span className="text-sm text-gray-500">{t({ es: "Desde", en: "From" })}</span>
-                          <span className="text-xl font-bold text-proman-navy ml-2">${service.base_price}</span>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
-        )}
 
         {/* Rubros por Sector */}
         <div className="border-t pt-16">
