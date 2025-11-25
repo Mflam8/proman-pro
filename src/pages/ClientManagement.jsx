@@ -234,18 +234,30 @@ export default function ClientManagement() {
             </p>
           </div>
           <div className="flex gap-3">
-            {isAdmin && (
-              <a 
-                href={base44.agents.getWhatsAppConnectURL('proman_assistant')} 
-                target="_blank" 
-                rel="noopener noreferrer"
-              >
-                <Button className="bg-green-500 hover:bg-green-600 text-white">
-                  <Bot className="w-4 h-4 mr-2" />
-                  Conectar WhatsApp Bot
-                </Button>
-              </a>
-            )}
+                            {(isAdmin || isSupervisor) && (
+                              <a 
+                                href={base44.agents.getWhatsAppConnectURL('data_entry_assistant')} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                              >
+                                <Button className="bg-blue-500 hover:bg-blue-600 text-white">
+                                  <Bot className="w-4 h-4 mr-2" />
+                                  Agregar Datos por WhatsApp
+                                </Button>
+                              </a>
+                            )}
+                            {isAdmin && (
+                              <a 
+                                href={base44.agents.getWhatsAppConnectURL('proman_assistant')} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                              >
+                                <Button className="bg-green-500 hover:bg-green-600 text-white">
+                                  <Bot className="w-4 h-4 mr-2" />
+                                  Conectar WhatsApp Bot
+                                </Button>
+                              </a>
+                            )}
             {mainTab === "trabajos" && (
               <Button onClick={() => setShowCreateModal(true)} className="bg-proman-yellow text-proman-navy hover:opacity-90">
                   Nuevo Trabajo
