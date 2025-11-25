@@ -30,24 +30,21 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'inquiryId is required' }, { status: 400 });
         }
 
-        // Obtener el trabajo
+        // Obtener el trabajo - los datos vienen directamente en el objeto
         const inquiries = await base44.asServiceRole.entities.ClientInquiry.filter({ id: inquiryId });
-        const inquiryRaw = inquiries[0];
+        const inquiry = inquiries[0];
 
-        if (!inquiryRaw) {
+        if (!inquiry) {
             return Response.json({ error: 'Trabajo no encontrado' }, { status: 404 });
         }
         
-        // Los datos pueden venir en inquiryRaw.data o directamente en inquiryRaw
-        const inquiry = inquiryRaw.data || inquiryRaw;
+        console.log('FULL INQUIRY OBJECT:', JSON.stringify(inquiry, null, 2));
 
         // Obtener cliente
         let customer = null;
-        const customerId = inquiry.customer_id;
-        if (customerId) {
-            const customers = await base44.asServiceRole.entities.Customer.filter({ id: customerId });
-            const customerRaw = customers[0];
-            customer = customerRaw?.data || customerRaw;
+        if (inquiry.customer_id) {
+            const customers = await base44.asServiceRole.entities.Customer.filter({ id: inquiry.customer_id });
+            customer = customers[0] || null;
         }
 
         // Obtener items de facturación (solo servicios y mano de obra)
