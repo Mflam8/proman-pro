@@ -25,6 +25,7 @@ export default function ScheduleCalendar({ onSelectJob }) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState("week"); // "week" or "day"
   const [selectedEmployee, setSelectedEmployee] = useState("all");
+  const [dataMode, setDataMode] = useState("scheduled"); // "scheduled" or "worked"
 
   const { data: employees } = useQuery({
     queryKey: ['employees'],
@@ -41,6 +42,13 @@ export default function ScheduleCalendar({ onSelectJob }) {
   const { data: customers } = useQuery({
     queryKey: ['customers'],
     queryFn: () => base44.entities.Customer.list(),
+    initialData: [],
+  });
+
+  // Fetch progress logs for worked hours
+  const { data: progressLogs } = useQuery({
+    queryKey: ['allProgressLogs'],
+    queryFn: () => base44.entities.ProgressLog.list('-work_date'),
     initialData: [],
   });
 
@@ -145,10 +153,65 @@ export default function ScheduleCalendar({ onSelectJob }) {
     setCurrentDate(new Date());
   };
 
-  // Calculate hours worked per day per employee
+  // Calculate estimated hours per day per employee
   const getHoursForDay = (employeeEmail, dateKey) => {
     const jobs = jobsByEmployeeAndDay[employeeEmail]?.days[dateKey] || [];
     return jobs.reduce((sum, job) => sum + (job.estimated_duration_hours || 0), 0);
+  };
+
+  // Group worked hours by employee and day from ProgressLogs
+  const workedHoursByEmployeeAndDay = useMemo(() => {
+    const grouped = {};
+    
+    const employeesToShow = selectedEmployee === "all" 
+      ? employees 
+      : employees.filter(e => e.email === selectedEmployee);
+
+    employeesToShow.forEach(emp => {
+      grouped[emp.email] = {
+        employee: emp,
+        days: {}
+      };
+      
+      weekDays.forEach(day => {
+        const dateKey = format(day, 'yyyy-MM-dd');
+        grouped[emp.email].days[dateKey] = [];
+      });
+    });
+
+    // Filter logs by date range
+    const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
+    
+    progressLogs.forEach(log => {
+      const logDate = log.work_date || log.created_date?.split('T')[0];
+      if (!logDate) return;
+      
+      // Find which employee made this log
+      const employeeEmail = log.updated_by;
+      if (!grouped[employeeEmail]) return;
+      
+      // Check if log is in current week
+      const logDateObj = parseISO(logDate);
+      if (logDateObj < weekStart || logDateObj > weekEnd) return;
+      
+      const dateKey = logDate;
+      if (grouped[employeeEmail].days[dateKey]) {
+        grouped[employeeEmail].days[dateKey].push(log);
+      }
+    });
+
+    return grouped;
+  }, [employees, progressLogs, weekDays, selectedEmployee, currentDate, weekStart]);
+
+  // Get total worked hours for a day
+  const getWorkedHoursForDay = (employeeEmail, dateKey) => {
+    const logs = workedHoursByEmployeeAndDay[employeeEmail]?.days[dateKey] || [];
+    return logs.reduce((sum, log) => sum + (log.hours_worked || 0), 0);
+  };
+
+  // Get inquiry details for a progress log
+  const getInquiryForLog = (log) => {
+    return inquiries.find(i => i.id === log.inquiry_id);
   };
 
   return (
@@ -197,47 +260,114 @@ export default function ScheduleCalendar({ onSelectJob }) {
                   <SelectItem value="day">Día</SelectItem>
                 </SelectContent>
               </Select>
+              
+              <div className="flex bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setDataMode("scheduled")}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    dataMode === "scheduled"
+                      ? "bg-white text-proman-navy shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  📅 Programado
+                </button>
+                <button
+                  onClick={() => setDataMode("worked")}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    dataMode === "worked"
+                      ? "bg-white text-proman-navy shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  ⏱️ Trabajado
+                </button>
+              </div>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Stats Summary */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-proman-navy">{filteredJobs.length}</div>
-            <div className="text-sm text-gray-600">Trabajos Programados</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600">
-              {filteredJobs.reduce((sum, j) => sum + (j.estimated_duration_hours || 0), 0)}h
-            </div>
-            <div className="text-sm text-gray-600">Horas Totales</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">
-              {filteredJobs.filter(j => j.status === 'completado').length}
-            </div>
-            <div className="text-sm text-gray-600">Completados</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-orange-600">
-              {filteredJobs.filter(j => j.status !== 'completado').length}
-            </div>
-            <div className="text-sm text-gray-600">Pendientes</div>
-          </CardContent>
-        </Card>
-      </div>
+      {dataMode === "scheduled" ? (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card>
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-proman-navy">{filteredJobs.length}</div>
+              <div className="text-sm text-gray-600">Trabajos Programados</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-blue-600">
+                {filteredJobs.reduce((sum, j) => sum + (j.estimated_duration_hours || 0), 0)}h
+              </div>
+              <div className="text-sm text-gray-600">Horas Estimadas</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-green-600">
+                {filteredJobs.filter(j => j.status === 'completado').length}
+              </div>
+              <div className="text-sm text-gray-600">Completados</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-orange-600">
+                {filteredJobs.filter(j => j.status !== 'completado').length}
+              </div>
+              <div className="text-sm text-gray-600">Pendientes</div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="border-2 border-orange-200">
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-orange-600">
+                {Object.values(workedHoursByEmployeeAndDay).reduce((total, emp) => 
+                  total + Object.values(emp.days).reduce((dayTotal, logs) => 
+                    dayTotal + logs.reduce((logTotal, log) => logTotal + (log.hours_worked || 0), 0), 0), 0)}h
+              </div>
+              <div className="text-sm text-gray-600">Total Horas Trabajadas</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-blue-600">
+                {Object.values(workedHoursByEmployeeAndDay).reduce((total, emp) => 
+                  total + Object.values(emp.days).reduce((dayTotal, logs) => dayTotal + logs.length, 0), 0)}
+              </div>
+              <div className="text-sm text-gray-600">Actualizaciones</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-green-600">
+                {new Set(Object.values(workedHoursByEmployeeAndDay).flatMap(emp => 
+                  Object.values(emp.days).flatMap(logs => logs.map(l => l.inquiry_id))
+                )).size}
+              </div>
+              <div className="text-sm text-gray-600">Trabajos Activos</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold text-purple-600">
+                {Object.values(workedHoursByEmployeeAndDay).filter(emp => 
+                  Object.values(emp.days).some(logs => logs.length > 0)
+                ).length}
+              </div>
+              <div className="text-sm text-gray-600">Técnicos Activos</div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
-      {/* Week View */}
-      {viewMode === "week" && (
+      {/* Week View - Scheduled */}
+      {viewMode === "week" && dataMode === "scheduled" && (
         <Card>
           <CardContent className="p-0 overflow-x-auto">
             <table className="w-full min-w-[900px]">
@@ -327,8 +457,135 @@ export default function ScheduleCalendar({ onSelectJob }) {
         </Card>
       )}
 
+      {/* Week View - Worked Hours */}
+      {viewMode === "week" && dataMode === "worked" && (
+        <Card className="border-2 border-orange-200">
+          <CardHeader className="bg-orange-50 border-b">
+            <CardTitle className="text-orange-800 flex items-center gap-2">
+              ⏱️ Horas Reales Trabajadas - Semana del {format(weekStart, "d 'de' MMMM", { locale: es })}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0 overflow-x-auto">
+            <table className="w-full min-w-[900px]">
+              <thead>
+                <tr className="border-b">
+                  <th className="p-3 text-left bg-orange-50 w-40 sticky left-0">Técnico</th>
+                  {weekDays.map(day => {
+                    const isToday = isSameDay(day, new Date());
+                    const isPast = day < new Date() && !isToday;
+                    return (
+                      <th 
+                        key={day.toISOString()} 
+                        className={`p-3 text-center border-l ${isToday ? 'bg-proman-yellow/20' : isPast ? 'bg-orange-50' : 'bg-gray-50'}`}
+                      >
+                        <div className="font-medium">{format(day, "EEE", { locale: es })}</div>
+                        <div className={`text-lg ${isToday ? 'text-proman-navy font-bold' : ''}`}>
+                          {format(day, "d")}
+                        </div>
+                      </th>
+                    );
+                  })}
+                  <th className="p-3 text-center border-l bg-orange-100 font-bold">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.values(workedHoursByEmployeeAndDay).map(({ employee, days }) => {
+                  const weekTotal = Object.values(days).reduce((sum, logs) => 
+                    sum + logs.reduce((logSum, log) => logSum + (log.hours_worked || 0), 0), 0);
+                  
+                  return (
+                    <tr key={employee.email} className="border-b hover:bg-gray-50">
+                      <td className="p-3 bg-white sticky left-0 border-r">
+                        <div className="flex items-center gap-2">
+                          <img 
+                            src={employee.profile_picture_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(employee.employee_name || employee.full_name)}&background=fdc80c&color=252a5c&size=32`}
+                            alt={employee.employee_name || employee.full_name}
+                            className="w-8 h-8 rounded-full"
+                          />
+                          <div>
+                            <div className="font-medium text-sm">{employee.employee_name || employee.full_name}</div>
+                            <div className="text-xs text-gray-500">{employee.email.split('@')[0]}</div>
+                          </div>
+                        </div>
+                      </td>
+                      {weekDays.map(day => {
+                        const dateKey = format(day, 'yyyy-MM-dd');
+                        const dayLogs = days[dateKey] || [];
+                        const totalWorkedHours = dayLogs.reduce((sum, log) => sum + (log.hours_worked || 0), 0);
+                        const isToday = isSameDay(day, new Date());
+                        const isPast = day < new Date() && !isToday;
+                        
+                        return (
+                          <td 
+                            key={dateKey} 
+                            className={`p-2 border-l align-top ${isToday ? 'bg-proman-yellow/10' : isPast ? 'bg-orange-50/50' : ''}`}
+                          >
+                            {dayLogs.length > 0 ? (
+                              <div className="space-y-1">
+                                {dayLogs.map((log, idx) => {
+                                  const inquiry = getInquiryForLog(log);
+                                  return (
+                                    <div 
+                                      key={idx}
+                                      onClick={() => inquiry && onSelectJob?.(inquiry)}
+                                      className="p-2 rounded-lg bg-orange-100 text-orange-900 text-xs cursor-pointer hover:bg-orange-200 transition-colors border border-orange-200"
+                                    >
+                                      <div className="font-semibold truncate">
+                                        {inquiry ? getCustomerName(inquiry) : 'Trabajo'}
+                                      </div>
+                                      <div className="flex items-center gap-1 mt-1 font-bold text-orange-700">
+                                        <Clock className="w-3 h-3" />
+                                        {log.hours_worked || 0}h trabajadas
+                                      </div>
+                                      {inquiry && (
+                                        <div className="truncate opacity-75 text-xs">{inquiry.service_type}</div>
+                                      )}
+                                      {log.work_done && (
+                                        <div className="truncate text-xs mt-1 italic text-orange-600">
+                                          "{log.work_done.substring(0, 30)}..."
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })}
+                                <div className="text-xs font-bold text-orange-700 text-center pt-1 bg-orange-100 rounded py-1">
+                                  Total: {totalWorkedHours}h
+                                </div>
+                              </div>
+                            ) : isPast ? (
+                              <div className="text-center text-gray-400 text-xs py-2">
+                                Sin registro
+                              </div>
+                            ) : null}
+                          </td>
+                        );
+                      })}
+                      <td className="p-3 border-l bg-orange-100 text-center">
+                        <div className={`text-xl font-bold ${weekTotal >= 40 ? 'text-green-600' : weekTotal > 0 ? 'text-orange-700' : 'text-gray-400'}`}>
+                          {weekTotal}h
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          {weekTotal >= 40 ? '✅ Completo' : weekTotal > 0 ? 'En progreso' : 'Sin horas'}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            
+            {Object.keys(workedHoursByEmployeeAndDay).length === 0 && (
+              <div className="text-center py-12 text-gray-500">
+                <Clock className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                <p>No hay registros de horas trabajadas esta semana</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Day View */}
-      {viewMode === "day" && (
+      {viewMode === "day" && dataMode === "scheduled" && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {Object.values(jobsByEmployeeAndDay).map(({ employee, days }) => {
             const dateKey = format(currentDate, 'yyyy-MM-dd');
