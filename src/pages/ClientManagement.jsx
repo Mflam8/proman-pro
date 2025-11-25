@@ -754,6 +754,8 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
                     await base44.entities.ProgressLog.create({
                         inquiry_id: id,
                         progress_percentage: formData.progress_percentage || 0,
+                        hours_worked: formData.current_hours_worked || 0,
+                        work_date: formData.current_work_date || new Date().toISOString().split('T')[0],
                         work_done: formData.work_notes_done || '',
                         work_pending: formData.work_notes_pending || '',
                         next_follow_up_date: formData.next_follow_up_date || null,
@@ -798,12 +800,16 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
         const lastUpdate = new Date(lastLog.created_date);
         const daysPassed = Math.ceil((lastUpdate - startDate) / (1000 * 60 * 60 * 24));
         
+        // Calcular total de horas trabajadas
+        const totalHoursWorked = progressLogs.reduce((sum, log) => sum + (log.hours_worked || 0), 0);
+        
         return {
             totalUpdates: progressLogs.length,
             daysPassed: daysPassed,
             startDate: startDate,
             lastUpdate: lastUpdate,
-            currentProgress: lastLog.progress_percentage
+            currentProgress: lastLog.progress_percentage,
+            totalHoursWorked: totalHoursWorked
         };
     }, [progressLogs]);
 
@@ -821,6 +827,29 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
                             </p>
                         </CardHeader>
                         <CardContent className="space-y-4 pt-4">
+                            <div className="grid grid-cols-2 gap-4 bg-white p-3 rounded-lg border">
+                                <div>
+                                    <label className="block text-sm font-medium text-proman-navy mb-1">📅 Fecha del Trabajo</label>
+                                    <Input 
+                                        type="date" 
+                                        value={formData.current_work_date || new Date().toISOString().split('T')[0]} 
+                                        onChange={(e) => setFormData(prev => ({...prev, current_work_date: e.target.value}))}
+                                        disabled={isUpdating || !canEdit}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-proman-navy mb-1">⏱️ Horas Trabajadas</label>
+                                    <Input 
+                                        type="number" 
+                                        step="0.5"
+                                        min="0"
+                                        value={formData.current_hours_worked || ''} 
+                                        onChange={(e) => setFormData(prev => ({...prev, current_hours_worked: parseFloat(e.target.value) || 0}))}
+                                        disabled={isUpdating || !canEdit}
+                                        placeholder="Ej: 8"
+                                    />
+                                </div>
+                            </div>
                             <div>
                                 <label className="block text-sm font-medium text-proman-navy mb-2">
                                     Porcentaje de Avance: <span className="text-xl font-bold text-blue-600">{formData.progress_percentage || 0}%</span>
@@ -885,10 +914,14 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
                             </CardHeader>
                             <CardContent className="pt-4">
                                 {workStats && (
-                                    <div className="bg-white rounded-lg p-4 mb-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div className="bg-white rounded-lg p-4 mb-4 grid grid-cols-2 md:grid-cols-5 gap-4">
                                         <div className="text-center">
                                             <p className="text-2xl font-bold text-green-600">{workStats.currentProgress}%</p>
                                             <p className="text-xs text-gray-600">Avance Actual</p>
+                                        </div>
+                                        <div className="text-center">
+                                            <p className="text-2xl font-bold text-orange-600">{workStats.totalHoursWorked}h</p>
+                                            <p className="text-xs text-gray-600">Horas Trabajadas</p>
                                         </div>
                                         <div className="text-center">
                                             <p className="text-2xl font-bold text-blue-600">{workStats.totalUpdates}</p>
@@ -932,7 +965,7 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
                                                     {/* Content */}
                                                     <div className="flex-1 bg-white rounded-lg border-2 border-gray-200 p-4 shadow-sm">
                                                         <div className="flex justify-between items-start mb-3">
-                                                            <div>
+                                                            <div className="flex items-center gap-2">
                                                                 <Badge className={
                                                                     isFirst ? "bg-blue-500 text-white" :
                                                                     isLast ? "bg-green-500 text-white" :
@@ -942,13 +975,19 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
                                                                     {isLast && "✅ Última actualización"}
                                                                     {!isFirst && !isLast && `Actualización ${progressLogs.length - idx}`}
                                                                 </Badge>
+                                                                {log.hours_worked > 0 && (
+                                                                    <Badge className="bg-orange-100 text-orange-800">
+                                                                        <Clock className="w-3 h-3 mr-1" />
+                                                                        {log.hours_worked}h trabajadas
+                                                                    </Badge>
+                                                                )}
                                                             </div>
                                                             <div className="text-right">
                                                                 <p className="text-xs font-semibold text-gray-700">
-                                                                    {format(new Date(log.created_date), "dd MMM yyyy", { locale: es })}
+                                                                    {log.work_date ? format(new Date(log.work_date), "dd MMM yyyy", { locale: es }) : format(new Date(log.created_date), "dd MMM yyyy", { locale: es })}
                                                                 </p>
                                                                 <p className="text-xs text-gray-500">
-                                                                    {format(new Date(log.created_date), "HH:mm", { locale: es })}
+                                                                    Registrado: {format(new Date(log.created_date), "HH:mm", { locale: es })}
                                                                 </p>
                                                             </div>
                                                         </div>
