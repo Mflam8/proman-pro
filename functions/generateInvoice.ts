@@ -115,7 +115,20 @@ Deno.serve(async (req) => {
         // Combinar nombre del lugar con departamento
         const locationName = inquiry.location_name || '';
         const departamento = inquiry.location || '';
-        const direccion = locationName ? `${locationName}, ${departamento}` : departamento || 'N/A';
+        
+        // Debug: Log para verificar los valores
+        console.log('DEBUG location_name:', inquiry.location_name);
+        console.log('DEBUG location:', inquiry.location);
+        console.log('DEBUG inquiry keys:', Object.keys(inquiry));
+        
+        let direccion = 'N/A';
+        if (locationName && departamento) {
+            direccion = `${locationName}, ${departamento}`;
+        } else if (locationName) {
+            direccion = locationName;
+        } else if (departamento) {
+            direccion = departamento;
+        }
         // Usar fecha seleccionada o fecha actual si no se proporciona
         const fechaFactura = invoiceDate ? new Date(invoiceDate + 'T12:00:00') : new Date();
         const fechaFormato = fechaFactura.toLocaleDateString('es-SV', { day: '2-digit', month: '2-digit', year: 'numeric' });
