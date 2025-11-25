@@ -95,10 +95,10 @@ export default function ServicesCarousel() {
 
                 <div className="absolute inset-0 bg-gradient-to-t from-proman-navy/90 via-proman-navy/50 to-transparent"></div>
                 <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-8 md:p-12 text-white">
-                  <h3 className="bg-gray-50 text-slate-950 mb-2 text-2xl font-bold sm:text-3xl md:text-4xl md:mb-3">
+                  <h3 className="text-2xl font-bold sm:text-3xl md:text-4xl mb-2 md:mb-3 drop-shadow-lg">
                     {slide.title}
                   </h3>
-                  <p className="bg-zinc-50 text-slate-950 text-base sm:text-lg md:text-xl max-w-2xl">
+                  <p className="text-base sm:text-lg md:text-xl max-w-2xl drop-shadow-md">
                     {slide.description}
                   </p>
                 </div>

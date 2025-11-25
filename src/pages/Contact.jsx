@@ -229,40 +229,6 @@ export default function Contact() {
 
                   <div>
                     <label className="block text-sm font-medium text-proman-navy mb-2">
-                      {t({ es: "Email (Opcional)", en: "Email (Optional)" })}
-                    </label>
-                    <Input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      placeholder={t({ es: "tu@email.com", en: "your@email.com" })}
-                      disabled={submitCustomer.isPending}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-proman-navy mb-2">
-                      {t({ es: "Departamento *", en: "Department *" })}
-                    </label>
-                    <Select
-                      required
-                      value={formData.location}
-                      onValueChange={(value) => setFormData({...formData, location: value})}
-                      disabled={submitCustomer.isPending}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={t({ es: "Selecciona tu departamento", en: "Select your department" })} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {departamentos.map((dept) => (
-                          <SelectItem key={dept} value={dept}>{dept}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-proman-navy mb-2">
                       {t({ es: "Tipo de Servicio *", en: "Service Type *" })}
                     </label>
                     <Select
@@ -286,45 +252,14 @@ export default function Contact() {
 
                   <div>
                     <label className="block text-sm font-medium text-proman-navy mb-2">
-                      {t({ es: "Servicio Específico", en: "Specific Service" })}
-                    </label>
-                    <Input
-                      value={formData.service_type}
-                      onChange={(e) => setFormData({...formData, service_type: e.target.value})}
-                      placeholder={t({ es: "Ej: Destapado de tuberías, instalación eléctrica...", en: "Ex: Pipe unclogging, electrical installation..." })}
-                      disabled={submitCustomer.isPending}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-proman-navy mb-2">
-                      {t({ es: "Horario Preferido", en: "Preferred Time" })}
-                    </label>
-                    <Select
-                      value={formData.preferred_time}
-                      onValueChange={(value) => setFormData({...formData, preferred_time: value})}
-                      disabled={submitCustomer.isPending}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={t({ es: "Selecciona tu horario preferido", en: "Select your preferred time" })} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="mañana">{t({ es: "Mañana (8:00 AM - 12:00 PM)", en: "Morning (8:00 AM - 12:00 PM)" })}</SelectItem>
-                        <SelectItem value="tarde">{t({ es: "Tarde (12:00 PM - 4:00 PM)", en: "Afternoon (12:00 PM - 4:00 PM)" })}</SelectItem>
-                        <SelectItem value="vespertino">{t({ es: "Vespertino (4:00 PM - 6:00 PM)", en: "Evening (4:00 PM - 6:00 PM)" })}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-proman-navy mb-2">
-                      {t({ es: "Describe tu necesidad", en: "Describe your need" })}
+                      {t({ es: "¿Qué necesitas? *", en: "What do you need? *" })}
                     </label>
                     <Textarea
+                      required
                       value={formData.message}
                       onChange={(e) => setFormData({...formData, message: e.target.value})}
-                      placeholder={t({ es: "Cuéntanos los detalles de lo que necesitas...", en: "Tell us the details of what you need..." })}
-                      rows={4}
+                      placeholder={t({ es: "Cuéntanos brevemente tu problema o lo que necesitas...", en: "Tell us briefly about your problem or what you need..." })}
+                      rows={3}
                       disabled={submitCustomer.isPending}
                     />
                   </div>
