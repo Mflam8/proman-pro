@@ -242,7 +242,7 @@ export default function ClientManagement() {
                               >
                                 <Button className="bg-blue-500 hover:bg-blue-600 text-white">
                                   <Bot className="w-4 h-4 mr-2" />
-                                  Agregar Datos por WhatsApp
+                                  Agrega datos con el bot
                                 </Button>
                               </a>
                             )}
