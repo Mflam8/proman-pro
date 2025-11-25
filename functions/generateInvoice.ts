@@ -270,8 +270,8 @@ Deno.serve(async (req) => {
         
         const { file_url } = await base44.asServiceRole.integrations.Core.UploadFile({ file });
 
-        // Actualizar el inquiry
-        await base44.asServiceRole.entities.ClientInquiry.update(inquiryId, {
+        // Actualizar el inquiry (usar el id original del raw)
+        await base44.asServiceRole.entities.ClientInquiry.update(inquiryRaw.id || inquiryId, {
             quote_pdf_url: file_url
         });
 
