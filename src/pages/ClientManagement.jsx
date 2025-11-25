@@ -590,13 +590,14 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
     const queryClient = useQueryClient();
     
     const [formData, setFormData] = useState({
-        ...inquiry,
-        progress_percentage: inquiry.progress_percentage || 0,
-        scheduled_date: inquiry.scheduled_date || '',
-        scheduled_start_time: inquiry.scheduled_start_time || '',
-        estimated_duration_hours: inquiry.estimated_duration_hours || '',
-        quote_pdf_url: inquiry.quote_pdf_url || '',
-    });
+                  ...inquiry,
+                  progress_percentage: inquiry.progress_percentage || 0,
+                  scheduled_date: inquiry.scheduled_date || '',
+                  scheduled_start_time: inquiry.scheduled_start_time || '',
+                  estimated_duration_hours: inquiry.estimated_duration_hours || '',
+                  quote_pdf_url: inquiry.quote_pdf_url || '',
+                  location_name: inquiry.location_name || '',
+              });
     const [beforeImageFile, setBeforeImageFile] = useState(null);
     const [afterImageFile, setAfterImageFile] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
@@ -677,13 +678,14 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
 
     useEffect(() => {
         setFormData({
-            ...inquiry,
-            progress_percentage: inquiry.progress_percentage || 0,
-            scheduled_date: inquiry.scheduled_date || '',
-            scheduled_start_time: inquiry.scheduled_start_time || '',
-            estimated_duration_hours: inquiry.estimated_duration_hours || '',
-            quote_pdf_url: inquiry.quote_pdf_url || '',
-        });
+                          ...inquiry,
+                          progress_percentage: inquiry.progress_percentage || 0,
+                          scheduled_date: inquiry.scheduled_date || '',
+                          scheduled_start_time: inquiry.scheduled_start_time || '',
+                          estimated_duration_hours: inquiry.estimated_duration_hours || '',
+                          quote_pdf_url: inquiry.quote_pdf_url || '',
+                          location_name: inquiry.location_name || '',
+                      });
     }, [inquiry]);
 
     // Sincronizar final_amount calculado con formData
@@ -1360,7 +1362,11 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
                             )}
 
                             <div className="pt-2 border-t">
-                                <InfoRow label="Ubicación del Trabajo" value={currentInquiry?.location || inquiry.location} />
+                                <InfoRow label="Ubicación del Trabajo" value={
+                                      (currentInquiry?.location_name || inquiry.location_name) 
+                                        ? `${currentInquiry?.location_name || inquiry.location_name}, ${currentInquiry?.location || inquiry.location}`
+                                        : (currentInquiry?.location || inquiry.location)
+                                  } />
                                 <InfoRow label="Servicio" value={`${currentInquiry?.rubro || inquiry.rubro} - ${currentInquiry?.service_type || inquiry.service_type}`} />
                                 <InfoRow label="Estado Actual" value={statusConfig[currentInquiry?.status || inquiry.status]?.label || 'N/A'} />
                                 <InfoRow label="Recibido" value={format(new Date(inquiry.created_date), "dd MMM yyyy, HH:mm", { locale: es })} />
