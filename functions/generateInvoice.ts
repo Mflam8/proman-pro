@@ -108,8 +108,9 @@ Deno.serve(async (req) => {
         const clientName = customer?.full_name || inquiry.client_name || 'N/A';
         const clientPhone = customer?.phone || inquiry.phone || 'N/A';
         const direccion = inquiry.location || 'N/A';
-        const fechaCreacion = new Date(inquiry.created_date);
-        const fechaFormato = fechaCreacion.toLocaleDateString('es-SV', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        // Usar fecha seleccionada o fecha actual si no se proporciona
+        const fechaFactura = invoiceDate ? new Date(invoiceDate + 'T12:00:00') : new Date();
+        const fechaFormato = fechaFactura.toLocaleDateString('es-SV', { day: '2-digit', month: '2-digit', year: 'numeric' });
         
         doc.setTextColor(...navyColor);
         doc.setFontSize(9);
