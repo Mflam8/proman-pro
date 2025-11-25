@@ -2162,6 +2162,7 @@ function EmployeeSelectorCreate({ selectedDate, startTime, duration, onSelect, c
 function GenerateInvoiceButton({ inquiry }) {
     const [isGenerating, setIsGenerating] = useState(false);
     const [error, setError] = useState(null);
+    const [invoiceDate, setInvoiceDate] = useState(new Date().toISOString().split('T')[0]);
     const queryClient = useQueryClient();
 
     const handleGenerate = async () => {
@@ -2170,7 +2171,8 @@ function GenerateInvoiceButton({ inquiry }) {
         
         try {
             const response = await base44.functions.invoke('generateInvoice', {
-                inquiryId: inquiry.id
+                inquiryId: inquiry.id,
+                invoiceDate: invoiceDate
             });
 
             if (response.data.success) {
@@ -2190,7 +2192,16 @@ function GenerateInvoiceButton({ inquiry }) {
     };
 
     return (
-        <div>
+        <div className="space-y-2">
+            <div>
+                <Label className="text-sm font-medium text-proman-navy">Fecha de Factura</Label>
+                <Input 
+                    type="date" 
+                    value={invoiceDate}
+                    onChange={(e) => setInvoiceDate(e.target.value)}
+                    className="mt-1"
+                />
+            </div>
             <Button 
                 type="button"
                 onClick={handleGenerate}
