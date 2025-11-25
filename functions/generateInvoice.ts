@@ -107,7 +107,10 @@ Deno.serve(async (req) => {
         
         const clientName = customer?.full_name || inquiry.client_name || 'N/A';
         const clientPhone = customer?.phone || inquiry.phone || 'N/A';
-        const direccion = inquiry.location || 'N/A';
+        // Combinar nombre del lugar con departamento
+        const locationName = inquiry.location_name || '';
+        const departamento = inquiry.location || '';
+        const direccion = locationName ? `${locationName}, ${departamento}` : departamento || 'N/A';
         // Usar fecha seleccionada o fecha actual si no se proporciona
         const fechaFactura = invoiceDate ? new Date(invoiceDate + 'T12:00:00') : new Date();
         const fechaFormato = fechaFactura.toLocaleDateString('es-SV', { day: '2-digit', month: '2-digit', year: 'numeric' });
