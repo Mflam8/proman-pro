@@ -1089,35 +1089,50 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
                             </CardHeader>
                             <CardContent className="space-y-4 pt-4">
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <Label className="block text-sm font-medium text-proman-navy mb-2">Estado</Label>
-                                        <Select value={formData.status} onValueChange={(v) => {
-                                            setFormData(p => ({
-                                                ...p, 
-                                                status: v,
-                                                progress_percentage: v === 'completado' ? 100 : p.progress_percentage
-                                            }));
-                                        }} disabled={isUpdating}>
-                                            <SelectTrigger><SelectValue /></SelectTrigger>
-                                            <SelectContent>
-                                                {Object.entries(statusConfig).map(([k, v]) => (
-                                                    <SelectItem key={k} value={k}>{v.label}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div>
-                                        <Label className="block text-sm font-medium text-proman-navy mb-2">Prioridad</Label>
-                                        <Select value={formData.priority} onValueChange={(v) => setFormData(p => ({...p, priority: v}))} disabled={isUpdating}>
-                                            <SelectTrigger><SelectValue /></SelectTrigger>
-                                            <SelectContent>
-                                                {Object.entries(priorityConfig).map(([k, v]) => (
-                                                    <SelectItem key={k} value={k}>{v.label}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                </div>
+                                                                          <div>
+                                                                              <Label className="block text-sm font-medium text-proman-navy mb-2">Estado</Label>
+                                                                              <Select value={formData.status} onValueChange={(v) => {
+                                                                                  setFormData(p => ({
+                                                                                      ...p, 
+                                                                                      status: v,
+                                                                                      progress_percentage: v === 'completado' ? 100 : p.progress_percentage
+                                                                                  }));
+                                                                              }} disabled={isUpdating}>
+                                                                                  <SelectTrigger><SelectValue /></SelectTrigger>
+                                                                                  <SelectContent>
+                                                                                      {Object.entries(statusConfig).map(([k, v]) => (
+                                                                                          <SelectItem key={k} value={k}>{v.label}</SelectItem>
+                                                                                      ))}
+                                                                                  </SelectContent>
+                                                                              </Select>
+                                                                          </div>
+                                                                          <div>
+                                                                              <Label className="block text-sm font-medium text-proman-navy mb-2">Prioridad</Label>
+                                                                              <Select value={formData.priority} onValueChange={(v) => setFormData(p => ({...p, priority: v}))} disabled={isUpdating}>
+                                                                                  <SelectTrigger><SelectValue /></SelectTrigger>
+                                                                                  <SelectContent>
+                                                                                      {Object.entries(priorityConfig).map(([k, v]) => (
+                                                                                          <SelectItem key={k} value={k}>{v.label}</SelectItem>
+                                                                                      ))}
+                                                                                  </SelectContent>
+                                                                              </Select>
+                                                                          </div>
+                                                                      </div>
+
+                                                                      <div>
+                                                                          <Label className="block text-sm font-medium text-proman-navy mb-2">
+                                                                              Nombre del Lugar (para factura)
+                                                                          </Label>
+                                                                          <Input 
+                                                                              value={formData.location_name || ''} 
+                                                                              onChange={(e) => setFormData(p => ({...p, location_name: e.target.value}))}
+                                                                              placeholder="Ej: Cuartel General, Hospital Nacional, etc."
+                                                                              disabled={isUpdating}
+                                                                          />
+                                                                          <p className="text-xs text-gray-500 mt-1">
+                                                                              Este nombre aparecerá junto al departamento en la factura
+                                                                          </p>
+                                                                      </div>
 
                                 <div className="border-t pt-4">
                                     <h3 className="font-semibold text-proman-navy mb-3">Programación del Trabajo</h3>
