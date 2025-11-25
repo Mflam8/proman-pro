@@ -159,23 +159,38 @@ export default function ScheduleCalendar({ onSelectJob }) {
     return jobs.reduce((sum, job) => sum + (job.estimated_duration_hours || 0), 0);
   };
 
+  // Fetch all users for worked hours view
+  const { data: allUsers } = useQuery({
+    queryKey: ['allUsers'],
+    queryFn: () => base44.entities.User.list(),
+    initialData: [],
+  });
+
   // Group worked hours by employee and day from ProgressLogs
   const workedHoursByEmployeeAndDay = useMemo(() => {
     const grouped = {};
     
-    const employeesToShow = selectedEmployee === "all" 
-      ? employees 
-      : employees.filter(e => e.email === selectedEmployee);
+    // Get unique users who have logged work
+    const usersWithLogs = new Set(progressLogs.map(log => log.updated_by).filter(Boolean));
+    
+    // Combine employees and users who have logged work
+    let usersToShow = allUsers.filter(u => 
+      usersWithLogs.has(u.email) || u.employee_type === 'Empleado'
+    );
+    
+    if (selectedEmployee !== "all") {
+      usersToShow = usersToShow.filter(u => u.email === selectedEmployee);
+    }
 
-    employeesToShow.forEach(emp => {
-      grouped[emp.email] = {
-        employee: emp,
+    usersToShow.forEach(user => {
+      grouped[user.email] = {
+        employee: user,
         days: {}
       };
       
       weekDays.forEach(day => {
         const dateKey = format(day, 'yyyy-MM-dd');
-        grouped[emp.email].days[dateKey] = [];
+        grouped[user.email].days[dateKey] = [];
       });
     });
 
@@ -186,22 +201,37 @@ export default function ScheduleCalendar({ onSelectJob }) {
       const logDate = log.work_date || log.created_date?.split('T')[0];
       if (!logDate) return;
       
-      // Find which employee made this log
-      const employeeEmail = log.updated_by;
-      if (!grouped[employeeEmail]) return;
+      // Find which user made this log
+      const userEmail = log.updated_by;
+      if (!grouped[userEmail]) {
+        // Create entry for this user if not exists
+        const user = allUsers.find(u => u.email === userEmail);
+        if (user && (selectedEmployee === "all" || selectedEmployee === userEmail)) {
+          grouped[userEmail] = {
+            employee: user,
+            days: {}
+          };
+          weekDays.forEach(day => {
+            const dateKey = format(day, 'yyyy-MM-dd');
+            grouped[userEmail].days[dateKey] = [];
+          });
+        } else {
+          return;
+        }
+      }
       
       // Check if log is in current week
       const logDateObj = parseISO(logDate);
       if (logDateObj < weekStart || logDateObj > weekEnd) return;
       
       const dateKey = logDate;
-      if (grouped[employeeEmail].days[dateKey]) {
-        grouped[employeeEmail].days[dateKey].push(log);
+      if (grouped[userEmail]?.days[dateKey]) {
+        grouped[userEmail].days[dateKey].push(log);
       }
     });
 
     return grouped;
-  }, [employees, progressLogs, weekDays, selectedEmployee, currentDate, weekStart]);
+  }, [allUsers, progressLogs, weekDays, selectedEmployee, currentDate, weekStart]);
 
   // Get total worked hours for a day
   const getWorkedHoursForDay = (employeeEmail, dateKey) => {
