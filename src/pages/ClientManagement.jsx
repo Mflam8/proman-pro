@@ -1409,183 +1409,21 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
                                 
                                 <Textarea name="notes" placeholder="Notas internas administrativas..." value={formData.notes || ''} onChange={(e) => setFormData(prev => ({...prev, notes: e.target.value}))} rows={2} disabled={isUpdating} />
                             </CardContent>
-                        </Card>
-                    )}
-                </div>
+                            </Card>
 
-                <div className="space-y-6">
-                    <Card className="border-2 border-proman-yellow">
-                        <CardHeader>
-                            <div className="flex justify-between items-center">
-                                <CardTitle className="flex items-center gap-2">
-                                    <User className="w-5 h-5" />
-                                    {customer ? 'Cliente Vinculado' : 'Información del Cliente'}
-                                </CardTitle>
-                                {canEdit && customer && (
-                                    <Button 
-                                        type="button"
-                                        size="sm" 
-                                        variant="outline"
-                                        onClick={() => setShowCustomerEdit(!showCustomerEdit)}
-                                    >
-                                        <Edit2 className="w-4 h-4 mr-1" />
-                                        Cambiar Cliente
-                                    </Button>
-                                )}
-                            </div>
-                        </CardHeader>
-                        <CardContent className="space-y-3 text-sm">
-                            {customer ? (
-                                <>
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <Badge className="bg-green-100 text-green-800">
-                                            Cliente Registrado en Base de Datos
-                                        </Badge>
-                                        {customer.is_vip && (
-                                            <Badge className="bg-yellow-100 text-yellow-800">
-                                                <Star className="w-3 h-3 mr-1" />
-                                                VIP
-                                            </Badge>
-                                        )}
-                                    </div>
-                                    <InfoRow label="Nombre" value={customer.full_name} />
-                                    <InfoRow label="Teléfono Principal" value={customer.phone} />
-                                    {customer.secondary_phone && (
-                                        <InfoRow label="Teléfono Secundario" value={customer.secondary_phone} />
-                                    )}
-                                    {customer.email && (
-                                        <InfoRow label="Email" value={customer.email} />
-                                    )}
-                                    <InfoRow label="Tipo" value={customer.customer_type} />
-                                    {customer.addresses && customer.addresses.length > 0 && (
-                                        <div className="pt-2 border-t">
-                                            <span className="text-gray-600 font-medium">Direcciones:</span>
-                                            {customer.addresses.map((addr, idx) => (
-                                                <div key={idx} className="ml-4 mt-1 text-xs text-gray-600">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="font-medium">{addr.label}:</span> {addr.location}
-                                                        {addr.is_primary && <Badge className="ml-2 text-xs bg-green-100 text-green-800">Principal</Badge>}
-                                                        {addr.map_url && (
-                                                            <a 
-                                                                href={addr.map_url} 
-                                                                target="_blank" 
-                                                                rel="noopener noreferrer"
-                                                                className="text-blue-600 hover:underline"
-                                                                onClick={(e) => e.stopPropagation()}
-                                                            >
-                                                                <MapPin className="w-3 h-3" />
-                                                            </a>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                    <div className="pt-2 border-t">
-                                        <InfoRow label="Total Trabajos" value={`${customer.total_jobs || 0} trabajos`} />
-                                        <InfoRow label="Total Gastado" value={`$${customer.total_spent || 0}`} />
-                                    </div>
-                                </>
-                            ) : (
-                                <>
-                                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-3">
-                                        <p className="text-xs text-yellow-800">
-                                            ⚠️ <strong>Cliente no vinculado:</strong> Este trabajo no está vinculado a un cliente en la base de datos. Datos temporales en el trabajo.
-                                        </p>
-                                    </div>
-                                    <InfoRow label="Nombre" value={inquiry.client_name || "N/A"} />
-                                    <InfoRow label="Teléfono" value={inquiry.phone || "N/A"} />
-                                    {canEdit && (
-                                        <Button 
-                                            type="button"
-                                            size="sm"
-                                            className="w-full mt-3 bg-proman-yellow text-proman-navy"
-                                            onClick={() => setShowCustomerEdit(true)}
-                                        >
-                                            <UserPlus className="w-4 h-4 mr-2" />
-                                            Vincular con Cliente Existente
-                                        </Button>
-                                    )}
-                                </>
-                            )}
-
-                            {showCustomerEdit && (
-                                <div className="pt-3 border-t space-y-3">
-                                    <Input 
-                                        placeholder="Buscar cliente por nombre o teléfono..."
-                                        value={customerSearch}
-                                        onChange={(e) => setCustomerSearch(e.target.value)}
-                                    />
-                                    <div className="max-h-48 overflow-y-auto space-y-2">
-                                        {filteredCustomersForSearch.length > 0 ? (
-                                            filteredCustomersForSearch.map(c => (
-                                                <div 
-                                                    key={c.id}
-                                                    className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer"
-                                                    onClick={() => handleChangeCustomer(c.id)}
-                                                >
-                                                    <div className="font-medium">{c.full_name}</div>
-                                                    <div className="text-xs text-gray-500">{c.phone} • {c.customer_type}</div>
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <p className="text-center text-gray-500 text-sm">No hay clientes que coincidan.</p>
-                                        )}
-                                    </div>
-                                    <Button 
-                                        type="button"
-                                        size="sm" 
-                                        variant="outline"
-                                        className="w-full"
-                                        onClick={() => setShowCustomerEdit(false)}
-                                    >
-                                        Cancelar
-                                    </Button>
-                                </div>
-                            )}
-
-                            <div className="pt-2 border-t">
-                                <InfoRow label="Ubicación del Trabajo" value={
-                                      (currentInquiry?.location_name || inquiry.location_name) 
-                                        ? `${currentInquiry?.location_name || inquiry.location_name}, ${currentInquiry?.location || inquiry.location}`
-                                        : (currentInquiry?.location || inquiry.location)
-                                  } />
-                                <InfoRow label="Servicio" value={`${currentInquiry?.rubro || inquiry.rubro} - ${currentInquiry?.service_type || inquiry.service_type}`} />
-                                <InfoRow label="Estado Actual" value={statusConfig[currentInquiry?.status || inquiry.status]?.label || 'N/A'} />
-                                <InfoRow label="Recibido" value={format(new Date(inquiry.created_date), "dd MMM yyyy, HH:mm", { locale: es })} />
-                                {inquiry.message && <div className="pt-2"><p className="text-gray-600 mt-1 italic">"{inquiry.message}"</p></div>}
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <BillingDetails inquiryId={inquiry.id} canEdit={canEdit} inquiry={inquiry} />
-
-                    <WorkExpenses inquiryId={inquiry.id} canEdit={canEdit} />
-
-                    {canEdit && (
-                        <Card>
-                            <CardHeader><CardTitle>Acciones con Cliente</CardTitle></CardHeader>
-                            <CardContent className="space-y-3">
-                                <a href={getWhatsAppUpdateLink(formData)} target="_blank" rel="noopener noreferrer" className="block">
-                                    <Button type="button" variant="outline" className="w-full"><MessageCircle className="w-4 h-4 mr-2" />Notificar Avance por WhatsApp</Button>
-                                </a>
-                                {inquiry.status === 'completado' && (
-                                    <>
-                                        <GenerateInvoiceButton inquiry={inquiry} />
-                                        <div>
-                                            <Label className="text-sm font-medium">Enlace de Encuesta:</Label>
-                                            <div className="flex gap-2 mt-1">
-                                                <Input readOnly value={getSurveyLink(inquiry.id)} className="text-xs" />
-                                                <Button type="button" size="icon" onClick={() => navigator.clipboard.writeText(getSurveyLink(inquiry.id))}><Copy className="w-4 h-4" /></Button>
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
+                            {/* 6. FOTOGRAFÍAS */}
+                            <Card className="border-2 border-blue-500 bg-blue-50/30">
+                            <CardHeader className="bg-blue-500 text-white">
+                            <CardTitle>📸 Fotografías del Trabajo</CardTitle>
+                            </CardHeader>
+                            <CardContent className="grid grid-cols-2 gap-4 pt-4">
+                            <ImageUploader label="Antes" imageUrl={formData.before_image_url} onFileSelect={setBeforeImageFile} isUploading={isUploading} disabled={!canEdit} />
+                            <ImageUploader label="Después" imageUrl={formData.after_image_url} onFileSelect={setAfterImageFile} isUploading={isUploading} disabled={!canEdit} />
                             </CardContent>
-                        </Card>
-                    )}
+                            </Card>
 
-                    <Card className="border-2 border-green-500">
+                            {/* 7. PAGOS */}
+                            <Card className="border-2 border-green-500">
                         <CardHeader className="bg-green-500 text-white">
                             <div className="flex justify-between items-center">
                                 <CardTitle>💰 Pagos del Servicio</CardTitle>
