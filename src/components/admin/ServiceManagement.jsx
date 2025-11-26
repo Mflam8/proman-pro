@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -40,6 +39,11 @@ export default function ServiceManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['services'] });
       setShowCreateModal(false);
+      alert('✅ Servicio creado correctamente');
+    },
+    onError: (error) => {
+      console.error('Error creating service:', error);
+      alert('❌ Error al crear servicio: ' + (error.message || 'Error desconocido'));
     },
   });
 
@@ -48,6 +52,11 @@ export default function ServiceManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['services'] });
       setEditingService(null);
+      alert('✅ Servicio actualizado correctamente');
+    },
+    onError: (error) => {
+      console.error('Error updating service:', error);
+      alert('❌ Error al actualizar servicio: ' + (error.message || 'Error desconocido'));
     },
   });
 
