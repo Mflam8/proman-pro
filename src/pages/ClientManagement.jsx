@@ -829,11 +829,168 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* COLUMNA IZQUIERDA */}
                 <div className="space-y-6">
+                    {/* 1. INFORMACIÓN DEL CLIENTE - PRIMERO */}
+                    <Card className="border-2 border-proman-yellow">
+                        <CardHeader>
+                            <div className="flex justify-between items-center">
+                                <CardTitle className="flex items-center gap-2">
+                                    <User className="w-5 h-5" />
+                                    {customer ? 'Cliente Vinculado' : 'Información del Cliente'}
+                                </CardTitle>
+                                {canEdit && customer && (
+                                    <Button 
+                                        type="button"
+                                        size="sm" 
+                                        variant="outline"
+                                        onClick={() => setShowCustomerEdit(!showCustomerEdit)}
+                                    >
+                                        <Edit2 className="w-4 h-4 mr-1" />
+                                        Cambiar
+                                    </Button>
+                                )}
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-3 text-sm">
+                            {customer ? (
+                                <>
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <Badge className="bg-green-100 text-green-800">
+                                            Cliente Registrado
+                                        </Badge>
+                                        {customer.is_vip && (
+                                            <Badge className="bg-yellow-100 text-yellow-800">
+                                                <Star className="w-3 h-3 mr-1" />
+                                                VIP
+                                            </Badge>
+                                        )}
+                                    </div>
+                                    <InfoRow label="Nombre" value={customer.full_name} />
+                                    <InfoRow label="Teléfono" value={customer.phone} />
+                                    {customer.email && <InfoRow label="Email" value={customer.email} />}
+                                    <InfoRow label="Tipo" value={customer.customer_type} />
+                                </>
+                            ) : (
+                                <>
+                                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-3">
+                                        <p className="text-xs text-yellow-800">
+                                            ⚠️ Cliente no vinculado a base de datos
+                                        </p>
+                                    </div>
+                                    <InfoRow label="Nombre" value={inquiry.client_name || "N/A"} />
+                                    <InfoRow label="Teléfono" value={inquiry.phone || "N/A"} />
+                                    {canEdit && (
+                                        <Button type="button" size="sm" className="w-full mt-3 bg-proman-yellow text-proman-navy" onClick={() => setShowCustomerEdit(true)}>
+                                            <UserPlus className="w-4 h-4 mr-2" />
+                                            Vincular Cliente
+                                        </Button>
+                                    )}
+                                </>
+                            )}
+                            {showCustomerEdit && (
+                                <div className="pt-3 border-t space-y-3">
+                                    <Input placeholder="Buscar cliente..." value={customerSearch} onChange={(e) => setCustomerSearch(e.target.value)} />
+                                    <div className="max-h-48 overflow-y-auto space-y-2">
+                                        {filteredCustomersForSearch.map(c => (
+                                            <div key={c.id} className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer" onClick={() => handleChangeCustomer(c.id)}>
+                                                <div className="font-medium">{c.full_name}</div>
+                                                <div className="text-xs text-gray-500">{c.phone}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <Button type="button" size="sm" variant="outline" className="w-full" onClick={() => setShowCustomerEdit(false)}>Cancelar</Button>
+                                </div>
+                            )}
+                            <div className="pt-2 border-t">
+                                <InfoRow label="Ubicación" value={(currentInquiry?.location_name || inquiry.location_name) ? `${currentInquiry?.location_name || inquiry.location_name}, ${currentInquiry?.location || inquiry.location}` : (currentInquiry?.location || inquiry.location)} />
+                                <InfoRow label="Servicio" value={`${currentInquiry?.rubro || inquiry.rubro} - ${currentInquiry?.service_type || inquiry.service_type}`} />
+                                <InfoRow label="Recibido" value={format(new Date(inquiry.created_date), "dd MMM yyyy, HH:mm", { locale: es })} />
+                                {inquiry.message && <p className="text-gray-600 mt-2 italic text-xs">"{inquiry.message}"</p>}
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* 2. PANEL ADMINISTRATIVO */}
+                    {canEdit && (
+                        <Card className="border-2 border-purple-500 bg-purple-50/30">
+                            <CardHeader className="bg-purple-500 text-white">
+                                <CardTitle>⚙️ Panel Administrativo</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4 pt-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <Label className="block text-sm font-medium text-proman-navy mb-2">Estado</Label>
+                                        <Select value={formData.status} onValueChange={(v) => setFormData(p => ({...p, status: v, progress_percentage: v === 'completado' ? 100 : p.progress_percentage}))} disabled={isUpdating}>
+                                            <SelectTrigger><SelectValue /></SelectTrigger>
+                                            <SelectContent>
+                                                {Object.entries(statusConfig).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div>
+                                        <Label className="block text-sm font-medium text-proman-navy mb-2">Prioridad</Label>
+                                        <Select value={formData.priority} onValueChange={(v) => setFormData(p => ({...p, priority: v}))} disabled={isUpdating}>
+                                            <SelectTrigger><SelectValue /></SelectTrigger>
+                                            <SelectContent>
+                                                {Object.entries(priorityConfig).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <Label className="block text-sm font-medium text-proman-navy mb-2">Nombre del Lugar (factura)</Label>
+                                    <Input value={formData.location_name || ''} onChange={(e) => setFormData(p => ({...p, location_name: e.target.value}))} placeholder="Ej: Cuartel General, Hospital Nacional" disabled={isUpdating} />
+                                </div>
+                                <div className="border-t pt-4">
+                                    <h3 className="font-semibold text-proman-navy mb-3">Programación</h3>
+                                    <div className="grid grid-cols-3 gap-4 mb-4">
+                                        <div><Label className="text-xs">Fecha</Label><Input type="date" value={formData.scheduled_date || ''} onChange={(e) => setFormData(p => ({...p, scheduled_date: e.target.value}))} disabled={isUpdating} /></div>
+                                        <div><Label className="text-xs">Hora</Label><Input type="time" value={formData.scheduled_start_time || ''} onChange={(e) => setFormData(p => ({...p, scheduled_start_time: e.target.value}))} disabled={isUpdating} /></div>
+                                        <div><Label className="text-xs">Duración (hrs)</Label><Input type="number" step="0.5" value={formData.estimated_duration_hours || ''} onChange={(e) => setFormData(p => ({...p, estimated_duration_hours: parseFloat(e.target.value)}))} disabled={isUpdating} /></div>
+                                    </div>
+                                    <EmployeeSelector selectedDate={formData.scheduled_date} startTime={formData.scheduled_start_time} duration={formData.estimated_duration_hours} onSelect={(email) => setFormData(p => ({...p, assigned_to: email}))} currentAssignee={formData.assigned_to} />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                                    <InputField label="Cotización ($)" type="number" value={formData.quote_amount} onChange={(e) => setFormData(p => ({...p, quote_amount: e.target.value}))} disabled={isUpdating} />
+                                    <InputField label="Monto Final ($)" type="number" value={formData.final_amount} onChange={(e) => setFormData(p => ({...p, final_amount: e.target.value}))} disabled={isUpdating} />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <Label className="text-xs">Estado de Pago</Label>
+                                        <Select value={formData.payment_status || 'pendiente'} onValueChange={(v) => setFormData(p => ({...p, payment_status: v}))} disabled={isUpdating}>
+                                            <SelectTrigger><SelectValue /></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="pendiente">Pendiente</SelectItem>
+                                                <SelectItem value="parcial">Parcial</SelectItem>
+                                                <SelectItem value="pagado">Pagado</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div>
+                                        <Label className="text-xs">Técnico Asignado</Label>
+                                        <Input value={formData.assigned_to || ''} disabled className="bg-gray-50" />
+                                    </div>
+                                </div>
+                                <Textarea name="notes" placeholder="Notas internas..." value={formData.notes || ''} onChange={(e) => setFormData(prev => ({...prev, notes: e.target.value}))} rows={2} disabled={isUpdating} />
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {/* 3. COTIZACIÓN / FACTURACIÓN */}
+                    <BillingDetails inquiryId={inquiry.id} canEdit={canEdit} inquiry={inquiry} />
+                </div>
+
+                {/* COLUMNA DERECHA */}
+                <div className="space-y-6">
+                    {/* 4. GASTOS DEL TRABAJO */}
+                    <WorkExpenses inquiryId={inquiry.id} canEdit={canEdit} />
+
+                    {/* 5. ACTUALIZACIÓN DE PROGRESO */}
                     <Card className="border-2 border-blue-500 bg-blue-50/30">
                         <CardHeader className="bg-blue-500 text-white">
                             <CardTitle className="flex items-center gap-2">
-                                👷 Actualización de Progreso del Trabajo
+                                👷 Actualización de Progreso
                             </CardTitle>
                             <p className="text-xs text-blue-100 mt-1">
                                 Cada cambio que guardes se registrará automáticamente en el historial
