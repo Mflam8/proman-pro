@@ -347,12 +347,22 @@ function ServiceFormModal({ isOpen, onClose, service, onSubmit, isSubmitting }) 
     setFormData({...formData, rubros: newRubros});
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (formData.rubros.length === 0) {
+    if (!formData.rubros || formData.rubros.length === 0) {
       alert('Debes seleccionar al menos un rubro');
       return;
     }
+    if (!formData.service_name || formData.service_name.trim() === '') {
+      alert('Debes ingresar el nombre del servicio');
+      return;
+    }
+    if (!formData.estimated_hours || formData.estimated_hours <= 0) {
+      alert('Debes ingresar las horas estimadas');
+      return;
+    }
+    
+    console.log('Enviando datos del servicio:', formData);
     onSubmit(formData);
   };
 
