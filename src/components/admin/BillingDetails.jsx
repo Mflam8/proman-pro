@@ -671,7 +671,7 @@ function BillingItemForm({ item, existingOptions, onSubmit, onCancel, isSubmitti
         <Button
           type="submit"
           className="bg-proman-yellow text-proman-navy hover:opacity-90"
-          disabled={isSubmitting || !formData.descripcion}
+          disabled={isSubmitting}
         >
           {isSubmitting ? 'Guardando...' : item ? 'Actualizar' : 'Agregar'}
         </Button>
