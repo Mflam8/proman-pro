@@ -81,9 +81,11 @@ export default function ClientManagement() {
 
   const { data: inquiries, isLoading: isLoadingInquiries } = useQuery({
     queryKey: ['clientInquiries', sortOrder],
-    queryFn: () => {
+    queryFn: async () => {
       const orderBy = sortOrder === "desc" ? '-created_date' : 'created_date';
-      return base44.entities.ClientInquiry.filter({}, orderBy);
+      const rawData = await base44.entities.ClientInquiry.filter({}, orderBy);
+      // Normalizar datos - aplanar .data si existe
+      return rawData.map(item => item.data ? { ...item, ...item.data } : item);
     },
     enabled: !!user && hasManagementAccess,
     initialData: [],
