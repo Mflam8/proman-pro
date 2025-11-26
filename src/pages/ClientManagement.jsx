@@ -336,12 +336,11 @@ export default function ClientManagement() {
               </Card>
             )}
 
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
               <Card><CardContent className="p-4"><div className="text-2xl font-bold text-proman-navy">{stats.total}</div><div className="text-sm text-gray-600">Total</div></CardContent></Card>
               <Card><CardContent className="p-4"><div className="text-2xl font-bold text-blue-600">{stats.nuevo}</div><div className="text-sm text-gray-600">Nuevos</div></CardContent></Card>
-              <Card><CardContent className="p-4"><div className="text-2xl font-bold text-yellow-600">{stats.evaluacion_pendiente}</div><div className="text-sm text-gray-600">Evaluaciones</div></CardContent></Card>
-              <Card><CardContent className="p-4"><div className="text-2xl font-bold text-orange-600">{stats.cotizacion_pendiente}</div><div className="text-sm text-gray-600">Cotizaciones</div></CardContent></Card>
-              <Card><CardContent className="p-4"><div className="text-2xl font-bold text-indigo-600">{stats.en_proceso}</div><div className="text-sm text-gray-600">En Proceso</div></CardContent></Card>
+              <Card><CardContent className="p-4"><div className="text-2xl font-bold text-orange-600">{stats.activos}</div><div className="text-sm text-gray-600">Activos</div></CardContent></Card>
+              <Card><CardContent className="p-4"><div className="text-2xl font-bold text-green-600">{stats.completado}</div><div className="text-sm text-gray-600">Completados</div></CardContent></Card>
             </div>
 
             <Card className="mb-6">
