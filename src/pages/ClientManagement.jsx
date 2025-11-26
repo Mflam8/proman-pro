@@ -358,48 +358,48 @@ export default function ClientManagement() {
                   </div>
                   
                   <div className="overflow-x-auto -mx-4 px-4">
-                    <div className="inline-flex bg-gray-100 rounded-lg p-1">
-                      <button
-                        onClick={() => setActiveTab("all")}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                          activeTab === "all"
-                            ? "bg-white text-proman-navy shadow-sm"
-                            : "text-gray-600 hover:text-gray-900"
-                        }`}
-                      >
-                        Todos
-                      </button>
-                      <button
-                        onClick={() => setActiveTab("nuevo")}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                          activeTab === "nuevo"
-                            ? "bg-white text-proman-navy shadow-sm"
-                            : "text-gray-600 hover:text-gray-900"
-                        }`}
-                      >
-                        Nuevos
-                      </button>
-                      <button
-                        onClick={() => setActiveTab("en_proceso")}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                          activeTab === "en_proceso"
-                            ? "bg-white text-proman-navy shadow-sm"
-                            : "text-gray-600 hover:text-gray-900"
-                        }`}
-                      >
-                        En Proceso
-                      </button>
-                      <button
-                        onClick={() => setActiveTab("completado")}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                          activeTab === "completado"
-                            ? "bg-white text-proman-navy shadow-sm"
-                            : "text-gray-600 hover:text-gray-900"
-                        }`}
-                      >
-                        Completado
-                      </button>
-                    </div>
+                  <div className="inline-flex bg-gray-100 rounded-lg p-1 flex-wrap gap-1">
+                    <button
+                      onClick={() => setActiveTab("all")}
+                      className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                        activeTab === "all"
+                          ? "bg-white text-proman-navy shadow-sm"
+                          : "text-gray-600 hover:text-gray-900"
+                      }`}
+                    >
+                      Todos
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("nuevo")}
+                      className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                        activeTab === "nuevo"
+                          ? "bg-white text-proman-navy shadow-sm"
+                          : "text-gray-600 hover:text-gray-900"
+                      }`}
+                    >
+                      Nuevos
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("activos")}
+                      className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                        activeTab === "activos"
+                          ? "bg-white text-proman-navy shadow-sm"
+                          : "text-gray-600 hover:text-gray-900"
+                      }`}
+                    >
+                      Activos
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("completado")}
+                      className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                        activeTab === "completado"
+                          ? "bg-white text-proman-navy shadow-sm"
+                          : "text-gray-600 hover:text-gray-900"
+                      }`}
+                    >
+                      Completados
+                    </button>
+                  </div>
                   </div>
                 </div>
               </CardContent>
