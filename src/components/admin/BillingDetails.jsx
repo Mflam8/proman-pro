@@ -454,6 +454,14 @@ function BillingItemForm({ item, existingOptions, onSubmit, onCancel, isSubmitti
   });
   
   const [isNewOption, setIsNewOption] = useState(false);
+  const [useCustomTitle, setUseCustomTitle] = useState(!!item?.descripcion);
+
+  // Fetch services from catalog
+  const { data: services } = useQuery({
+    queryKey: ['services'],
+    queryFn: () => base44.entities.Service.filter({ is_active: true }),
+    initialData: [],
+  });
 
   const handleSubmit = (e) => {
     e.preventDefault();
