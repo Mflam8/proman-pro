@@ -32,6 +32,7 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
   const [isGeneratingInvoice, setIsGeneratingInvoice] = useState(false);
   const [quoteAsunto, setQuoteAsunto] = useState("");
   const [showQuoteOptions, setShowQuoteOptions] = useState(false);
+  const [documentType, setDocumentType] = useState("cotizacion"); // "cotizacion" o "factura"
   const queryClient = useQueryClient();
 
   const { data: allItems, isLoading } = useQuery({
