@@ -155,8 +155,19 @@ export default function ClientManagement() {
     return null;
   };
 
+  // Estados que se consideran "activos" (en progreso)
+  const activeStatuses = ["trabajo_aprobado", "en_proceso", "evaluacion_agendada", "evaluacion_pendiente", "evaluacion_realizada", "cotizacion_pendiente", "cotizacion_realizada"];
+  
   const filteredInquiries = inquiries.filter(inquiry => {
-    const matchesTab = activeTab === "all" || inquiry.status === activeTab;
+    let matchesTab = false;
+    if (activeTab === "all") {
+      matchesTab = true;
+    } else if (activeTab === "activos") {
+      matchesTab = activeStatuses.includes(inquiry.status);
+    } else {
+      matchesTab = inquiry.status === activeTab;
+    }
+    
     const customer = getCustomerForInquiry(inquiry);
     const matchesSearch = searchTerm === "" || 
       inquiry.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
