@@ -170,13 +170,10 @@ export default function ClientManagement() {
 
   const stats = {
     total: inquiries.length,
-    nuevo: inquiries.filter(i => (i.status || i.data?.status) === "nuevo").length,
-    evaluacion_pendiente: inquiries.filter(i => {
-      const status = i.status || i.data?.status;
-      return status === "evaluacion_pendiente" || status === "evaluacion_agendada";
-    }).length,
-    cotizacion_pendiente: inquiries.filter(i => (i.status || i.data?.status) === "cotizacion_pendiente").length,
-    en_proceso: inquiries.filter(i => (i.status || i.data?.status) === "en_proceso").length
+    nuevo: inquiries.filter(i => i.status === "nuevo").length,
+    evaluacion_pendiente: inquiries.filter(i => i.status === "evaluacion_pendiente" || i.status === "evaluacion_agendada").length,
+    cotizacion_pendiente: inquiries.filter(i => i.status === "cotizacion_pendiente").length,
+    en_proceso: inquiries.filter(i => i.status === "en_proceso").length
   };
 
   const getWhatsAppLink = (inquiry) => {
