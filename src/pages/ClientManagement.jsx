@@ -154,15 +154,20 @@ export default function ClientManagement() {
   };
 
   const filteredInquiries = inquiries.filter(inquiry => {
-    const matchesTab = activeTab === "all" || inquiry.status === activeTab;
+    const inquiryStatus = inquiry.status || inquiry.data?.status;
+    const matchesTab = activeTab === "all" || inquiryStatus === activeTab;
     const customer = getCustomerForInquiry(inquiry);
+    const clientName = inquiry.client_name || inquiry.data?.client_name;
+    const phone = inquiry.phone || inquiry.data?.phone;
+    const serviceType = inquiry.service_type || inquiry.data?.service_type;
+    const rubro = inquiry.rubro || inquiry.data?.rubro;
     const matchesSearch = searchTerm === "" || 
-      inquiry.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inquiry.phone?.includes(searchTerm) ||
+      phone?.includes(searchTerm) ||
       customer?.phone?.includes(searchTerm) ||
-      inquiry.service_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inquiry.rubro?.toLowerCase().includes(searchTerm.toLowerCase());
+      serviceType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      rubro?.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesTab && matchesSearch;
   });
 
