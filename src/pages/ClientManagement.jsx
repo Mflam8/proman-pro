@@ -1506,6 +1506,62 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
                             </CardContent>
                         </Card>
                     )}
+
+                    {/* 8. HISTORIAL */}
+                    {progressLogs.length > 0 && (
+                        <Card className="border-2 border-green-500">
+                            <CardHeader className="bg-green-500 text-white">
+                                <CardTitle className="flex items-center justify-between">
+                                    <span>📊 Historial de Trabajo</span>
+                                    <Badge className="bg-white text-green-700">{progressLogs.length} actualizaciones</Badge>
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-4">
+                                {workStats && (
+                                    <div className="bg-white rounded-lg p-4 mb-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        <div className="text-center"><p className="text-2xl font-bold text-green-600">{workStats.currentProgress}%</p><p className="text-xs text-gray-600">Avance</p></div>
+                                        <div className="text-center"><p className="text-2xl font-bold text-orange-600">{workStats.totalHoursWorked}h</p><p className="text-xs text-gray-600">Trabajadas</p></div>
+                                        <div className="text-center"><p className="text-2xl font-bold text-blue-600">{workStats.totalUpdates}</p><p className="text-xs text-gray-600">Updates</p></div>
+                                        <div className="text-center"><p className="text-2xl font-bold text-purple-600">{workStats.daysPassed}</p><p className="text-xs text-gray-600">Días</p></div>
+                                    </div>
+                                )}
+                                <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                                    {progressLogs.map((log, idx) => (
+                                        <div key={log.id} className="bg-white rounded-lg border p-3 text-sm">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <Badge className={idx === 0 ? "bg-green-500 text-white" : "bg-gray-500 text-white"}>{log.progress_percentage}%</Badge>
+                                                <span className="text-xs text-gray-500">{format(new Date(log.created_date), "dd MMM", { locale: es })}</span>
+                                            </div>
+                                            {log.work_done && <p className="text-gray-700 mb-1"><span className="text-green-700 font-medium">✓</span> {log.work_done}</p>}
+                                            {log.work_pending && <p className="text-gray-600 text-xs"><span className="text-orange-600">⏳</span> {log.work_pending}</p>}
+                                            {log.hours_worked > 0 && <p className="text-xs text-gray-500 mt-1">{log.hours_worked}h trabajadas</p>}
+                                        </div>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {/* ACCIONES CON CLIENTE */}
+                    {canEdit && (
+                        <Card>
+                            <CardHeader><CardTitle>Acciones con Cliente</CardTitle></CardHeader>
+                            <CardContent className="space-y-3">
+                                <a href={getWhatsAppUpdateLink(formData)} target="_blank" rel="noopener noreferrer" className="block">
+                                    <Button type="button" variant="outline" className="w-full"><MessageCircle className="w-4 h-4 mr-2" />Notificar Avance</Button>
+                                </a>
+                                {inquiry.status === 'completado' && (
+                                    <div>
+                                        <Label className="text-sm font-medium">Enlace de Encuesta:</Label>
+                                        <div className="flex gap-2 mt-1">
+                                            <Input readOnly value={getSurveyLink(inquiry.id)} className="text-xs" />
+                                            <Button type="button" size="icon" onClick={() => navigator.clipboard.writeText(getSurveyLink(inquiry.id))}><Copy className="w-4 h-4" /></Button>
+                                        </div>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
             </div>
             
