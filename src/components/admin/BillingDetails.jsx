@@ -391,16 +391,37 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
         </Dialog>
       )}
 
-      {/* Modal para opciones de cotización */}
+      {/* Modal para opciones de documento */}
       {showQuoteOptions && (
         <Dialog open={showQuoteOptions} onOpenChange={() => setShowQuoteOptions(false)}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Generar Cotización PDF</DialogTitle>
+              <DialogTitle>Generar Documento PDF</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 pt-4">
+              {/* Selector de tipo de documento */}
               <div>
-                <Label className="block text-sm font-medium mb-2">Asunto de la Cotización</Label>
+                <Label className="block text-sm font-medium mb-2">Tipo de Documento</Label>
+                <Select value={documentType} onValueChange={setDocumentType}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cotizacion">📋 Cotización</SelectItem>
+                    <SelectItem value="factura">🧾 Factura Comercial</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-500 mt-1">
+                  {documentType === "cotizacion" 
+                    ? "Propuesta de precios para aprobación del cliente (sin IVA incluido)." 
+                    : "Documento final de cobro por servicios realizados (incluye IVA)."}
+                </p>
+              </div>
+
+              <div>
+                <Label className="block text-sm font-medium mb-2">
+                  Asunto {documentType === "cotizacion" ? "de la Cotización" : "de la Factura"}
+                </Label>
                 <Textarea
                   value={quoteAsunto}
                   onChange={(e) => setQuoteAsunto(e.target.value)}
@@ -413,11 +434,17 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
                   Cancelar
                 </Button>
                 <Button 
-                  onClick={handleGenerateQuote}
-                  disabled={isGeneratingQuote}
+                  onClick={() => {
+                    if (documentType === "cotizacion") {
+                      handleGenerateQuote();
+                    } else {
+                      handleGenerateInvoice();
+                    }
+                  }}
+                  disabled={isGeneratingQuote || isGeneratingInvoice}
                   className="bg-proman-yellow text-proman-navy"
                 >
-                  {isGeneratingQuote ? 'Generando...' : 'Generar PDF'}
+                  {(isGeneratingQuote || isGeneratingInvoice) ? 'Generando...' : `Generar ${documentType === "cotizacion" ? "Cotización" : "Factura"}`}
                 </Button>
               </div>
             </div>
