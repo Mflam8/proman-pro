@@ -191,27 +191,15 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
           </CardTitle>
           <div className="flex gap-2 flex-wrap">
             {canEdit && items.length > 0 && (
-              <>
-                <Button
-                  size="sm"
-                  onClick={() => setShowQuoteOptions(true)}
-                  disabled={isGeneratingQuote}
-                  variant="outline"
-                  className="border-proman-navy text-proman-navy"
-                >
-                  <FileDown className="w-4 h-4 mr-1" />
-                  {isGeneratingQuote ? 'Generando...' : 'Cotización PDF'}
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={handleGenerateInvoice}
-                  disabled={isGeneratingInvoice}
-                  className="bg-proman-navy text-white hover:opacity-90"
-                >
-                  <FileDown className="w-4 h-4 mr-1" />
-                  {isGeneratingInvoice ? 'Generando...' : 'Factura PDF'}
-                </Button>
-              </>
+              <Button
+                size="sm"
+                onClick={() => setShowQuoteOptions(true)}
+                disabled={isGeneratingQuote || isGeneratingInvoice}
+                className="bg-proman-navy text-white hover:opacity-90"
+              >
+                <FileDown className="w-4 h-4 mr-1" />
+                {(isGeneratingQuote || isGeneratingInvoice) ? 'Generando...' : 'Generar PDF'}
+              </Button>
             )}
             {canEdit && (
               <Button
