@@ -180,22 +180,37 @@ Deno.serve(async (req) => {
         
         let totalGeneral = 0;
         let itemNum = 1;
+        const hayMultiplesOpciones = opciones.length > 1;
 
         for (const opcion of opciones) {
             // Calcular altura necesaria para esta opción
-            let opcionHeight = 15; // Mínimo para título
+            let opcionHeight = hayMultiplesOpciones ? 25 : 15; // Más espacio si hay título de opción
             
             for (const item of opcion.items) {
                 const descripcionDetallada = item.descripcion_detallada || item.descripcion || '';
                 const lines = doc.splitTextToSize(descripcionDetallada, colWidths.detalle - 6);
-                opcionHeight = Math.max(opcionHeight, lines.length * 4 + 12);
+                opcionHeight += Math.max(lines.length * 4 + 10, 20);
             }
+            opcionHeight += 12; // Espacio para subtotal
             
             // Nueva página si no cabe
             if (yPos + opcionHeight > 260) {
                 doc.addPage();
                 yPos = 20;
             }
+
+            // Título de la opción (solo si hay múltiples opciones)
+            if (hayMultiplesOpciones) {
+                doc.setFillColor(240, 240, 250);
+                doc.rect(startX, yPos, 185, 10, 'FD');
+                doc.setTextColor(...navyColor);
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'bold');
+                doc.text(`OPCIÓN ${opcion.numero}: ${opcion.titulo}`, startX + 3, yPos + 7);
+                yPos += 12;
+            }
+
+            let subtotalOpcion = 0;
 
             for (const item of opcion.items) {
                 const descripcionDetallada = item.descripcion_detallada || item.descripcion || '';
@@ -237,11 +252,24 @@ Deno.serve(async (req) => {
                 
                 // Precio total
                 const precioTotal = (item.cantidad || 1) * precioUnit;
+                subtotalOpcion += precioTotal;
                 totalGeneral += precioTotal;
                 doc.text(`$ ${precioTotal.toFixed(2)}`, startX + colWidths.item + colWidths.detalle + colWidths.cantidad + colWidths.precioU + colWidths.precioT - 3, yPos + rowHeight / 2, { align: 'right' });
                 
                 yPos += rowHeight;
                 itemNum++;
+            }
+
+            // Subtotal de la opción (solo si hay múltiples opciones)
+            if (hayMultiplesOpciones) {
+                doc.setFillColor(...yellowColor);
+                doc.rect(startX + colWidths.item + colWidths.detalle, yPos, colWidths.cantidad + colWidths.precioU + colWidths.precioT, 8, 'FD');
+                doc.setTextColor(...navyColor);
+                doc.setFontSize(9);
+                doc.setFont(undefined, 'bold');
+                doc.text(`SUBTOTAL OPCIÓN ${opcion.numero}:`, startX + colWidths.item + colWidths.detalle + 3, yPos + 5.5);
+                doc.text(`$ ${subtotalOpcion.toFixed(2)}`, startX + colWidths.item + colWidths.detalle + colWidths.cantidad + colWidths.precioU + colWidths.precioT - 3, yPos + 5.5, { align: 'right' });
+                yPos += 15;
             }
         }
 
