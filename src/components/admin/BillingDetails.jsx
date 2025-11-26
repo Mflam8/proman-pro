@@ -9,17 +9,29 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Plus, Edit2, Trash2, DollarSign, Wrench, FileText, FileDown } from "lucide-react";
+import { Plus, Edit2, Trash2, DollarSign, Wrench, FileText, FileDown, CheckCircle, Layers } from "lucide-react";
 
 const tipoItemConfig = {
-  servicio: { label: "Servicio", icon: Wrench, color: "bg-blue-100 text-blue-800" },
+  servicio: { label: "Servicio/Trabajo", icon: Wrench, color: "bg-blue-100 text-blue-800" },
   mano_de_obra: { label: "Mano de Obra", icon: Wrench, color: "bg-orange-100 text-orange-800" }
+};
+
+const unidadMedidaConfig = {
+  unidad: "unidad",
+  m2: "m²",
+  ml: "ml",
+  hora: "hora",
+  dia: "día",
+  global: "global"
 };
 
 export default function BillingDetails({ inquiryId, canEdit = true, inquiry = null }) {
   const [showItemModal, setShowItemModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [isGeneratingQuote, setIsGeneratingQuote] = useState(false);
+  const [isGeneratingInvoice, setIsGeneratingInvoice] = useState(false);
+  const [quoteAsunto, setQuoteAsunto] = useState("");
+  const [showQuoteOptions, setShowQuoteOptions] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: allItems, isLoading } = useQuery({
@@ -29,25 +41,23 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
     initialData: [],
   });
 
-  // Filtrar solo servicios y mano de obra (excluir materiales, transporte, etc.)
-  const items = allItems.filter(i => i.tipo_item === 'servicio' || i.tipo_item === 'mano_de_obra');
+  // Filtrar solo servicios y mano de obra
+  const items = allItems.filter(i => {
+    const itemData = i.data || i;
+    return itemData.tipo_item === 'servicio' || itemData.tipo_item === 'mano_de_obra';
+  }).map(i => i.data || i);
 
   const createItem = useMutation({
     mutationFn: (data) => {
       const precioBase = data.cantidad * data.precio_unitario;
-      const aplicarInteres = (data.tipo_item === 'servicio' || data.tipo_item === 'mano_de_obra') && data.incluir_iva;
-      const montoTotal = aplicarInteres ? precioBase * 1.13 : precioBase;
-      
       return base44.entities.DetalleFacturaTrabajo.create({
         ...data,
         inquiry_id: inquiryId,
-        monto_total_item: montoTotal
+        monto_total_item: precioBase
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['billingItems', inquiryId] });
-      queryClient.invalidateQueries({ queryKey: ['clientInquiries'] });
-      queryClient.invalidateQueries({ queryKey: ['inquiry', inquiryId] });
       setShowItemModal(false);
       setEditingItem(null);
     },
@@ -56,18 +66,13 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
   const updateItem = useMutation({
     mutationFn: ({ id, data }) => {
       const precioBase = data.cantidad * data.precio_unitario;
-      const aplicarInteres = (data.tipo_item === 'servicio' || data.tipo_item === 'mano_de_obra') && data.incluir_iva;
-      const montoTotal = aplicarInteres ? precioBase * 1.13 : precioBase;
-      
       return base44.entities.DetalleFacturaTrabajo.update(id, {
         ...data,
-        monto_total_item: montoTotal
+        monto_total_item: precioBase
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['billingItems', inquiryId] });
-      queryClient.invalidateQueries({ queryKey: ['clientInquiries'] });
-      queryClient.invalidateQueries({ queryKey: ['inquiry', inquiryId] });
       setShowItemModal(false);
       setEditingItem(null);
     },
@@ -77,21 +82,87 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
     mutationFn: (id) => base44.entities.DetalleFacturaTrabajo.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['billingItems', inquiryId] });
-      queryClient.invalidateQueries({ queryKey: ['clientInquiries'] });
-      queryClient.invalidateQueries({ queryKey: ['inquiry', inquiryId] });
     },
   });
 
-  const totalAmount = items.reduce((sum, item) => sum + (item.monto_total_item || 0), 0);
+  const toggleOpcionSeleccionada = useMutation({
+    mutationFn: async ({ itemId, selected }) => {
+      const item = allItems.find(i => (i.id || i.data?.id) === itemId);
+      const itemData = item?.data || item;
+      const opcionNum = itemData?.opcion_numero || 1;
+      
+      // Actualizar todos los items de esta opción
+      const itemsToUpdate = allItems.filter(i => {
+        const data = i.data || i;
+        return data.opcion_numero === opcionNum;
+      });
+      
+      for (const i of itemsToUpdate) {
+        await base44.entities.DetalleFacturaTrabajo.update(i.id, {
+          opcion_seleccionada: selected
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['billingItems', inquiryId] });
+    },
+  });
 
-  const itemsByType = {
-    servicio: items.filter(i => i.tipo_item === 'servicio'),
-    mano_de_obra: items.filter(i => i.tipo_item === 'mano_de_obra')
+  // Agrupar por opción
+  const itemsByOption = {};
+  items.forEach(item => {
+    const opcionNum = item.opcion_numero || 1;
+    if (!itemsByOption[opcionNum]) {
+      itemsByOption[opcionNum] = {
+        numero: opcionNum,
+        titulo: item.opcion_titulo || `Opción ${opcionNum}`,
+        items: [],
+        seleccionada: item.opcion_seleccionada || false
+      };
+    }
+    itemsByOption[opcionNum].items.push(item);
+    if (item.opcion_seleccionada) {
+      itemsByOption[opcionNum].seleccionada = true;
+    }
+  });
+
+  const opciones = Object.values(itemsByOption).sort((a, b) => a.numero - b.numero);
+  
+  // Total solo de opciones seleccionadas
+  const totalSeleccionado = opciones
+    .filter(op => op.seleccionada)
+    .reduce((sum, op) => sum + op.items.reduce((s, i) => s + (i.monto_total_item || 0), 0), 0);
+
+  // Total general (todas las opciones)
+  const totalGeneral = items.reduce((sum, item) => sum + (item.monto_total_item || 0), 0);
+
+  const handleGenerateQuote = async () => {
+    if (!inquiry) return;
+    setIsGeneratingQuote(true);
+    
+    try {
+      const response = await base44.functions.invoke('generateQuote', {
+        inquiryId: inquiry.id,
+        quoteDate: new Date().toISOString().split('T')[0],
+        asunto: quoteAsunto || inquiry.service_type
+      });
+
+      if (response.data.success) {
+        await queryClient.invalidateQueries({ queryKey: ['clientInquiries'] });
+        window.open(response.data.pdf_url, '_blank');
+      }
+    } catch (err) {
+      console.error('Error generating quote:', err);
+      alert('Error al generar cotización: ' + err.message);
+    } finally {
+      setIsGeneratingQuote(false);
+      setShowQuoteOptions(false);
+    }
   };
 
   const handleGenerateInvoice = async () => {
     if (!inquiry) return;
-    setIsGenerating(true);
+    setIsGeneratingInvoice(true);
     
     try {
       const response = await base44.functions.invoke('generateInvoice', {
@@ -100,37 +171,47 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
 
       if (response.data.success) {
         await queryClient.invalidateQueries({ queryKey: ['clientInquiries'] });
-        await queryClient.invalidateQueries({ queryKey: ['inquiry', inquiry.id] });
-        
         window.open(response.data.pdf_url, '_blank');
       }
     } catch (err) {
       console.error('Error generating invoice:', err);
       alert('Error al generar factura: ' + err.message);
     } finally {
-      setIsGenerating(false);
+      setIsGeneratingInvoice(false);
     }
   };
 
   return (
     <Card className="border-2 border-proman-yellow">
       <CardHeader className="bg-proman-yellow/10">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center flex-wrap gap-2">
           <CardTitle className="flex items-center gap-2">
             <DollarSign className="w-5 h-5" />
-            Facturación al Cliente
+            Cotización / Facturación
           </CardTitle>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {canEdit && items.length > 0 && (
-              <Button
-                size="sm"
-                onClick={handleGenerateInvoice}
-                disabled={isGenerating}
-                className="bg-proman-navy text-white hover:opacity-90"
-              >
-                <FileDown className="w-4 h-4 mr-1" />
-                {isGenerating ? 'Generando...' : 'Factura PDF'}
-              </Button>
+              <>
+                <Button
+                  size="sm"
+                  onClick={() => setShowQuoteOptions(true)}
+                  disabled={isGeneratingQuote}
+                  variant="outline"
+                  className="border-proman-navy text-proman-navy"
+                >
+                  <FileDown className="w-4 h-4 mr-1" />
+                  {isGeneratingQuote ? 'Generando...' : 'Cotización PDF'}
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={handleGenerateInvoice}
+                  disabled={isGeneratingInvoice}
+                  className="bg-proman-navy text-white hover:opacity-90"
+                >
+                  <FileDown className="w-4 h-4 mr-1" />
+                  {isGeneratingInvoice ? 'Generando...' : 'Factura PDF'}
+                </Button>
+              </>
             )}
             {canEdit && (
               <Button
@@ -149,10 +230,15 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
         </div>
       </CardHeader>
       <CardContent className="pt-4">
-        <div className="bg-proman-navy text-white rounded-lg p-4 mb-4">
-          <div className="flex justify-between items-center">
-            <span className="text-lg font-medium">Total a Cobrar al Cliente:</span>
-            <span className="text-3xl font-bold">${totalAmount.toFixed(2)}</span>
+        {/* Resumen de totales */}
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="bg-gray-100 rounded-lg p-4">
+            <span className="text-sm text-gray-600">Total Cotizado:</span>
+            <p className="text-2xl font-bold text-proman-navy">${totalGeneral.toFixed(2)}</p>
+          </div>
+          <div className="bg-proman-navy text-white rounded-lg p-4">
+            <span className="text-sm text-gray-200">Total Aprobado:</span>
+            <p className="text-2xl font-bold">${totalSeleccionado.toFixed(2)}</p>
           </div>
         </div>
 
@@ -161,7 +247,7 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
         ) : items.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <FileText className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-            <p>No hay servicios facturables registrados</p>
+            <p>No hay items de cotización registrados</p>
             {canEdit && (
               <Button
                 size="sm"
@@ -176,86 +262,106 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
           </div>
         ) : (
           <div className="space-y-4">
-            {Object.entries(itemsByType).map(([tipo, typeItems]) => {
-              if (typeItems.length === 0) return null;
-              const config = tipoItemConfig[tipo];
-              const Icon = config.icon;
-              const subtotal = typeItems.reduce((sum, item) => sum + (item.monto_total_item || 0), 0);
-
+            {opciones.map((opcion) => {
+              const opcionTotal = opcion.items.reduce((sum, i) => sum + (i.monto_total_item || 0), 0);
+              
               return (
-                <div key={tipo} className="border rounded-lg p-3 bg-gray-50">
-                  <div className="flex justify-between items-center mb-3">
-                    <div className="flex items-center gap-2">
-                      <Icon className="w-5 h-5 text-proman-navy" />
-                      <h4 className="font-semibold text-proman-navy">{config.label}</h4>
-                      <Badge variant="outline">{typeItems.length} items</Badge>
+                <div 
+                  key={opcion.numero} 
+                  className={`border-2 rounded-lg overflow-hidden ${
+                    opcion.seleccionada ? 'border-green-500 bg-green-50/30' : 'border-gray-200'
+                  }`}
+                >
+                  <div className={`p-3 flex justify-between items-center ${
+                    opcion.seleccionada ? 'bg-green-500 text-white' : 'bg-gray-100'
+                  }`}>
+                    <div className="flex items-center gap-3">
+                      <Badge className={opcion.seleccionada ? 'bg-white text-green-700' : 'bg-proman-navy text-white'}>
+                        <Layers className="w-3 h-3 mr-1" />
+                        Opción {opcion.numero}
+                      </Badge>
+                      <span className="font-semibold">{opcion.titulo}</span>
                     </div>
-                    <span className="font-bold text-proman-navy">${subtotal.toFixed(2)}</span>
+                    <div className="flex items-center gap-3">
+                      <span className="font-bold text-lg">${opcionTotal.toFixed(2)}</span>
+                      {canEdit && (
+                        <Button
+                          size="sm"
+                          variant={opcion.seleccionada ? "secondary" : "outline"}
+                          onClick={() => {
+                            const firstItem = opcion.items[0];
+                            const itemId = allItems.find(i => {
+                              const data = i.data || i;
+                              return data.opcion_numero === opcion.numero;
+                            })?.id;
+                            if (itemId) {
+                              toggleOpcionSeleccionada.mutate({ 
+                                itemId, 
+                                selected: !opcion.seleccionada 
+                              });
+                            }
+                          }}
+                          className={opcion.seleccionada ? 'bg-white text-green-700 hover:bg-gray-100' : ''}
+                        >
+                          <CheckCircle className={`w-4 h-4 mr-1 ${opcion.seleccionada ? 'text-green-600' : ''}`} />
+                          {opcion.seleccionada ? 'Aprobada' : 'Aprobar'}
+                        </Button>
+                      )}
+                    </div>
                   </div>
-
-                  <div className="space-y-2">
-                    {typeItems.map((item) => (
-                      <div key={item.id} className="bg-white rounded p-3 border">
-                        <div className="flex justify-between items-start gap-3">
-                          {item.descripcion && item.descripcion.startsWith('http') && (
-                            <img 
-                              src={item.descripcion} 
-                              alt="Factura" 
-                              className="w-20 h-20 object-cover rounded border cursor-pointer"
-                              onClick={() => window.open(item.descripcion, '_blank')}
-                            />
-                          )}
-                          <div className="flex-1">
-                            {!item.descripcion.startsWith('http') && (
+                  
+                  <div className="p-3 space-y-2">
+                    {opcion.items.map((item, idx) => {
+                      const itemRecord = allItems.find(i => {
+                        const data = i.data || i;
+                        return data.descripcion === item.descripcion && data.opcion_numero === item.opcion_numero;
+                      });
+                      
+                      return (
+                        <div key={idx} className="bg-white rounded p-3 border">
+                          <div className="flex justify-between items-start gap-3">
+                            <div className="flex-1">
                               <p className="font-medium text-gray-900 mb-1">{item.descripcion}</p>
-                            )}
-                            <p className="text-sm text-gray-600">
-                              {item.cantidad} x ${item.precio_unitario.toFixed(2)}
-                              {(item.tipo_item === 'servicio' || item.tipo_item === 'mano_de_obra') && item.incluir_iva && (
-                                <span className="text-xs text-blue-600 ml-1">(+13% IVA)</span>
+                              {item.descripcion_detallada && (
+                                <p className="text-sm text-gray-600 whitespace-pre-line mb-2">
+                                  {item.descripcion_detallada}
+                                </p>
                               )}
-                              {' = '}
-                              <span className="font-semibold ml-1">${item.monto_total_item.toFixed(2)}</span>
-                            </p>
-                            {item.descripcion && item.descripcion.startsWith('http') && (
-                              <a 
-                                href={item.descripcion} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-xs text-blue-600 hover:underline mt-1 inline-block"
-                              >
-                                Ver imagen completa
-                              </a>
+                              <p className="text-sm text-gray-600">
+                                {item.cantidad} {unidadMedidaConfig[item.unidad_medida] || item.unidad_medida} x ${item.precio_unitario?.toFixed(2)}
+                                {' = '}
+                                <span className="font-semibold">${item.monto_total_item?.toFixed(2)}</span>
+                              </p>
+                            </div>
+                            {canEdit && (
+                              <div className="flex gap-2 ml-2">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    setEditingItem({ ...item, id: itemRecord?.id });
+                                    setShowItemModal(true);
+                                  }}
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    if (confirm('¿Eliminar este item?')) {
+                                      deleteItem.mutate(itemRecord?.id);
+                                    }
+                                  }}
+                                >
+                                  <Trash2 className="w-4 h-4 text-red-500" />
+                                </Button>
+                              </div>
                             )}
                           </div>
-                          {canEdit && (
-                            <div className="flex gap-2 ml-2">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => {
-                                  setEditingItem(item);
-                                  setShowItemModal(true);
-                                }}
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => {
-                                  if (confirm('¿Eliminar este item de facturación?')) {
-                                    deleteItem.mutate(item.id);
-                                  }
-                                }}
-                              >
-                                <Trash2 className="w-4 h-4 text-red-500" />
-                              </Button>
-                            </div>
-                          )}
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               );
@@ -264,21 +370,23 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
         )}
       </CardContent>
 
+      {/* Modal para agregar/editar item */}
       {showItemModal && (
         <Dialog open={showItemModal} onOpenChange={() => {
           setShowItemModal(false);
           setEditingItem(null);
         }}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                {editingItem ? 'Editar Item de Facturación' : 'Agregar Item de Facturación'}
+                {editingItem ? 'Editar Item de Cotización' : 'Agregar Item de Cotización'}
               </DialogTitle>
             </DialogHeader>
             <BillingItemForm
               item={editingItem}
+              existingOptions={opciones}
               onSubmit={(data) => {
-                if (editingItem) {
+                if (editingItem?.id) {
                   updateItem.mutate({ id: editingItem.id, data });
                 } else {
                   createItem.mutate(data);
@@ -293,132 +401,170 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Modal para opciones de cotización */}
+      {showQuoteOptions && (
+        <Dialog open={showQuoteOptions} onOpenChange={() => setShowQuoteOptions(false)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Generar Cotización PDF</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-4">
+              <div>
+                <Label className="block text-sm font-medium mb-2">Asunto de la Cotización</Label>
+                <Textarea
+                  value={quoteAsunto}
+                  onChange={(e) => setQuoteAsunto(e.target.value)}
+                  placeholder="Ej: Impermeabilizado y reparaciones en cisterna de agua potable"
+                  rows={3}
+                />
+              </div>
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={() => setShowQuoteOptions(false)}>
+                  Cancelar
+                </Button>
+                <Button 
+                  onClick={handleGenerateQuote}
+                  disabled={isGeneratingQuote}
+                  className="bg-proman-yellow text-proman-navy"
+                >
+                  {isGeneratingQuote ? 'Generando...' : 'Generar PDF'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </Card>
   );
 }
 
-function BillingItemForm({ item, onSubmit, onCancel, isSubmitting }) {
+function BillingItemForm({ item, existingOptions, onSubmit, onCancel, isSubmitting }) {
   const [formData, setFormData] = useState({
     tipo_item: item?.tipo_item || 'servicio',
+    opcion_numero: item?.opcion_numero || (existingOptions.length > 0 ? existingOptions[existingOptions.length - 1].numero : 1),
+    opcion_titulo: item?.opcion_titulo || '',
     descripcion: item?.descripcion || '',
+    descripcion_detallada: item?.descripcion_detallada || '',
     cantidad: item?.cantidad || 1,
+    unidad_medida: item?.unidad_medida || 'unidad',
     precio_unitario: item?.precio_unitario || 0,
-    service_id: item?.service_id || '',
-    incluir_iva: item?.incluir_iva !== undefined ? item.incluir_iva : true
+    incluir_iva: item?.incluir_iva || false,
+    es_cotizacion: item?.es_cotizacion !== false
   });
-  const [imageFile, setImageFile] = useState(null);
-  const [isUploading, setIsUploading] = useState(false);
-
-  // Fetch services for servicio type
-  const { data: services } = useQuery({
-    queryKey: ['services'],
-    queryFn: () => base44.entities.Service.list(),
-    enabled: formData.tipo_item === 'servicio',
-    initialData: [],
-  });
-
-  React.useEffect(() => {
-    const uploadImage = async () => {
-      if (!imageFile) return;
-      setIsUploading(true);
-      try {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file: imageFile });
-        setFormData(prev => ({ ...prev, descripcion: file_url }));
-      } catch (error) {
-        console.error("Error uploading image", error);
-      } finally {
-        setIsUploading(false);
-      }
-    };
-    uploadImage();
-  }, [imageFile]);
+  
+  const [isNewOption, setIsNewOption] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit(formData);
   };
 
-  // Para servicios, agregar 13% solo si se selecciona incluir IVA
-  const aplicarInteres = (formData.tipo_item === 'servicio' || formData.tipo_item === 'mano_de_obra') && formData.incluir_iva;
-  const precioBase = formData.cantidad * formData.precio_unitario;
-  const montoTotal = aplicarInteres ? precioBase * 1.13 : precioBase;
+  const precioTotal = formData.cantidad * formData.precio_unitario;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-      <div>
-        <Label className="block text-sm font-medium text-proman-navy mb-2">
-          Tipo de Item *
+      {/* Selección de Opción */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <Label className="block text-sm font-medium text-blue-900 mb-2">
+          <Layers className="w-4 h-4 inline mr-1" />
+          Agrupar en Opción
         </Label>
-        <Select
-          value={formData.tipo_item}
-          onValueChange={(v) => setFormData({ ...formData, tipo_item: v, descripcion: '', precio_unitario: 0, service_id: '' })}
-          required
-        >
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {Object.entries(tipoItemConfig).map(([key, config]) => (
-              <SelectItem key={key} value={key}>
-                {config.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        
+        {!isNewOption ? (
+          <div className="space-y-2">
+            <Select
+              value={formData.opcion_numero.toString()}
+              onValueChange={(v) => {
+                if (v === 'new') {
+                  setIsNewOption(true);
+                  setFormData({
+                    ...formData,
+                    opcion_numero: existingOptions.length + 1,
+                    opcion_titulo: ''
+                  });
+                } else {
+                  const opcion = existingOptions.find(o => o.numero.toString() === v);
+                  setFormData({
+                    ...formData,
+                    opcion_numero: parseInt(v),
+                    opcion_titulo: opcion?.titulo || `Opción ${v}`
+                  });
+                }
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {existingOptions.map(op => (
+                  <SelectItem key={op.numero} value={op.numero.toString()}>
+                    Opción {op.numero}: {op.titulo}
+                  </SelectItem>
+                ))}
+                <SelectItem value="new">+ Crear nueva opción</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <Input
+                value={`Opción ${formData.opcion_numero}`}
+                disabled
+                className="w-24"
+              />
+              <Input
+                value={formData.opcion_titulo}
+                onChange={(e) => setFormData({ ...formData, opcion_titulo: e.target.value })}
+                placeholder="Título de la opción (ej: Impermeabilizado completo)"
+                className="flex-1"
+              />
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={() => setIsNewOption(false)}
+            >
+              Cancelar nueva opción
+            </Button>
+          </div>
+        )}
       </div>
 
-      {formData.tipo_item === 'servicio' ? (
-        <div>
-          <Label className="block text-sm font-medium text-proman-navy mb-2">
-            Seleccionar Servicio del Catálogo *
-          </Label>
-          <Select
-            value={formData.service_id}
-            onValueChange={(serviceId) => {
-              const service = services.find(s => s.id === serviceId);
-              if (service) {
-                setFormData(prev => ({
-                  ...prev,
-                  service_id: serviceId,
-                  descripcion: service.service_name,
-                  precio_unitario: service.base_price || 0
-                }));
-              }
-            }}
-            required
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Seleccionar servicio" />
-            </SelectTrigger>
-            <SelectContent>
-              {services.map(service => (
-                <SelectItem key={service.id} value={service.id}>
-                  {service.service_name} - ${service.base_price || 0}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {formData.descripcion && (
-            <p className="text-sm text-gray-600 mt-2">
-              <strong>Servicio seleccionado:</strong> {formData.descripcion}
-            </p>
-          )}
-        </div>
-      ) : (
-        <div>
-          <Label className="block text-sm font-medium text-proman-navy mb-2">
-            Descripción de Mano de Obra *
-          </Label>
-          <Textarea
-            value={formData.descripcion}
-            onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-            placeholder="Ej: Instalación especializada, Trabajo nocturno, etc."
-            rows={3}
-            required
-          />
-        </div>
-      )}
+      {/* Descripción corta */}
+      <div>
+        <Label className="block text-sm font-medium text-proman-navy mb-2">
+          Título del Item *
+        </Label>
+        <Input
+          value={formData.descripcion}
+          onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+          placeholder="Ej: Impermeabilizado completo de cisterna"
+          required
+        />
+      </div>
 
+      {/* Descripción detallada */}
+      <div>
+        <Label className="block text-sm font-medium text-proman-navy mb-2">
+          Descripción Detallada del Trabajo
+        </Label>
+        <Textarea
+          value={formData.descripcion_detallada}
+          onChange={(e) => setFormData({ ...formData, descripcion_detallada: e.target.value })}
+          placeholder="El trabajo consiste en:
+- Escarificación de 39 m2 para remover pintura existente...
+- Suministro y aplicación de SikaMonotop Seal 107..."
+          rows={5}
+        />
+        <p className="text-xs text-gray-500 mt-1">
+          Esta descripción aparecerá en la cotización PDF
+        </p>
+      </div>
+
+      {/* Cantidad y Unidad */}
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label className="block text-sm font-medium text-proman-navy mb-2">
@@ -433,58 +579,50 @@ function BillingItemForm({ item, onSubmit, onCancel, isSubmitting }) {
             required
           />
         </div>
-
         <div>
           <Label className="block text-sm font-medium text-proman-navy mb-2">
-            Precio Unitario ($) *
+            Unidad de Medida
           </Label>
-          <Input
-            type="number"
-            step="0.01"
-            min="0"
-            value={formData.precio_unitario}
-            onChange={(e) => setFormData({ ...formData, precio_unitario: parseFloat(e.target.value) || 0 })}
-            required
-          />
+          <Select
+            value={formData.unidad_medida}
+            onValueChange={(v) => setFormData({ ...formData, unidad_medida: v })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(unidadMedidaConfig).map(([key, label]) => (
+                <SelectItem key={key} value={key}>{label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      {(formData.tipo_item === 'servicio' || formData.tipo_item === 'mano_de_obra') && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={formData.incluir_iva}
-              onChange={(e) => setFormData({ ...formData, incluir_iva: e.target.checked })}
-              className="w-4 h-4 text-proman-navy focus:ring-proman-yellow rounded"
-            />
-            <div>
-              <span className="text-sm font-medium text-blue-900">Incluir IVA (13%)</span>
-              <p className="text-xs text-blue-700 mt-0.5">
-                Marca esta opción si deseas agregar el 13% de IVA al precio
-              </p>
-            </div>
-          </label>
-        </div>
-      )}
+      {/* Precio Unitario */}
+      <div>
+        <Label className="block text-sm font-medium text-proman-navy mb-2">
+          Precio Unitario ($) *
+        </Label>
+        <Input
+          type="number"
+          step="0.01"
+          min="0"
+          value={formData.precio_unitario}
+          onChange={(e) => setFormData({ ...formData, precio_unitario: parseFloat(e.target.value) || 0 })}
+          required
+        />
+      </div>
 
+      {/* Total */}
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-        <div className="space-y-2">
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-gray-700">Subtotal:</span>
-            <span className="font-medium">${precioBase.toFixed(2)}</span>
-          </div>
-          {aplicarInteres && (
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-700">IVA (13%):</span>
-              <span className="font-medium text-blue-600">+${(precioBase * 0.13).toFixed(2)}</span>
-            </div>
-          )}
-          <div className="flex justify-between items-center border-t pt-2">
-            <span className="text-sm font-medium text-proman-navy">Monto Total del Item:</span>
-            <span className="text-xl font-bold text-proman-navy">${montoTotal.toFixed(2)}</span>
-          </div>
+        <div className="flex justify-between items-center">
+          <span className="text-sm font-medium text-proman-navy">Precio Total del Item:</span>
+          <span className="text-xl font-bold text-proman-navy">${precioTotal.toFixed(2)}</span>
         </div>
+        <p className="text-xs text-gray-500 mt-1">
+          Nota: El IVA se calcula al generar la factura final, no en la cotización.
+        </p>
       </div>
 
       <div className="flex justify-end gap-3 pt-4">
@@ -494,10 +632,10 @@ function BillingItemForm({ item, onSubmit, onCancel, isSubmitting }) {
         <Button
           type="submit"
           className="bg-proman-yellow text-proman-navy hover:opacity-90"
-          disabled={isSubmitting || isUploading || !formData.descripcion}
-          >
-          {isSubmitting || isUploading ? 'Guardando...' : item ? 'Actualizar' : 'Agregar'}
-          </Button>
+          disabled={isSubmitting || !formData.descripcion}
+        >
+          {isSubmitting ? 'Guardando...' : item ? 'Actualizar' : 'Agregar'}
+        </Button>
       </div>
     </form>
   );
