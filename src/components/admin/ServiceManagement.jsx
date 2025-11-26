@@ -362,8 +362,17 @@ function ServiceFormModal({ isOpen, onClose, service, onSubmit, isSubmitting }) 
       return;
     }
     
-    console.log('Enviando datos del servicio:', formData);
-    onSubmit(formData);
+    // Limpiar datos: convertir strings vacíos a null para campos numéricos opcionales
+    const cleanedData = {
+      ...formData,
+      base_price: formData.base_price ? parseFloat(formData.base_price) : null,
+      price_range_min: formData.price_range_min ? parseFloat(formData.price_range_min) : null,
+      price_range_max: formData.price_range_max ? parseFloat(formData.price_range_max) : null,
+      estimated_hours: parseFloat(formData.estimated_hours),
+    };
+    
+    console.log('Enviando datos del servicio:', cleanedData);
+    onSubmit(cleanedData);
   };
 
   return (
