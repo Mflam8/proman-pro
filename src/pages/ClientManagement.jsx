@@ -1413,8 +1413,8 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
                     )}
 
                     {/* 6. PAGOS */}
-                            <Card className="border-2 border-green-500">
-                        <CardHeader className="bg-green-500 text-white">
+                    <Card className="border-2 border-teal-500">
+                        <CardHeader className="bg-teal-500 text-white">
                             <div className="flex justify-between items-center">
                                 <CardTitle>💰 Pagos del Servicio</CardTitle>
                                 {canEdit && (
