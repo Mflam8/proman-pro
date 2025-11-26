@@ -1409,20 +1409,10 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
                                 
                                 <Textarea name="notes" placeholder="Notas internas administrativas..." value={formData.notes || ''} onChange={(e) => setFormData(prev => ({...prev, notes: e.target.value}))} rows={2} disabled={isUpdating} />
                             </CardContent>
-                            </Card>
+                        </Card>
+                    )}
 
-                            {/* 6. FOTOGRAFÍAS */}
-                            <Card className="border-2 border-blue-500 bg-blue-50/30">
-                            <CardHeader className="bg-blue-500 text-white">
-                            <CardTitle>📸 Fotografías del Trabajo</CardTitle>
-                            </CardHeader>
-                            <CardContent className="grid grid-cols-2 gap-4 pt-4">
-                            <ImageUploader label="Antes" imageUrl={formData.before_image_url} onFileSelect={setBeforeImageFile} isUploading={isUploading} disabled={!canEdit} />
-                            <ImageUploader label="Después" imageUrl={formData.after_image_url} onFileSelect={setAfterImageFile} isUploading={isUploading} disabled={!canEdit} />
-                            </CardContent>
-                            </Card>
-
-                            {/* 7. PAGOS */}
+                    {/* 6. PAGOS */}
                             <Card className="border-2 border-green-500">
                         <CardHeader className="bg-green-500 text-white">
                             <div className="flex justify-between items-center">
