@@ -541,17 +541,48 @@ function BillingItemForm({ item, existingOptions, onSubmit, onCancel, isSubmitti
         )}
       </div>
 
-      {/* Descripción corta */}
+      {/* Título del Item - Dropdown o personalizado */}
       <div>
         <Label className="block text-sm font-medium text-proman-navy mb-2">
           Título del Item *
         </Label>
-        <Input
-          value={formData.descripcion}
-          onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-          placeholder="Ej: Impermeabilizado completo de cisterna"
-          required
-        />
+        <Select
+          value={useCustomTitle ? "_custom" : (formData.descripcion || "_empty")}
+          onValueChange={(v) => {
+            if (v === "_custom") {
+              setUseCustomTitle(true);
+              setFormData({ ...formData, descripcion: '' });
+            } else if (v === "_empty") {
+              setUseCustomTitle(false);
+              setFormData({ ...formData, descripcion: '' });
+            } else {
+              setUseCustomTitle(false);
+              setFormData({ ...formData, descripcion: v });
+            }
+          }}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Seleccionar servicio..." />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="_empty">-- Sin título (vacío) --</SelectItem>
+            {services.map(service => (
+              <SelectItem key={service.id} value={service.service_name}>
+                {service.service_name}
+              </SelectItem>
+            ))}
+            <SelectItem value="_custom">✏️ Escribir título personalizado...</SelectItem>
+          </SelectContent>
+        </Select>
+        
+        {useCustomTitle && (
+          <Input
+            value={formData.descripcion}
+            onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+            placeholder="Ej: Impermeabilizado completo de cisterna"
+            className="mt-2"
+          />
+        )}
       </div>
 
       {/* Descripción detallada */}
