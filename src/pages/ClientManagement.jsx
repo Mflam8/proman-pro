@@ -182,9 +182,8 @@ export default function ClientManagement() {
   const stats = {
     total: inquiries.length,
     nuevo: inquiries.filter(i => i.status === "nuevo").length,
-    evaluacion_pendiente: inquiries.filter(i => i.status === "evaluacion_pendiente" || i.status === "evaluacion_agendada").length,
-    cotizacion_pendiente: inquiries.filter(i => i.status === "cotizacion_pendiente").length,
-    en_proceso: inquiries.filter(i => i.status === "en_proceso").length
+    activos: inquiries.filter(i => activeStatuses.includes(i.status)).length,
+    completado: inquiries.filter(i => i.status === "completado").length
   };
 
   const getWhatsAppLink = (inquiry) => {
