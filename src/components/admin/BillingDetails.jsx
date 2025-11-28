@@ -33,6 +33,7 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
   const [quoteAsunto, setQuoteAsunto] = useState("");
   const [showQuoteOptions, setShowQuoteOptions] = useState(false);
   const [documentType, setDocumentType] = useState("cotizacion"); // "cotizacion" o "factura"
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const queryClient = useQueryClient();
 
   const { data: allItems, isLoading } = useQuery({
@@ -144,7 +145,7 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
     try {
       const response = await base44.functions.invoke('generateQuote', {
         inquiryId: inquiry.id,
-        quoteDate: new Date().toISOString().split('T')[0],
+        quoteDate: selectedDate,
         asunto: quoteAsunto || inquiry.service_type
       });
 
@@ -167,7 +168,8 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
     
     try {
       const response = await base44.functions.invoke('generateInvoice', {
-        inquiryId: inquiry.id
+        inquiryId: inquiry.id,
+        invoiceDate: selectedDate
       });
 
       if (response.data.success) {
@@ -416,6 +418,15 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
                     ? "Propuesta de precios para aprobación del cliente (sin IVA incluido)." 
                     : "Documento final de cobro por servicios realizados (incluye IVA)."}
                 </p>
+              </div>
+
+              <div>
+                <Label className="block text-sm font-medium mb-2">Fecha del Documento</Label>
+                <Input 
+                  type="date" 
+                  value={selectedDate} 
+                  onChange={(e) => setSelectedDate(e.target.value)} 
+                />
               </div>
 
               <div>
