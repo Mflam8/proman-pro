@@ -730,6 +730,23 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
         if (afterImageFile) handleImageUpload(afterImageFile, 'after_image_url');
     }, [afterImageFile]);
 
+    const handleAutoSaveChange = (field, value) => {
+        let newData = { ...formData, [field]: value };
+        
+        if (field === 'status' && value === 'completado') {
+            newData.progress_percentage = 100;
+        }
+        
+        setFormData(newData);
+        
+        // Auto-save changes
+        const { id, ...updateData } = newData;
+        // Asegurar que progress_percentage se incluya explícitamente como número
+        updateData.progress_percentage = Number(newData.progress_percentage) || 0;
+        
+        onUpdate({ id: inquiry.id, data: updateData });
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         
@@ -921,7 +938,7 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <Label className="block text-sm font-medium text-proman-navy mb-2">Estado</Label>
-                                        <Select value={formData.status} onValueChange={(v) => setFormData(p => ({...p, status: v, progress_percentage: v === 'completado' ? 100 : p.progress_percentage}))} disabled={isUpdating}>
+                                        <Select value={formData.status} onValueChange={(v) => handleAutoSaveChange('status', v)} disabled={isUpdating}>
                                             <SelectTrigger><SelectValue /></SelectTrigger>
                                             <SelectContent>
                                                 {Object.entries(statusConfig).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
@@ -930,7 +947,7 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
                                     </div>
                                     <div>
                                         <Label className="block text-sm font-medium text-proman-navy mb-2">Prioridad</Label>
-                                        <Select value={formData.priority} onValueChange={(v) => setFormData(p => ({...p, priority: v}))} disabled={isUpdating}>
+                                        <Select value={formData.priority} onValueChange={(v) => handleAutoSaveChange('priority', v)} disabled={isUpdating}>
                                             <SelectTrigger><SelectValue /></SelectTrigger>
                                             <SelectContent>
                                                 {Object.entries(priorityConfig).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
