@@ -9,7 +9,7 @@ import {
   Users, UserPlus, MapPin, DollarSign, TrendingUp, Package, 
   FileText, Clock, CheckCircle, AlertCircle, BarChart3, PieChart
 } from "lucide-react";
-import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isWithinInterval, subMonths } from "date-fns";
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isWithinInterval, subMonths, subWeeks } from "date-fns";
 import { es } from "date-fns/locale";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPie, Pie, Cell, Legend } from "recharts";
 
@@ -61,6 +61,9 @@ export default function ReportsManagement() {
     const now = new Date();
     if (dateFilter === "week") {
       return { start: startOfWeek(now, { locale: es }), end: endOfWeek(now, { locale: es }) };
+    } else if (dateFilter === "last_week") {
+      const lastWeek = subWeeks(now, 1);
+      return { start: startOfWeek(lastWeek, { locale: es }), end: endOfWeek(lastWeek, { locale: es }) };
     } else if (dateFilter === "month") {
       const [year, month] = selectedMonth.split('-');
       const date = new Date(parseInt(year), parseInt(month) - 1, 1);
@@ -251,6 +254,7 @@ export default function ReportsManagement() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="week">Esta Semana</SelectItem>
+                  <SelectItem value="last_week">Semana Pasada</SelectItem>
                   <SelectItem value="month">Este Mes</SelectItem>
                   <SelectItem value="year">Este Año</SelectItem>
                   <SelectItem value="all">Todo</SelectItem>
