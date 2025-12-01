@@ -133,17 +133,18 @@ export default function ReportsManagement() {
     // Ingresos
     const ingresosBrutos = filteredPayments.reduce((sum, p) => sum + (p.amount_paid || 0), 0);
 
-    // Desglose de Ingresos
-    const ingresosEfectivo = filteredPayments
-      .filter(p => p.payment_method === 'efectivo')
-      .reduce((sum, p) => sum + (p.amount_paid || 0), 0);
-      
+    // Desglose de Ingresos (basado en destino del dinero)
     const ingresosCuentasPropias = filteredPayments
       .filter(p => p.destination_account_type === 'propia')
       .reduce((sum, p) => sum + (p.amount_paid || 0), 0);
 
     const ingresosCuentasTerceros = filteredPayments
       .filter(p => p.destination_account_type === 'terceros')
+      .reduce((sum, p) => sum + (p.amount_paid || 0), 0);
+
+    // Efectivo en manos (no depositado/N.A.)
+    const ingresosEfectivo = filteredPayments
+      .filter(p => p.destination_account_type === 'n/a' || !p.destination_account_type)
       .reduce((sum, p) => sum + (p.amount_paid || 0), 0);
     
     // Gastos de materiales (solo tipo material)
