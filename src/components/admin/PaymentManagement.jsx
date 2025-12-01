@@ -323,6 +323,7 @@ function PaymentForm({ inquiries, customers, onSubmit, isSubmitting, onCancel })
     amount_paid: "",
     payment_date: new Date().toISOString().split('T')[0],
     payment_method: "efectivo",
+    destination_account_type: "n/a",
     transaction_id: "",
     confirmation_url: "",
     notes: ""
@@ -445,26 +446,51 @@ function PaymentForm({ inquiries, customers, onSubmit, isSubmitting, onCancel })
         </div>
       </div>
 
-      <div>
-        <Label className="block text-sm font-medium text-proman-navy mb-2">
-          Método de Pago *
-        </Label>
-        <Select
-          value={formData.payment_method}
-          onValueChange={(value) => setFormData({ ...formData, payment_method: value })}
-          required
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Seleccionar método" />
-          </SelectTrigger>
-          <SelectContent>
-            {Object.entries(paymentMethodConfig).map(([key, config]) => (
-              <SelectItem key={key} value={key}>
-                {config.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label className="block text-sm font-medium text-proman-navy mb-2">
+            Método de Pago *
+          </Label>
+          <Select
+            value={formData.payment_method}
+            onValueChange={(value) => {
+              // Si es efectivo, por defecto cuenta n/a, si es transferencia/deposito sugerir algo?
+              // Mejor dejar que el usuario elija.
+              setFormData({ ...formData, payment_method: value });
+            }}
+            required
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Seleccionar método" />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(paymentMethodConfig).map(([key, config]) => (
+                <SelectItem key={key} value={key}>
+                  {config.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label className="block text-sm font-medium text-proman-navy mb-2">
+            Cuenta Destino
+          </Label>
+          <Select
+            value={formData.destination_account_type}
+            onValueChange={(value) => setFormData({ ...formData, destination_account_type: value })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Tipo de cuenta" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="n/a">N/A (Efectivo)</SelectItem>
+              <SelectItem value="propia">Cuenta Propia (Empresa)</SelectItem>
+              <SelectItem value="terceros">Cuenta de Terceros</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div>

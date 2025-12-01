@@ -132,6 +132,19 @@ export default function ReportsManagement() {
 
     // Ingresos
     const ingresosBrutos = filteredPayments.reduce((sum, p) => sum + (p.amount_paid || 0), 0);
+
+    // Desglose de Ingresos
+    const ingresosEfectivo = filteredPayments
+      .filter(p => p.payment_method === 'efectivo')
+      .reduce((sum, p) => sum + (p.amount_paid || 0), 0);
+      
+    const ingresosCuentasPropias = filteredPayments
+      .filter(p => p.destination_account_type === 'propia')
+      .reduce((sum, p) => sum + (p.amount_paid || 0), 0);
+
+    const ingresosCuentasTerceros = filteredPayments
+      .filter(p => p.destination_account_type === 'terceros')
+      .reduce((sum, p) => sum + (p.amount_paid || 0), 0);
     
     // Gastos de materiales (solo tipo material)
     const gastosMateriales = filteredGastos
@@ -157,6 +170,9 @@ export default function ReportsManagement() {
       cuentasPorCobrar: cuentasPorCobrar.length,
       montoPorCobrar,
       ingresosBrutos,
+      ingresosEfectivo,
+      ingresosCuentasPropias,
+      ingresosCuentasTerceros,
       gastosMateriales,
       otrosGastos,
       ingresoNeto
@@ -364,6 +380,22 @@ export default function ReportsManagement() {
                 <p className="text-3xl font-bold mt-1">${stats.ingresosBrutos.toFixed(2)}</p>
               </div>
               <TrendingUp className="w-10 h-10 text-green-200" />
+            </div>
+            <div className="mt-4 pt-4 border-t border-green-400/50 grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <p className="text-green-100">Cuentas Propias</p>
+                <p className="font-bold text-lg">${stats.ingresosCuentasPropias.toFixed(2)}</p>
+              </div>
+              <div>
+                <p className="text-green-100">Ctas. Terceros</p>
+                <p className="font-bold text-lg">${stats.ingresosCuentasTerceros.toFixed(2)}</p>
+              </div>
+              <div className="col-span-2 border-t border-green-400/30 pt-1 mt-1">
+                <div className="flex justify-between items-center">
+                  <p className="text-green-100">Efectivo</p>
+                  <p className="font-bold text-lg">${stats.ingresosEfectivo.toFixed(2)}</p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
