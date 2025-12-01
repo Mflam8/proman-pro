@@ -4,8 +4,23 @@ import autoTable from 'npm:jspdf-autotable@3.8.2';
 import { format } from 'npm:date-fns@2.30.0';
 import { es } from 'npm:date-fns@2.30.0/locale';
 
+// Polyfill for jsPDF in Deno/Node environments
+if (typeof window === 'undefined') {
+    globalThis.window = globalThis;
+}
+
 Deno.serve(async (req) => {
     try {
+        if (req.method === 'OPTIONS') {
+            return new Response(null, {
+                headers: {
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                }
+            });
+        }
+
         const base44 = createClientFromRequest(req);
         const user = await base44.auth.me();
 
@@ -13,11 +28,12 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { startDate, endDate, filterLabel } = await req.json();
+        const body = await req.json();
+        const { startDate, endDate, filterLabel } = body;
+        
         const start = new Date(startDate);
         const end = new Date(endDate);
-        
-        // Ajustar end date al final del día - Force deploy
+        // Ensure end date covers the full day
         end.setHours(23, 59, 59, 999);
 
         // Fetch Data
@@ -40,13 +56,11 @@ Deno.serve(async (req) => {
         // 1. Resumen General
         const totalTrabajos = filteredInquiries.length;
         const trabajosCompletados = filteredInquiries.filter(i => i.status === 'completado').length;
-        const trabajosPendientes = filteredInquiries.filter(i => i.status !== 'completado').length;
         const pendientesCotizacion = filteredInquiries.filter(i => i.status === 'cotizacion_pendiente').length;
         
         const totalIngresos = filteredPayments.reduce((sum, p) => sum + (p.amount_paid || 0), 0);
 
-        // 2. Cuentas por Cobrar (Total acumulado histórico, no solo del rango)
-        // Son trabajos completados con saldo pendiente
+        // 2. Cuentas por Cobrar (Total acumulado histórico)
         const cuentasPorCobrar = inquiries
             .filter(i => i.status === 'completado' && i.payment_status !== 'pagado')
             .map(i => {
@@ -56,7 +70,7 @@ Deno.serve(async (req) => {
                     .reduce((s, p) => s + (p.amount_paid || 0), 0);
                 return { ...i, saldo: total - pagado, pagado, total };
             })
-            .filter(i => i.saldo > 0);
+            .filter(i => i.saldo > 0.01); // Filter small floating point diffs
         
         const totalPorCobrar = cuentasPorCobrar.reduce((sum, i) => sum + i.saldo, 0);
 
@@ -66,9 +80,6 @@ Deno.serve(async (req) => {
             const loc = i.location || 'Sin Especificar';
             if (!geoStats[loc]) geoStats[loc] = { count: 0, revenue: 0 };
             geoStats[loc].count++;
-            // Estimamos revenue por trabajo basado en sus pagos asociados en este periodo
-            // O usamos el monto del trabajo si fue completado en este periodo.
-            // Para reporte gerencial, mejor sumar lo facturado/cotizado de los trabajos de este periodo
             geoStats[loc].revenue += (i.final_amount || i.quote_amount || 0);
         });
 
@@ -84,7 +95,7 @@ Deno.serve(async (req) => {
             .sort((a, b) => b[1].revenue - a[1].revenue)
             .slice(0, 10);
 
-        // 5. Desglose de Ingresos (Money Sources)
+        // 5. Desglose de Ingresos
         const ingresosPropia = filteredPayments
             .filter(p => p.destination_account_type === 'propia')
             .reduce((sum, p) => sum + (p.amount_paid || 0), 0);
@@ -95,8 +106,7 @@ Deno.serve(async (req) => {
             .filter(p => p.destination_account_type === 'n/a' || !p.destination_account_type)
             .reduce((sum, p) => sum + (p.amount_paid || 0), 0);
 
-        // 6. Dinero en Manos de Empleados (De los pagos filtrados)
-        // Agrupamos pagos en efectivo por recolector
+        // 6. Dinero en Manos
         const dineroEmpleados = {};
         filteredPayments
             .filter(p => p.destination_account_type === 'n/a' || !p.destination_account_type)
@@ -133,9 +143,9 @@ Deno.serve(async (req) => {
         yPos += 10;
 
         const summaryData = [
-            ['Total Trabajos', totalTrabajos],
-            ['Completados', trabajosCompletados],
-            ['Pendientes de Cotización', pendientesCotizacion],
+            ['Total Trabajos', totalTrabajos.toString()],
+            ['Completados', trabajosCompletados.toString()],
+            ['Pendientes de Cotización', pendientesCotizacion.toString()],
             ['Ingresos Totales (Pagos Recibidos)', `$ ${totalIngresos.toFixed(2)}`],
             ['Total por Cobrar (Global)', `$ ${totalPorCobrar.toFixed(2)}`]
         ];
@@ -174,7 +184,7 @@ Deno.serve(async (req) => {
 
         yPos = doc.lastAutoTable.finalY + 15;
 
-        // 3. Dinero en Manos (Detalle Efectivo)
+        // 3. Dinero en Manos
         if (Object.keys(dineroEmpleados).length > 0) {
             doc.text("3. Detalle de Dinero en Manos (Efectivo)", 20, yPos);
             yPos += 8;
@@ -188,7 +198,7 @@ Deno.serve(async (req) => {
                 head: [['Responsable / Técnico', 'Monto']],
                 body: cashData,
                 theme: 'striped',
-                headStyles: { fillColor: [220, 38, 38] } // Red color for alert
+                headStyles: { fillColor: [220, 38, 38] } // Red color
             });
             yPos = doc.lastAutoTable.finalY + 15;
         }
@@ -206,7 +216,7 @@ Deno.serve(async (req) => {
 
         const servicesData = topServices.map(([name, stats]) => [
             name, 
-            stats.count, 
+            stats.count.toString(), 
             `$ ${stats.revenue.toFixed(2)}`
         ]);
 
@@ -231,7 +241,7 @@ Deno.serve(async (req) => {
 
         const geoData = Object.entries(geoStats)
             .sort((a, b) => b[1].revenue - a[1].revenue)
-            .map(([loc, stats]) => [loc, stats.count, `$ ${stats.revenue.toFixed(2)}`]);
+            .map(([loc, stats]) => [loc, stats.count.toString(), `$ ${stats.revenue.toFixed(2)}`]);
 
         autoTable(doc, {
             startY: yPos,
@@ -240,7 +250,7 @@ Deno.serve(async (req) => {
             headStyles: { fillColor: [37, 42, 92] }
         });
 
-        // 6. Cuentas por Cobrar (Detalle)
+        // 6. Cuentas por Cobrar
         doc.addPage();
         yPos = 20;
         doc.setFontSize(14);
@@ -252,7 +262,7 @@ Deno.serve(async (req) => {
             .map(i => [
                 i.client_name || 'Cliente',
                 i.service_type || 'Servicio',
-                format(new Date(i.created_date), 'dd/MM/yyyy'),
+                i.created_date ? format(new Date(i.created_date), 'dd/MM/yyyy') : '-',
                 `$ ${i.total.toFixed(2)}`,
                 `$ ${i.saldo.toFixed(2)}`
             ]);
@@ -267,14 +277,20 @@ Deno.serve(async (req) => {
         // Output
         const pdfBytes = doc.output('arraybuffer');
         
-        // Upload to storage
+        // Upload
         const fileName = `reporte_gerencial_${Date.now()}.pdf`;
         const file = new File([pdfBytes], fileName, { type: 'application/pdf' });
-        const { file_url } = await base44.integrations.Core.UploadFile({ file });
-
-        return Response.json({ success: true, pdf_url: file_url });
+        
+        const uploadResult = await base44.integrations.Core.UploadFile({ file });
+        
+        return Response.json({ success: true, pdf_url: uploadResult.file_url });
 
     } catch (error) {
-        return Response.json({ error: error.message }, { status: 500 });
+        console.error("Error in generateManagementReport:", error);
+        return Response.json({ 
+            success: false,
+            error: error.message,
+            stack: error.stack 
+        }, { status: 500 });
     }
 });

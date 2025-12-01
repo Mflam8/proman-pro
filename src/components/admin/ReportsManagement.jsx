@@ -97,11 +97,12 @@ export default function ReportsManagement() {
       if (response.data.success) {
         window.open(response.data.pdf_url, '_blank');
       } else {
-        alert("Error al generar reporte");
+        console.error("Backend Error:", response.data);
+        alert("Error al generar reporte: " + (response.data.error || "Error desconocido"));
       }
     } catch (error) {
-      console.error(error);
-      alert("Error al generar el reporte: " + (error.message || "Error desconocido"));
+      console.error("Request Error:", error);
+      alert("Error de conexión al generar el reporte: " + (error.message || "Error desconocido"));
     } finally {
       setIsGeneratingReport(false);
     }
