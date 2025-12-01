@@ -1,26 +1,25 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 import { jsPDF } from 'npm:jspdf@2.5.1';
 import autoTable from 'npm:jspdf-autotable@3.8.2';
-import { format } from 'npm:date-fns@2.30.0';
-import { es } from 'npm:date-fns@2.30.0/locale';
 
-// Polyfill for jsPDF
-if (typeof window === 'undefined') {
+// Polyfill for jsPDF in Deno environment
+if (!globalThis.window) {
     globalThis.window = globalThis;
 }
 
 Deno.serve(async (req) => {
-    try {
-        if (req.method === 'OPTIONS') {
-            return new Response(null, {
-                headers: {
-                    'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-                    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-                }
-            });
-        }
+    // Handle CORS preflight
+    if (req.method === 'OPTIONS') {
+        return new Response(null, {
+            headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+            }
+        });
+    }
 
+    try {
         const base44 = createClientFromRequest(req);
         const user = await base44.auth.me();
 
@@ -28,7 +27,13 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const body = await req.json();
+        let body;
+        try {
+            body = await req.json();
+        } catch (e) {
+            return Response.json({ error: 'Invalid JSON body' }, { status: 400 });
+        }
+
         const { startDate, endDate, filterLabel } = body;
         
         const start = new Date(startDate);
@@ -113,20 +118,29 @@ Deno.serve(async (req) => {
                 dineroEmpleados[collector] += (p.amount_paid || 0);
             });
 
+        // Helper for currency formatting
+        const fmtMoney = (amount) => `$ ${amount.toFixed(2)}`;
+        
+        // Helper for date formatting
+        const fmtDate = (dateStr) => {
+            if (!dateStr) return '-';
+            return new Date(dateStr).toLocaleDateString('es-ES');
+        };
+
         // --- PDF GENERATION ---
         const doc = new jsPDF();
         const pageWidth = doc.internal.pageSize.width;
         let yPos = 20;
 
         // Header
-        doc.setFillColor(37, 42, 92);
+        doc.setFillColor(37, 42, 92); // Navy
         doc.rect(0, 0, pageWidth, 40, 'F');
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(22);
         doc.text("Reporte Gerencial", 20, 20);
         doc.setFontSize(12);
         doc.text(`Período: ${filterLabel}`, 20, 30);
-        doc.text(`Generado: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, pageWidth - 60, 30);
+        doc.text(`Generado: ${new Date().toLocaleString('es-ES')}`, pageWidth - 70, 30);
 
         yPos = 50;
 
@@ -141,8 +155,8 @@ Deno.serve(async (req) => {
             ['Completados', trabajosCompletados.toString()],
             ['Pendientes de Cotización', pendientesCotizacion.toString()],
             ['Total Trabajos', totalTrabajos.toString()],
-            ['Ingresos Totales', `$ ${totalIngresos.toFixed(2)}`],
-            ['Cuentas por Cobrar', `$ ${totalPorCobrar.toFixed(2)}`]
+            ['Ingresos Totales', fmtMoney(totalIngresos)],
+            ['Cuentas por Cobrar', fmtMoney(totalPorCobrar)]
         ];
 
         autoTable(doc, {
@@ -150,7 +164,7 @@ Deno.serve(async (req) => {
             head: [['Métrica', 'Valor']],
             body: summaryData,
             theme: 'grid',
-            headStyles: { fillColor: [253, 200, 12], textColor: [37, 42, 92] },
+            headStyles: { fillColor: [253, 200, 12], textColor: [37, 42, 92] }, // Yellow
             styles: { fontSize: 10 },
             columnStyles: { 0: { fontStyle: 'bold' } }
         });
@@ -166,10 +180,10 @@ Deno.serve(async (req) => {
             startY: yPos,
             head: [['Cuenta', 'Monto']],
             body: [
-                ['Empresa', `$ ${ingresosPropia.toFixed(2)}`],
-                ['Terceros', `$ ${ingresosTerceros.toFixed(2)}`],
-                ['Efectivo', `$ ${ingresosEfectivo.toFixed(2)}`],
-                ['TOTAL', `$ ${totalIngresos.toFixed(2)}`]
+                ['Empresa', fmtMoney(ingresosPropia)],
+                ['Terceros', fmtMoney(ingresosTerceros)],
+                ['Efectivo', fmtMoney(ingresosEfectivo)],
+                ['TOTAL', fmtMoney(totalIngresos)]
             ],
             theme: 'striped',
             headStyles: { fillColor: [37, 42, 92] }
@@ -183,7 +197,7 @@ Deno.serve(async (req) => {
             autoTable(doc, {
                 startY: yPos,
                 head: [['Responsable', 'Monto']],
-                body: Object.entries(dineroEmpleados).map(([k, v]) => [k, `$ ${v.toFixed(2)}`]),
+                body: Object.entries(dineroEmpleados).map(([k, v]) => [k, fmtMoney(v)]),
                 theme: 'striped',
                 headStyles: { fillColor: [220, 38, 38] }
             });
@@ -197,7 +211,7 @@ Deno.serve(async (req) => {
         autoTable(doc, {
             startY: yPos,
             head: [['Servicio', 'Cant.', 'Generado']],
-            body: topServices.map(([k, v]) => [k, v.count, `$ ${v.revenue.toFixed(2)}`]),
+            body: topServices.map(([k, v]) => [k, v.count, fmtMoney(v.revenue)]),
             headStyles: { fillColor: [37, 42, 92] }
         });
 
@@ -209,9 +223,10 @@ Deno.serve(async (req) => {
         return Response.json({ success: true, pdf_base64: pdfBase64 });
 
     } catch (error) {
+        console.error("Function execution error:", error);
         return Response.json({ 
             success: false,
-            error: error.message
+            error: error.message || "Unknown server error"
         }, { status: 500 });
     }
 });
