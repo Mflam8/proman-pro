@@ -94,25 +94,18 @@ export default function ReportsManagement() {
         filterLabel: filterLabels[dateFilter] || "Personalizado"
       });
 
-      if (response.data.success && response.data.pdf_base64) {
-        // Convert Base64 to Blob and open in new tab
-        const byteCharacters = atob(response.data.pdf_base64);
-        const byteNumbers = new Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-          byteNumbers[i] = byteCharacters.charCodeAt(i);
-        }
-        const byteArray = new Uint8Array(byteNumbers);
-        const blob = new Blob([byteArray], { type: 'application/pdf' });
-        const url = URL.createObjectURL(blob);
-        
-        // Open PDF
-        const pdfWindow = window.open(url, '_blank');
-        if (!pdfWindow) {
+      if (response.data.success && response.data.html) {
+        // Open HTML Report
+        const reportWindow = window.open('', '_blank');
+        if (reportWindow) {
+            reportWindow.document.write(response.data.html);
+            reportWindow.document.close();
+        } else {
             alert("Por favor permite las ventanas emergentes para ver el reporte");
         }
       } else {
         console.error("Backend Error:", response.data);
-        alert("Error al generar reporte: " + (response.data.error || response.data.details || "Error desconocido"));
+        alert("Error al generar reporte: " + (response.data.error || "Error desconocido"));
       }
     } catch (error) {
       console.error("Request Error:", error);

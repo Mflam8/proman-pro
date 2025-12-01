@@ -1,25 +1,11 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
-import { jsPDF } from 'npm:jspdf@2.5.1';
-import autoTable from 'npm:jspdf-autotable@3.8.2';
 
-// --- CRITICAL ENVIRONMENT POLYFILLS ---
-// jsPDF and autoTable require these globals to function in Deno/Node
-if (typeof globalThis.window === 'undefined') {
-    globalThis.window = globalThis;
-}
-if (typeof globalThis.navigator === 'undefined') {
-    globalThis.navigator = { userAgent: 'node' };
-}
-if (typeof globalThis.document === 'undefined') {
-    // Minimal document mock for some libraries
-    globalThis.document = {
-        createElement: () => ({}),
-        createElementNS: () => ({}),
-    };
-}
+// Helper function to format money
+const fmtMoney = (amount) => {
+    return new Intl.NumberFormat('es-SV', { style: 'currency', currency: 'USD' }).format(amount || 0);
+};
 
 Deno.serve(async (req) => {
-    // 1. Handle CORS preflight immediately
     if (req.method === 'OPTIONS') {
         return new Response(null, {
             headers: {
@@ -31,37 +17,27 @@ Deno.serve(async (req) => {
     }
 
     try {
-        // 2. Setup Client
         const base44 = createClientFromRequest(req);
-        
-        // 3. Auth Check
         const user = await base44.auth.me();
+
         if (!user) {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // 4. Parse Body
-        let body;
-        try {
-            body = await req.json();
-        } catch (e) {
-            return Response.json({ error: 'Invalid JSON body' }, { status: 400 });
-        }
-
+        const body = await req.json();
         const { startDate, endDate, filterLabel } = body;
         
-        // 5. Data Fetching
         const start = new Date(startDate);
         const end = new Date(endDate);
         end.setHours(23, 59, 59, 999);
 
-        // Fetch only needed entities
+        // 1. Fetch Data
         const [inquiries, payments] = await Promise.all([
             base44.entities.ClientInquiry.list(),
             base44.entities.Payment.list()
         ]);
 
-        // 6. Filtering
+        // 2. Filter Data
         const filteredInquiries = inquiries.filter(i => {
             const date = new Date(i.scheduled_date || i.created_date);
             return date >= start && date <= end;
@@ -72,32 +48,15 @@ Deno.serve(async (req) => {
             return date >= start && date <= end;
         });
 
-        // 7. Calculations
+        // 3. Calculations
         const totalTrabajos = filteredInquiries.length;
         const trabajosCompletados = filteredInquiries.filter(i => i.status === 'completado').length;
         const pendientesCotizacion = filteredInquiries.filter(i => i.status === 'cotizacion_pendiente').length;
         const serviciosNuevos = filteredInquiries.filter(i => i.status === 'nuevo').length;
+        
         const totalIngresos = filteredPayments.reduce((sum, p) => sum + (p.amount_paid || 0), 0);
 
-        // Cuentas por cobrar logic
-        const cuentasPorCobrar = inquiries
-            .filter(i => i.status === 'completado' && i.payment_status !== 'pagado')
-            .map(i => {
-                const total = i.final_amount || i.quote_amount || 0;
-                const pagado = payments
-                    .filter(p => p.inquiry_id === i.id)
-                    .reduce((s, p) => s + (p.amount_paid || 0), 0);
-                return { 
-                    client: i.client_name || 'Cliente',
-                    service: i.service_type || '-',
-                    saldo: total - pagado 
-                };
-            })
-            .filter(i => i.saldo > 0.01);
-        
-        const totalPorCobrar = cuentasPorCobrar.reduce((sum, i) => sum + i.saldo, 0);
-
-        // Ingresos logic
+        // Ingresos breakdown
         const ingresosPropia = filteredPayments
             .filter(p => p.destination_account_type === 'propia')
             .reduce((sum, p) => sum + (p.amount_paid || 0), 0);
@@ -108,7 +67,30 @@ Deno.serve(async (req) => {
             .filter(p => p.destination_account_type === 'n/a' || !p.destination_account_type)
             .reduce((sum, p) => sum + (p.amount_paid || 0), 0);
 
-        // Dinero en manos logic
+        // Cuentas por cobrar (Historical, not just filtered range usually, but keeping consistency)
+        // Usually Accounts Receivable is a snapshot of ALL open debts, regardless of when they were created.
+        // But let's stick to the requested scope or all active debts if preferred. 
+        // Here we calculate ALL pending debts as it's a status report.
+        const cuentasPorCobrar = inquiries
+            .filter(i => i.status === 'completado' && i.payment_status !== 'pagado')
+            .map(i => {
+                const total = i.final_amount || i.quote_amount || 0;
+                const pagado = payments
+                    .filter(p => p.inquiry_id === i.id)
+                    .reduce((s, p) => s + (p.amount_paid || 0), 0);
+                return { 
+                    client: i.client_name || 'Cliente',
+                    service: i.service_type || '-',
+                    date: i.created_date,
+                    saldo: total - pagado 
+                };
+            })
+            .filter(i => i.saldo > 0.01)
+            .sort((a, b) => b.saldo - a.saldo);
+        
+        const totalPorCobrar = cuentasPorCobrar.reduce((sum, i) => sum + i.saldo, 0);
+
+        // Dinero en Manos
         const dineroEmpleados = {};
         filteredPayments
             .filter(p => p.destination_account_type === 'n/a' || !p.destination_account_type)
@@ -118,7 +100,7 @@ Deno.serve(async (req) => {
                 dineroEmpleados[collector] += (p.amount_paid || 0);
             });
 
-        // Top Servicios logic
+        // Top Servicios
         const serviceStats = {};
         filteredInquiries.forEach(i => {
             const srv = i.service_type || 'Otros';
@@ -131,101 +113,200 @@ Deno.serve(async (req) => {
             .slice(0, 10);
 
 
-        // 8. PDF Generation
-        const doc = new jsPDF();
-        const pageWidth = doc.internal.pageSize.width;
-        const fmtMoney = (v) => `$ ${v.toFixed(2)}`;
+        // 4. HTML Generation
+        const css = `
+            body { font-family: 'Helvetica', 'Arial', sans-serif; color: #333; max-width: 1000px; margin: 0 auto; padding: 20px; }
+            .header { background-color: #252a5c; color: white; padding: 20px; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center; }
+            .header h1 { margin: 0; font-size: 24px; }
+            .meta { font-size: 12px; opacity: 0.9; text-align: right; }
+            .section { margin-top: 30px; border: 1px solid #eee; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+            .section-title { background-color: #f4f6f8; padding: 12px 20px; font-weight: bold; color: #252a5c; border-bottom: 1px solid #eee; font-size: 16px; }
+            .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; padding: 20px; }
+            .kpi-card { background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #e0e0e0; text-align: center; }
+            .kpi-value { font-size: 24px; font-weight: bold; color: #252a5c; margin: 5px 0; }
+            .kpi-label { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
+            table { width: 100%; border-collapse: collapse; }
+            th { background-color: #f8f9fa; text-align: left; padding: 12px 20px; font-size: 12px; color: #666; text-transform: uppercase; border-bottom: 2px solid #eee; }
+            td { padding: 12px 20px; border-bottom: 1px solid #eee; font-size: 14px; }
+            tr:last-child td { border-bottom: none; }
+            .amount { font-family: 'Courier New', monospace; font-weight: bold; }
+            .text-right { text-align: right; }
+            .text-red { color: #dc2626; }
+            .text-green { color: #16a34a; }
+            .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #999; border-top: 1px solid #eee; padding-top: 20px; }
+            @media print {
+                body { padding: 0; max-width: 100%; }
+                .section { break-inside: avoid; box-shadow: none; border: 1px solid #ddd; }
+            }
+        `;
 
-        // Header
-        doc.setFillColor(37, 42, 92);
-        doc.rect(0, 0, pageWidth, 40, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(22);
-        doc.text("Reporte Gerencial", 20, 20);
-        doc.setFontSize(12);
-        doc.text(`Período: ${filterLabel || 'Personalizado'}`, 20, 30);
-        doc.text(`Fecha: ${new Date().toLocaleDateString('es-ES')}`, pageWidth - 60, 30);
+        const html = `
+        <!DOCTYPE html>
+        <html lang="es">
+        <head>
+            <meta charset="UTF-8">
+            <title>Reporte Gerencial - ${filterLabel}</title>
+            <style>${css}</style>
+        </head>
+        <body>
+            <div class="header">
+                <div>
+                    <h1>PROMAN Services</h1>
+                    <div style="font-size: 14px; opacity: 0.8; margin-top: 5px;">Reporte Gerencial</div>
+                </div>
+                <div class="meta">
+                    <div>Período: <strong>${filterLabel}</strong></div>
+                    <div>Generado: ${new Date().toLocaleString('es-SV')}</div>
+                </div>
+            </div>
 
-        let yPos = 50;
+            <div class="section">
+                <div class="section-title">1. Resumen Ejecutivo</div>
+                <div class="summary-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-value text-green">${serviciosNuevos}</div>
+                        <div class="kpi-label">Servicios Nuevos</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-value text-green">${trabajosCompletados}</div>
+                        <div class="kpi-label">Completados</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-value" style="color: #f59e0b;">${pendientesCotizacion}</div>
+                        <div class="kpi-label">Pendientes Cotización</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-value">${totalTrabajos}</div>
+                        <div class="kpi-label">Total Trabajos</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-value text-green">${fmtMoney(totalIngresos)}</div>
+                        <div class="kpi-label">Ingresos Totales</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-value text-red">${fmtMoney(totalPorCobrar)}</div>
+                        <div class="kpi-label">Por Cobrar (Global)</div>
+                    </div>
+                </div>
+            </div>
 
-        // Table 1: Resumen
-        doc.setTextColor(37, 42, 92);
-        doc.setFontSize(14);
-        doc.text("1. Resumen Ejecutivo", 20, yPos);
-        yPos += 8;
+            <div class="section">
+                <div class="section-title">2. Desglose de Ingresos (Flujo de Caja)</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Cuenta Destino</th>
+                            <th class="text-right">Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Cuenta Empresa (Propia)</td>
+                            <td class="text-right amount text-green">${fmtMoney(ingresosPropia)}</td>
+                        </tr>
+                        <tr>
+                            <td>Cuenta Terceros</td>
+                            <td class="text-right amount">${fmtMoney(ingresosTerceros)}</td>
+                        </tr>
+                        <tr>
+                            <td>Efectivo (En Mano)</td>
+                            <td class="text-right amount">${fmtMoney(ingresosEfectivo)}</td>
+                        </tr>
+                        <tr style="background-color: #f8f9fa; font-weight: bold;">
+                            <td>TOTAL INGRESOS</td>
+                            <td class="text-right amount">${fmtMoney(totalIngresos)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
 
-        autoTable(doc, {
-            startY: yPos,
-            head: [['Indicador', 'Valor']],
-            body: [
-                ['Servicios Nuevos', servicesNuevos],
-                ['Trabajos Completados', trabajosCompletados],
-                ['Pendientes de Cotización', pendientesCotizacion],
-                ['Total Trabajos (Período)', totalTrabajos],
-                ['Ingresos Totales', fmtMoney(totalIngresos)],
-                ['Cuentas por Cobrar (Global)', fmtMoney(totalPorCobrar)],
-            ],
-            theme: 'grid',
-            headStyles: { fillColor: [253, 200, 12], textColor: [37, 42, 92] },
-            columnStyles: { 0: { fontStyle: 'bold' } }
-        });
-        yPos = doc.lastAutoTable.finalY + 15;
+            ${Object.keys(dineroEmpleados).length > 0 ? `
+            <div class="section">
+                <div class="section-title">3. Dinero en Manos (Efectivo por Técnico)</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Responsable</th>
+                            <th class="text-right">Monto a Liquidar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${Object.entries(dineroEmpleados).map(([k, v]) => `
+                        <tr>
+                            <td>${k}</td>
+                            <td class="text-right amount text-red">${fmtMoney(v)}</td>
+                        </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+            ` : ''}
 
-        // Table 2: Ingresos
-        doc.text("2. Desglose de Ingresos", 20, yPos);
-        yPos += 8;
-        autoTable(doc, {
-            startY: yPos,
-            head: [['Cuenta Destino', 'Monto']],
-            body: [
-                ['Empresa (Propia)', fmtMoney(ingresosPropia)],
-                ['Terceros', fmtMoney(ingresosTerceros)],
-                ['Efectivo (En Mano)', fmtMoney(ingresosEfectivo)],
-                ['TOTAL', fmtMoney(totalIngresos)]
-            ],
-            theme: 'striped',
-            headStyles: { fillColor: [37, 42, 92] }
-        });
-        yPos = doc.lastAutoTable.finalY + 15;
+            <div class="section">
+                <div class="section-title">4. Top Servicios (Más Vendidos)</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Servicio</th>
+                            <th class="text-right">Cantidad</th>
+                            <th class="text-right">Generado (Est.)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${topServices.map(([k, v]) => `
+                        <tr>
+                            <td>${k}</td>
+                            <td class="text-right">${v.count}</td>
+                            <td class="text-right amount">${fmtMoney(v.revenue)}</td>
+                        </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+            
+            ${cuentasPorCobrar.length > 0 ? `
+            <div class="section">
+                <div class="section-title">5. Detalle Cuentas por Cobrar (Top 10)</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Servicio</th>
+                            <th class="text-right">Saldo Pendiente</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${cuentasPorCobrar.slice(0, 10).map(i => `
+                        <tr>
+                            <td>${i.client}</td>
+                            <td>${i.service}</td>
+                            <td class="text-right amount text-red">${fmtMoney(i.saldo)}</td>
+                        </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+            ` : ''}
 
-        // Table 3: Dinero en Manos
-        if (Object.keys(dineroEmpleados).length > 0) {
-            doc.text("3. Dinero en Manos (Efectivo)", 20, yPos);
-            yPos += 8;
-            autoTable(doc, {
-                startY: yPos,
-                head: [['Responsable', 'Monto']],
-                body: Object.entries(dineroEmpleados).map(([k, v]) => [k, fmtMoney(v)]),
-                headStyles: { fillColor: [220, 38, 38] }
-            });
-            yPos = doc.lastAutoTable.finalY + 15;
-        }
+            <div class="footer">
+                <p>Reporte generado automáticamente por el sistema PROMAN Services.</p>
+            </div>
+            
+            <script>
+                // Auto print when loaded
+                window.onload = function() { setTimeout(function() { window.print(); }, 500); }
+            </script>
+        </body>
+        </html>
+        `;
 
-        // Table 4: Top Servicios
-        if (yPos > 220) { doc.addPage(); yPos = 20; }
-        doc.text("4. Top Servicios (Más Vendidos)", 20, yPos);
-        yPos += 8;
-        autoTable(doc, {
-            startY: yPos,
-            head: [['Servicio', 'Cant.', 'Generado']],
-            body: topServices.map(([k, v]) => [k, v.count, fmtMoney(v.revenue)]),
-            headStyles: { fillColor: [37, 42, 92] }
-        });
-
-        // 9. Return Base64
-        const pdfBytes = doc.output('arraybuffer');
-        const binaryString = new Uint8Array(pdfBytes).reduce((acc, byte) => acc + String.fromCharCode(byte), '');
-        const pdfBase64 = btoa(binaryString);
-
-        return Response.json({ success: true, pdf_base64: pdfBase64 });
+        return Response.json({ success: true, html: html });
 
     } catch (error) {
-        // Log error for debugging (server side)
-        console.error("REPORT_ERROR:", error);
+        console.error("HTML REPORT ERROR:", error);
         return Response.json({ 
             success: false, 
-            error: error.message,
-            details: error.stack 
+            error: error.message || "Error generico"
         }, { status: 500 });
     }
 });
