@@ -324,6 +324,7 @@ function PaymentForm({ inquiries, customers, onSubmit, isSubmitting, onCancel })
     payment_date: new Date().toISOString().split('T')[0],
     payment_method: "efectivo",
     destination_account_type: "n/a",
+    collected_by: "",
     transaction_id: "",
     confirmation_url: "",
     notes: ""
@@ -495,6 +496,17 @@ function PaymentForm({ inquiries, customers, onSubmit, isSubmitting, onCancel })
 
       <div>
         <Label className="block text-sm font-medium text-proman-navy mb-2">
+          Recibido por (Técnico/Persona)
+        </Label>
+        <Input
+          value={formData.collected_by}
+          onChange={(e) => setFormData({ ...formData, collected_by: e.target.value })}
+          placeholder="Ej: Juan Carlos"
+        />
+      </div>
+
+      <div>
+        <Label className="block text-sm font-medium text-proman-navy mb-2">
           ID de Transacción (Opcional)
         </Label>
         <Input
@@ -600,6 +612,12 @@ function PaymentDetail({ payment, inquiry, customer }) {
             <div className="flex justify-between">
               <span className="text-gray-600">ID Transacción:</span>
               <span className="font-medium">{payment.transaction_id}</span>
+            </div>
+          )}
+          {payment.collected_by && (
+            <div className="flex justify-between">
+              <span className="text-gray-600">Recibido por:</span>
+              <span className="font-medium text-proman-navy">{payment.collected_by}</span>
             </div>
           )}
           <div className="flex justify-between">

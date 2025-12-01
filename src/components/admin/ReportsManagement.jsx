@@ -256,6 +256,19 @@ export default function ReportsManagement() {
       .sort((a, b) => b.value - a.value);
   }, [filteredGastos]);
 
+  // Dinero por recolector (técnicos)
+  const dineroPorRecolector = useMemo(() => {
+    const counts = {};
+    filteredPayments.forEach(p => {
+      if (p.collected_by) {
+        counts[p.collected_by] = (counts[p.collected_by] || 0) + (p.amount_paid || 0);
+      }
+    });
+    return Object.entries(counts)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+  }, [filteredPayments]);
+
   return (
     <div className="space-y-6">
       {/* Filtros de fecha */}
@@ -456,6 +469,9 @@ export default function ReportsManagement() {
           <TabsTrigger value="proveedores" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
             📦 Proveedores
           </TabsTrigger>
+          <TabsTrigger value="recolectores" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
+            🤝 Dinero en Manos
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="geografia">
@@ -600,6 +616,41 @@ export default function ReportsManagement() {
                   <p className="text-green-600 font-semibold text-lg">¡Excelente!</p>
                   <p className="text-gray-500">No hay cuentas pendientes por cobrar</p>
                 </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="recolectores">
+          <Card className="border-2 border-blue-200">
+            <CardHeader className="bg-blue-50">
+              <CardTitle className="flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <DollarSign className="w-5 h-5 text-blue-600" />
+                  Dinero Recibido por Técnicos/Personal
+                </span>
+              </CardTitle>
+              <p className="text-sm text-blue-700 mt-1">
+                ℹ️ Montos físicos o en cuentas personales que deben liquidarse con la empresa.
+              </p>
+            </CardHeader>
+            <CardContent className="pt-4">
+              {dineroPorRecolector.length > 0 ? (
+                <div className="space-y-3">
+                  {dineroPorRecolector.map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between bg-white border rounded-lg p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                          <Users className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <span className="font-medium text-proman-navy">{item.name}</span>
+                      </div>
+                      <span className="text-xl font-bold text-blue-600">${item.value.toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center text-gray-500 py-8">No hay registros de dinero recibido por personal</p>
               )}
             </CardContent>
           </Card>
