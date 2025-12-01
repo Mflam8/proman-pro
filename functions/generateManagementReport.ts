@@ -230,7 +230,7 @@ Deno.serve(async (req) => {
         yPos += 8;
 
         const geoData = Object.entries(geoStats)
-            .sort((a, b) => b.1.revenue - a.1.revenue)
+            .sort((a, b) => b[1].revenue - a[1].revenue)
             .map(([loc, stats]) => [loc, stats.count, `$ ${stats.revenue.toFixed(2)}`]);
 
         autoTable(doc, {
