@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { generateManagementReport } from "@/functions/generateManagementReport";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -88,7 +88,7 @@ export default function ReportsManagement() {
         all: "Histórico Completo"
       };
 
-      const response = await generateManagementReport({
+      const response = await base44.functions.invoke('generateManagementReport', {
         startDate: dateRange.start.toISOString(),
         endDate: dateRange.end.toISOString(),
         filterLabel: filterLabels[dateFilter] || "Personalizado"

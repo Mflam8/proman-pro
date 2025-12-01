@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
         const start = new Date(startDate);
         const end = new Date(endDate);
         
-        // Ajustar end date al final del día - Re-deploy fix
+        // Ajustar end date al final del día - Force deploy
         end.setHours(23, 59, 59, 999);
 
         // Fetch Data
