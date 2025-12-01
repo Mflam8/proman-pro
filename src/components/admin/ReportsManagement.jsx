@@ -173,21 +173,30 @@ export default function ReportsManagement() {
       return sum + (total - pagado);
     }, 0);
 
+    // Helper classification
+    const getPaymentType = (p) => {
+       if (p.destination_account_type === 'propia') return 'propia';
+       if (p.destination_account_type === 'terceros') return 'terceros';
+       // Implicit classification
+       if (['transferencia', 'deposito', 'tarjeta'].includes(p.payment_method)) return 'propia';
+       return 'efectivo';
+    };
+
     // Ingresos
     const ingresosBrutos = filteredPayments.reduce((sum, p) => sum + (p.amount_paid || 0), 0);
 
     // Desglose de Ingresos (basado en destino del dinero)
     const ingresosCuentasPropias = filteredPayments
-      .filter(p => p.destination_account_type === 'propia')
+      .filter(p => getPaymentType(p) === 'propia')
       .reduce((sum, p) => sum + (p.amount_paid || 0), 0);
 
     const ingresosCuentasTerceros = filteredPayments
-      .filter(p => p.destination_account_type === 'terceros')
+      .filter(p => getPaymentType(p) === 'terceros')
       .reduce((sum, p) => sum + (p.amount_paid || 0), 0);
 
     // Efectivo en manos (no depositado/N.A.)
     const ingresosEfectivo = filteredPayments
-      .filter(p => p.destination_account_type === 'n/a' || !p.destination_account_type)
+      .filter(p => getPaymentType(p) === 'efectivo')
       .reduce((sum, p) => sum + (p.amount_paid || 0), 0);
     
     // Gastos de materiales (solo tipo material)
@@ -305,8 +314,17 @@ export default function ReportsManagement() {
   // Dinero por recolector (técnicos)
   const dineroPorRecolector = useMemo(() => {
     const counts = {};
+    // Helper defined inside useMemo or access from outside if moved
+    const getPaymentTypeLocal = (p) => {
+       if (p.destination_account_type === 'propia') return 'propia';
+       if (p.destination_account_type === 'terceros') return 'terceros';
+       if (['transferencia', 'deposito', 'tarjeta'].includes(p.payment_method)) return 'propia';
+       return 'efectivo';
+    };
+
     filteredPayments.forEach(p => {
-      if (p.collected_by) {
+      // Solo contar como dinero en mano si es efectivo
+      if (p.collected_by && getPaymentTypeLocal(p) === 'efectivo') {
         counts[p.collected_by] = (counts[p.collected_by] || 0) + (p.amount_paid || 0);
       }
     });

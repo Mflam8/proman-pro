@@ -455,9 +455,14 @@ function PaymentForm({ inquiries, customers, onSubmit, isSubmitting, onCancel })
           <Select
             value={formData.payment_method}
             onValueChange={(value) => {
-              // Si es efectivo, por defecto cuenta n/a, si es transferencia/deposito sugerir algo?
-              // Mejor dejar que el usuario elija.
-              setFormData({ ...formData, payment_method: value });
+              let newDest = formData.destination_account_type;
+              // Auto-select 'propia' for bank methods if currently n/a
+              if (['transferencia', 'deposito', 'tarjeta'].includes(value)) {
+                  if (newDest === 'n/a') newDest = 'propia';
+              } else if (value === 'efectivo') {
+                  newDest = 'n/a';
+              }
+              setFormData({ ...formData, payment_method: value, destination_account_type: newDest });
             }}
             required
           >

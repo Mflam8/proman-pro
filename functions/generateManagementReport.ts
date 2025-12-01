@@ -56,15 +56,24 @@ Deno.serve(async (req) => {
         
         const totalIngresos = filteredPayments.reduce((sum, p) => sum + (p.amount_paid || 0), 0);
 
+        // Helper classification
+        const getPaymentType = (p) => {
+             if (p.destination_account_type === 'propia') return 'propia';
+             if (p.destination_account_type === 'terceros') return 'terceros';
+             // Implicit classification based on method
+             if (['transferencia', 'deposito', 'tarjeta'].includes(p.payment_method)) return 'propia';
+             return 'efectivo';
+        };
+
         // Ingresos breakdown
         const ingresosPropia = filteredPayments
-            .filter(p => p.destination_account_type === 'propia')
+            .filter(p => getPaymentType(p) === 'propia')
             .reduce((sum, p) => sum + (p.amount_paid || 0), 0);
         const ingresosTerceros = filteredPayments
-            .filter(p => p.destination_account_type === 'terceros')
+            .filter(p => getPaymentType(p) === 'terceros')
             .reduce((sum, p) => sum + (p.amount_paid || 0), 0);
         const ingresosEfectivo = filteredPayments
-            .filter(p => p.destination_account_type === 'n/a' || !p.destination_account_type)
+            .filter(p => getPaymentType(p) === 'efectivo')
             .reduce((sum, p) => sum + (p.amount_paid || 0), 0);
 
         // Cuentas por cobrar (Historical, not just filtered range usually, but keeping consistency)
@@ -93,7 +102,7 @@ Deno.serve(async (req) => {
         // Dinero en Manos
         const dineroEmpleados = {};
         filteredPayments
-            .filter(p => p.destination_account_type === 'n/a' || !p.destination_account_type)
+            .filter(p => getPaymentType(p) === 'efectivo')
             .forEach(p => {
                 const collector = p.collected_by || 'No especificado';
                 if (!dineroEmpleados[collector]) dineroEmpleados[collector] = 0;
