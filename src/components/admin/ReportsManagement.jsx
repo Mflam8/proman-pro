@@ -151,6 +151,8 @@ export default function ReportsManagement() {
     const trabajosPendientes = filteredInquiries.filter(i => 
       i.status !== 'completado' && i.status !== 'en_proceso'
     );
+    const serviciosNuevos = filteredInquiries.filter(i => i.status === 'nuevo');
+    const pendientesCotizacion = filteredInquiries.filter(i => i.status === 'cotizacion_pendiente');
 
     // Cuentas por cobrar (completados con pago pendiente)
     const cuentasPorCobrar = inquiries.filter(i => 
@@ -202,6 +204,8 @@ export default function ReportsManagement() {
       trabajosCompletados: trabajosCompletados.length,
       trabajosEnProceso: trabajosEnProceso.length,
       trabajosPendientes: trabajosPendientes.length,
+      serviciosNuevos: serviciosNuevos.length,
+      pendientesCotizacion: pendientesCotizacion.length,
       cuentasPorCobrar: cuentasPorCobrar.length,
       montoPorCobrar,
       ingresosBrutos,
@@ -582,6 +586,45 @@ export default function ReportsManagement() {
         </TabsContent>
 
         <TabsContent value="servicios">
+          {/* Resumen de Servicios */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <Card className="bg-blue-50 border-blue-200">
+              <CardContent className="p-4 flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                  <Package className="w-5 h-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-blue-700 font-medium">Servicios Nuevos</p>
+                  <p className="text-2xl font-bold text-blue-900">{stats.serviciosNuevos}</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-green-50 border-green-200">
+              <CardContent className="p-4 flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-green-700 font-medium">Completados</p>
+                  <p className="text-2xl font-bold text-green-900">{stats.trabajosCompletados}</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-orange-50 border-orange-200">
+              <CardContent className="p-4 flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
+                  <FileText className="w-5 h-5 text-orange-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-orange-700 font-medium">Pendiente Cotización</p>
+                  <p className="text-2xl font-bold text-orange-900">{stats.pendientesCotizacion}</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
           <Card>
             <CardHeader>
               <CardTitle>Top 10 Servicios Más Vendidos</CardTitle>
