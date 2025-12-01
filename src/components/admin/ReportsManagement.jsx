@@ -9,7 +9,7 @@ import {
   Users, UserPlus, MapPin, DollarSign, TrendingUp, Package, 
   FileText, Clock, CheckCircle, AlertCircle, BarChart3, PieChart
 } from "lucide-react";
-import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isWithinInterval, subMonths, subWeeks } from "date-fns";
+import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isWithinInterval, subMonths, subWeeks, startOfYear, endOfYear } from "date-fns";
 import { es } from "date-fns/locale";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPie, Pie, Cell, Legend } from "recharts";
 
@@ -24,6 +24,7 @@ const departamentos = [
 export default function ReportsManagement() {
   const [dateFilter, setDateFilter] = useState("month");
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), 'yyyy-MM'));
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
   // Fetch all data
   const { data: customers } = useQuery({
@@ -69,10 +70,40 @@ export default function ReportsManagement() {
       const date = new Date(parseInt(year), parseInt(month) - 1, 1);
       return { start: startOfMonth(date), end: endOfMonth(date) };
     } else if (dateFilter === "year") {
-      return { start: new Date(now.getFullYear(), 0, 1), end: new Date(now.getFullYear(), 11, 31) };
+      return { start: startOfYear(now), end: endOfYear(now) };
     }
     return { start: subMonths(now, 12), end: now };
   }, [dateFilter, selectedMonth]);
+
+  const handleGenerateReport = async () => {
+    setIsGeneratingReport(true);
+    try {
+      const filterLabels = {
+        week: "Esta Semana",
+        last_week: "Semana Pasada",
+        month: `Mes ${selectedMonth}`,
+        year: "Este Año",
+        all: "Histórico Completo"
+      };
+
+      const response = await base44.functions.invoke('generateManagementReport', {
+        startDate: dateRange.start.toISOString(),
+        endDate: dateRange.end.toISOString(),
+        filterLabel: filterLabels[dateFilter] || "Personalizado"
+      });
+
+      if (response.data.success) {
+        window.open(response.data.pdf_url, '_blank');
+      } else {
+        alert("Error al generar reporte");
+      }
+    } catch (error) {
+      console.error(error);
+      alert("Error de conexión");
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
 
   // Filter data by date range
   const filteredInquiries = useMemo(() => {
@@ -305,6 +336,15 @@ export default function ReportsManagement() {
             <Badge className="bg-proman-yellow text-proman-navy">
               {format(dateRange.start, "dd MMM", { locale: es })} - {format(dateRange.end, "dd MMM yyyy", { locale: es })}
             </Badge>
+            
+            <Button 
+              onClick={handleGenerateReport} 
+              disabled={isGeneratingReport}
+              className="bg-proman-navy text-white ml-auto"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              {isGeneratingReport ? 'Generando...' : 'Generar Reporte PDF'}
+            </Button>
           </div>
         </CardContent>
       </Card>
