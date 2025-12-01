@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
             serviceStats[srv].revenue += (i.final_amount || i.quote_amount || 0);
         });
         const topServices = Object.entries(serviceStats)
-            .sort((a, b) => b.1.revenue - a.1.revenue)
+            .sort((a, b) => b[1].revenue - a[1].revenue)
             .slice(0, 10);
 
         // 5. Desglose de Ingresos (Money Sources)
@@ -180,7 +180,7 @@ Deno.serve(async (req) => {
             yPos += 8;
             
             const cashData = Object.entries(dineroEmpleados)
-                .sort((a, b) => b.1 - a.1)
+                .sort((a, b) => b[1] - a[1])
                 .map(([name, amount]) => [name, `$ ${amount.toFixed(2)}`]);
 
             autoTable(doc, {

@@ -100,7 +100,7 @@ export default function ReportsManagement() {
       }
     } catch (error) {
       console.error(error);
-      alert("Error de conexión");
+      alert("Error al generar el reporte: " + (error.message || "Error desconocido"));
     } finally {
       setIsGeneratingReport(false);
     }
