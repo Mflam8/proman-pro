@@ -4,7 +4,7 @@ import autoTable from 'npm:jspdf-autotable@3.8.2';
 import { format } from 'npm:date-fns@2.30.0';
 import { es } from 'npm:date-fns@2.30.0/locale';
 
-// Polyfill for jsPDF in Deno/Node environments
+// Polyfill for jsPDF
 if (typeof window === 'undefined') {
     globalThis.window = globalThis;
 }
@@ -33,14 +33,13 @@ Deno.serve(async (req) => {
         
         const start = new Date(startDate);
         const end = new Date(endDate);
-        // Ensure end date covers the full day
         end.setHours(23, 59, 59, 999);
 
         // Fetch Data
         const inquiries = await base44.entities.ClientInquiry.list();
         const payments = await base44.entities.Payment.list();
 
-        // Filter Data by Date Range
+        // Filter Data
         const filteredInquiries = inquiries.filter(i => {
             const date = new Date(i.scheduled_date || i.created_date);
             return date >= start && date <= end;
@@ -52,15 +51,14 @@ Deno.serve(async (req) => {
         });
 
         // --- CALCULATIONS ---
-
-        // 1. Resumen General
         const totalTrabajos = filteredInquiries.length;
         const trabajosCompletados = filteredInquiries.filter(i => i.status === 'completado').length;
         const pendientesCotizacion = filteredInquiries.filter(i => i.status === 'cotizacion_pendiente').length;
+        const serviciosNuevos = filteredInquiries.filter(i => i.status === 'nuevo').length;
         
         const totalIngresos = filteredPayments.reduce((sum, p) => sum + (p.amount_paid || 0), 0);
 
-        // 2. Cuentas por Cobrar (Total acumulado histórico)
+        // Cuentas por cobrar
         const cuentasPorCobrar = inquiries
             .filter(i => i.status === 'completado' && i.payment_status !== 'pagado')
             .map(i => {
@@ -70,11 +68,11 @@ Deno.serve(async (req) => {
                     .reduce((s, p) => s + (p.amount_paid || 0), 0);
                 return { ...i, saldo: total - pagado, pagado, total };
             })
-            .filter(i => i.saldo > 0.01); // Filter small floating point diffs
+            .filter(i => i.saldo > 0.01);
         
         const totalPorCobrar = cuentasPorCobrar.reduce((sum, i) => sum + i.saldo, 0);
 
-        // 3. Desglose Geográfico
+        // Stats Geo
         const geoStats = {};
         filteredInquiries.forEach(i => {
             const loc = i.location || 'Sin Especificar';
@@ -83,7 +81,7 @@ Deno.serve(async (req) => {
             geoStats[loc].revenue += (i.final_amount || i.quote_amount || 0);
         });
 
-        // 4. Servicios Más Vendidos
+        // Stats Servicios
         const serviceStats = {};
         filteredInquiries.forEach(i => {
             const srv = i.service_type || 'Otros';
@@ -95,7 +93,7 @@ Deno.serve(async (req) => {
             .sort((a, b) => b[1].revenue - a[1].revenue)
             .slice(0, 10);
 
-        // 5. Desglose de Ingresos
+        // Ingresos stats
         const ingresosPropia = filteredPayments
             .filter(p => p.destination_account_type === 'propia')
             .reduce((sum, p) => sum + (p.amount_paid || 0), 0);
@@ -106,7 +104,6 @@ Deno.serve(async (req) => {
             .filter(p => p.destination_account_type === 'n/a' || !p.destination_account_type)
             .reduce((sum, p) => sum + (p.amount_paid || 0), 0);
 
-        // 6. Dinero en Manos
         const dineroEmpleados = {};
         filteredPayments
             .filter(p => p.destination_account_type === 'n/a' || !p.destination_account_type)
@@ -116,20 +113,17 @@ Deno.serve(async (req) => {
                 dineroEmpleados[collector] += (p.amount_paid || 0);
             });
 
-
         // --- PDF GENERATION ---
         const doc = new jsPDF();
         const pageWidth = doc.internal.pageSize.width;
         let yPos = 20;
 
         // Header
-        doc.setFillColor(37, 42, 92); // Proman Navy
+        doc.setFillColor(37, 42, 92);
         doc.rect(0, 0, pageWidth, 40, 'F');
-        
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(22);
         doc.text("Reporte Gerencial", 20, 20);
-        
         doc.setFontSize(12);
         doc.text(`Período: ${filterLabel}`, 20, 30);
         doc.text(`Generado: ${format(new Date(), "dd/MM/yyyy HH:mm")}`, pageWidth - 60, 30);
@@ -143,11 +137,12 @@ Deno.serve(async (req) => {
         yPos += 10;
 
         const summaryData = [
-            ['Total Trabajos', totalTrabajos.toString()],
+            ['Servicios Nuevos', serviciosNuevos.toString()],
             ['Completados', trabajosCompletados.toString()],
             ['Pendientes de Cotización', pendientesCotizacion.toString()],
-            ['Ingresos Totales (Pagos Recibidos)', `$ ${totalIngresos.toFixed(2)}`],
-            ['Total por Cobrar (Global)', `$ ${totalPorCobrar.toFixed(2)}`]
+            ['Total Trabajos', totalTrabajos.toString()],
+            ['Ingresos Totales', `$ ${totalIngresos.toFixed(2)}`],
+            ['Cuentas por Cobrar', `$ ${totalPorCobrar.toFixed(2)}`]
         ];
 
         autoTable(doc, {
@@ -155,142 +150,68 @@ Deno.serve(async (req) => {
             head: [['Métrica', 'Valor']],
             body: summaryData,
             theme: 'grid',
-            headStyles: { fillColor: [253, 200, 12], textColor: [37, 42, 92] }, // Proman Yellow
+            headStyles: { fillColor: [253, 200, 12], textColor: [37, 42, 92] },
             styles: { fontSize: 10 },
             columnStyles: { 0: { fontStyle: 'bold' } }
         });
 
         yPos = doc.lastAutoTable.finalY + 15;
 
-        // 2. Desglose de Ingresos
+        // 2. Ingresos
         doc.setFontSize(14);
-        doc.text("2. Desglose de Ingresos (Flujo de Caja)", 20, yPos);
+        doc.text("2. Desglose de Ingresos", 20, yPos);
         yPos += 8;
-
-        const incomeData = [
-            ['Cuentas Propias (Empresa)', `$ ${ingresosPropia.toFixed(2)}`],
-            ['Cuentas de Terceros', `$ ${ingresosTerceros.toFixed(2)}`],
-            ['Efectivo / En Mano', `$ ${ingresosEfectivo.toFixed(2)}`],
-            ['TOTAL', `$ ${totalIngresos.toFixed(2)}`]
-        ];
 
         autoTable(doc, {
             startY: yPos,
-            head: [['Destino / Cuenta', 'Monto']],
-            body: incomeData,
+            head: [['Cuenta', 'Monto']],
+            body: [
+                ['Empresa', `$ ${ingresosPropia.toFixed(2)}`],
+                ['Terceros', `$ ${ingresosTerceros.toFixed(2)}`],
+                ['Efectivo', `$ ${ingresosEfectivo.toFixed(2)}`],
+                ['TOTAL', `$ ${totalIngresos.toFixed(2)}`]
+            ],
             theme: 'striped',
             headStyles: { fillColor: [37, 42, 92] }
         });
-
         yPos = doc.lastAutoTable.finalY + 15;
 
         // 3. Dinero en Manos
         if (Object.keys(dineroEmpleados).length > 0) {
-            doc.text("3. Detalle de Dinero en Manos (Efectivo)", 20, yPos);
+            doc.text("3. Dinero en Manos (Efectivo)", 20, yPos);
             yPos += 8;
-            
-            const cashData = Object.entries(dineroEmpleados)
-                .sort((a, b) => b[1] - a[1])
-                .map(([name, amount]) => [name, `$ ${amount.toFixed(2)}`]);
-
             autoTable(doc, {
                 startY: yPos,
-                head: [['Responsable / Técnico', 'Monto']],
-                body: cashData,
+                head: [['Responsable', 'Monto']],
+                body: Object.entries(dineroEmpleados).map(([k, v]) => [k, `$ ${v.toFixed(2)}`]),
                 theme: 'striped',
-                headStyles: { fillColor: [220, 38, 38] } // Red color
+                headStyles: { fillColor: [220, 38, 38] }
             });
             yPos = doc.lastAutoTable.finalY + 15;
         }
 
-        // Check page break
-        if (yPos > 200) {
-            doc.addPage();
-            yPos = 20;
-        }
-
         // 4. Top Servicios
-        doc.setFontSize(14);
-        doc.text("4. Servicios y Generación", 20, yPos);
+        if (yPos > 200) { doc.addPage(); yPos = 20; }
+        doc.text("4. Top Servicios", 20, yPos);
         yPos += 8;
-
-        const servicesData = topServices.map(([name, stats]) => [
-            name, 
-            stats.count.toString(), 
-            `$ ${stats.revenue.toFixed(2)}`
-        ]);
-
         autoTable(doc, {
             startY: yPos,
-            head: [['Servicio', 'Cantidad', 'Generado (Est.)']],
-            body: servicesData,
-            headStyles: { fillColor: [37, 42, 92] }
-        });
-        
-        yPos = doc.lastAutoTable.finalY + 15;
-
-        // Check page break
-        if (yPos > 200) {
-            doc.addPage();
-            yPos = 20;
-        }
-
-        // 5. Desglose Geográfico
-        doc.text("5. Actividad por Departamento", 20, yPos);
-        yPos += 8;
-
-        const geoData = Object.entries(geoStats)
-            .sort((a, b) => b[1].revenue - a[1].revenue)
-            .map(([loc, stats]) => [loc, stats.count.toString(), `$ ${stats.revenue.toFixed(2)}`]);
-
-        autoTable(doc, {
-            startY: yPos,
-            head: [['Departamento', 'Trabajos', 'Generado (Est.)']],
-            body: geoData,
+            head: [['Servicio', 'Cant.', 'Generado']],
+            body: topServices.map(([k, v]) => [k, v.count, `$ ${v.revenue.toFixed(2)}`]),
             headStyles: { fillColor: [37, 42, 92] }
         });
 
-        // 6. Cuentas por Cobrar
-        doc.addPage();
-        yPos = 20;
-        doc.setFontSize(14);
-        doc.text("6. Detalle Cuentas por Cobrar (Global)", 20, yPos);
-        yPos += 10;
-
-        const cxcData = cuentasPorCobrar
-            .sort((a, b) => b.saldo - a.saldo)
-            .map(i => [
-                i.client_name || 'Cliente',
-                i.service_type || 'Servicio',
-                i.created_date ? format(new Date(i.created_date), 'dd/MM/yyyy') : '-',
-                `$ ${i.total.toFixed(2)}`,
-                `$ ${i.saldo.toFixed(2)}`
-            ]);
-
-        autoTable(doc, {
-            startY: yPos,
-            head: [['Cliente', 'Servicio', 'Fecha', 'Total', 'Pendiente']],
-            body: cxcData,
-            headStyles: { fillColor: [220, 38, 38] }
-        });
-
-        // Output
+        // Output as Base64
         const pdfBytes = doc.output('arraybuffer');
-        
-        // Upload
-        const fileName = `reporte_gerencial_${Date.now()}.pdf`;
-        const file = new File([pdfBytes], fileName, { type: 'application/pdf' });
-        
-        const uploadResult = await base44.integrations.Core.UploadFile({ file });
-        
-        return Response.json({ success: true, pdf_url: uploadResult.file_url });
+        const binaryString = new Uint8Array(pdfBytes).reduce((acc, byte) => acc + String.fromCharCode(byte), '');
+        const pdfBase64 = btoa(binaryString);
+
+        return Response.json({ success: true, pdf_base64: pdfBase64 });
 
     } catch (error) {
-        console.error("Error in generateManagementReport:", error);
         return Response.json({ 
             success: false,
-            error: error.message,
-            stack: error.stack 
+            error: error.message
         }, { status: 500 });
     }
 });

@@ -94,8 +94,16 @@ export default function ReportsManagement() {
         filterLabel: filterLabels[dateFilter] || "Personalizado"
       });
 
-      if (response.data.success) {
-        window.open(response.data.pdf_url, '_blank');
+      if (response.data.success && response.data.pdf_base64) {
+        const byteCharacters = atob(response.data.pdf_base64);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
       } else {
         console.error("Backend Error:", response.data);
         alert("Error al generar reporte: " + (response.data.error || "Error desconocido"));
