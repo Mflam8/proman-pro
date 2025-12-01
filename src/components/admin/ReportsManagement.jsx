@@ -95,6 +95,7 @@ export default function ReportsManagement() {
       });
 
       if (response.data.success && response.data.pdf_base64) {
+        // Convert Base64 to Blob and open in new tab
         const byteCharacters = atob(response.data.pdf_base64);
         const byteNumbers = new Array(byteCharacters.length);
         for (let i = 0; i < byteCharacters.length; i++) {
@@ -103,10 +104,15 @@ export default function ReportsManagement() {
         const byteArray = new Uint8Array(byteNumbers);
         const blob = new Blob([byteArray], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
-        window.open(url, '_blank');
+        
+        // Open PDF
+        const pdfWindow = window.open(url, '_blank');
+        if (!pdfWindow) {
+            alert("Por favor permite las ventanas emergentes para ver el reporte");
+        }
       } else {
         console.error("Backend Error:", response.data);
-        alert("Error al generar reporte: " + (response.data.error || "Error desconocido"));
+        alert("Error al generar reporte: " + (response.data.error || response.data.details || "Error desconocido"));
       }
     } catch (error) {
       console.error("Request Error:", error);
