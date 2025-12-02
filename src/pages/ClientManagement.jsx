@@ -37,6 +37,7 @@ const statusConfig = {
   evaluacion_realizada: { label: "Evaluación Realizada", color: "bg-green-100 text-green-800", icon: ClipboardCheck },
   cotizacion_pendiente: { label: "Cotización Pendiente", color: "bg-orange-100 text-orange-800", icon: FileText },
   cotizacion_realizada: { label: "Cotización Realizada", color: "bg-purple-100 text-purple-800", icon: FileCheck },
+  pendiente_aprobacion: { label: "Trabajo pendiente de aprobación", color: "bg-orange-200 text-orange-900", icon: Clock },
   trabajo_aprobado: { label: "Trabajo Aprobado", color: "bg-teal-100 text-teal-800", icon: ThumbsUp },
   en_proceso: { label: "Trabajo en Proceso", color: "bg-blue-100 text-blue-800", icon: Clock },
   completado: { label: "Trabajo Completado", color: "bg-green-100 text-green-800", icon: CheckCircle }
@@ -156,7 +157,7 @@ export default function ClientManagement() {
   };
 
   // Estados que se consideran "activos" (en progreso)
-  const activeStatuses = ["trabajo_aprobado", "en_proceso", "evaluacion_agendada", "evaluacion_pendiente", "evaluacion_realizada", "cotizacion_pendiente", "cotizacion_realizada"];
+  const activeStatuses = ["trabajo_aprobado", "en_proceso", "evaluacion_agendada", "evaluacion_pendiente", "evaluacion_realizada", "cotizacion_pendiente", "cotizacion_realizada", "pendiente_aprobacion"];
   
   const filteredInquiries = inquiries.filter(inquiry => {
     let matchesTab = false;
