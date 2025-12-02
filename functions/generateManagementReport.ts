@@ -99,14 +99,17 @@ Deno.serve(async (req) => {
         
         const totalPorCobrar = cuentasPorCobrar.reduce((sum, i) => sum + i.saldo, 0);
 
-        // Dinero en Manos
+        // Dinero por Responsable (Efectivo + Cuentas Terceros a liquidar)
         const dineroEmpleados = {};
         filteredPayments
-            .filter(p => getPaymentType(p) === 'efectivo')
             .forEach(p => {
-                const collector = p.collected_by || 'No especificado';
-                if (!dineroEmpleados[collector]) dineroEmpleados[collector] = 0;
-                dineroEmpleados[collector] += (p.amount_paid || 0);
+                const type = getPaymentType(p);
+                // Incluir efectivo y cuentas de terceros (dinero que tiene alguien más)
+                if ((type === 'efectivo' || type === 'terceros') && p.collected_by) {
+                    const collector = p.collected_by;
+                    if (!dineroEmpleados[collector]) dineroEmpleados[collector] = 0;
+                    dineroEmpleados[collector] += (p.amount_paid || 0);
+                }
             });
 
         // Top Servicios
@@ -231,12 +234,12 @@ Deno.serve(async (req) => {
 
             ${Object.keys(dineroEmpleados).length > 0 ? `
             <div class="section">
-                <div class="section-title">3. Dinero en Manos (Efectivo por Técnico)</div>
+                <div class="section-title">3. Dinero a Liquidar por Responsable (Efectivo y Ctas. Terceros)</div>
                 <table>
                     <thead>
                         <tr>
                             <th>Responsable</th>
-                            <th class="text-right">Monto a Liquidar</th>
+                            <th class="text-right">Monto Total</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -296,6 +299,37 @@ Deno.serve(async (req) => {
                 </table>
             </div>
             ` : ''}
+
+            <div class="section">
+                <div class="section-title">6. Detalle Completo de Pagos Recibidos</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Responsable / Recibido Por</th>
+                            <th>Método / Destino</th>
+                            <th class="text-right">Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${filteredPayments.sort((a, b) => new Date(b.payment_date) - new Date(a.payment_date)).map(p => {
+                            const type = getPaymentType(p);
+                            const typeLabel = type === 'propia' ? 'Cta. Empresa' : (type === 'terceros' ? 'Cta. Terceros' : 'Efectivo');
+                            return `
+                            <tr>
+                                <td>${p.payment_date}</td>
+                                <td>${p.collected_by || '-'}</td>
+                                <td>
+                                    <div style="font-weight: bold;">${p.payment_method}</div>
+                                    <div style="font-size: 11px; color: #666;">Destino: ${typeLabel}</div>
+                                </td>
+                                <td class="text-right amount">${fmtMoney(p.amount_paid)}</td>
+                            </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
 
             <div class="footer">
                 <p>Reporte generado automáticamente por el sistema PROMAN Services.</p>
