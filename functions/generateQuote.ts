@@ -274,6 +274,27 @@ Deno.serve(async (req) => {
         }
 
         // ======================
+        // TOTAL GENERAL
+        // ======================
+        if (yPos + 12 > 260) {
+            doc.addPage();
+            yPos = 20;
+        }
+
+        // Fondo azul navy para el total
+        doc.setFillColor(...navyColor); 
+        doc.setDrawColor(...navyColor);
+        doc.rect(startX + colWidths.item + colWidths.detalle, yPos, colWidths.cantidad + colWidths.precioU + colWidths.precioT, 10, 'FD');
+        
+        doc.setTextColor(255, 255, 255); // Texto blanco
+        doc.setFontSize(11);
+        doc.setFont(undefined, 'bold');
+        doc.text('TOTAL:', startX + colWidths.item + colWidths.detalle + 3, yPos + 6.5);
+        doc.text(`$ ${totalGeneral.toFixed(2)}`, startX + colWidths.item + colWidths.detalle + colWidths.cantidad + colWidths.precioU + colWidths.precioT - 3, yPos + 6.5, { align: 'right' });
+        
+        yPos += 15;
+
+        // ======================
         // NOTA DE IVA
         // ======================
         yPos += 10;
