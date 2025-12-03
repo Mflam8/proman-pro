@@ -282,20 +282,28 @@ Deno.serve(async (req) => {
             yPos = 20;
         }
 
+        // Check if we have enough space for the total block
+        if (yPos > 260) {
+            doc.addPage();
+            yPos = 20;
+        }
+
         // Always show total row
         const totalWidth = colWidths.cantidad + colWidths.precioU + colWidths.precioT;
         const totalX = startX + colWidths.item + colWidths.detalle;
 
-        // Force background fill for visibility
-        doc.setFillColor(37, 42, 92); // Navy hardcoded
+        // Force background fill for visibility - Use very explicit values
+        doc.setFillColor(37, 42, 92); 
         doc.setDrawColor(37, 42, 92);
-        doc.rect(totalX, yPos, totalWidth, 12, 'FD');
+        // Draw RECT explicitly
+        doc.rect(totalX, yPos, totalWidth, 12, 'F'); 
         
-        doc.setTextColor(255, 255, 255); // White text
-        doc.setFontSize(11);
+        // Text settings
+        doc.setTextColor(255, 255, 255); 
+        doc.setFontSize(12);
         doc.setFont(undefined, 'bold');
         
-        // Text positioning
+        // Text positioning - ensure it's drawn ON TOP of the rect
         doc.text('TOTAL:', totalX + 5, yPos + 8);
         doc.text(`$ ${totalGeneral.toFixed(2)}`, totalX + totalWidth - 5, yPos + 8, { align: 'right' });
         
