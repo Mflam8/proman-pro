@@ -327,7 +327,8 @@ Deno.serve(async (req) => {
         const pdfBytes = doc.output('arraybuffer');
         const blob = new Blob([pdfBytes], { type: 'application/pdf' });
         const quoteNum = inquiry.id.substring(0, 8).toUpperCase();
-        const file = new File([blob], `cotizacion-${quoteNum}.pdf`, { type: 'application/pdf' });
+        const timestamp = Date.now(); // Add timestamp to avoid caching
+        const file = new File([blob], `cotizacion-${quoteNum}-${timestamp}.pdf`, { type: 'application/pdf' });
         
         const { file_url } = await base44.asServiceRole.integrations.Core.UploadFile({ file });
 
