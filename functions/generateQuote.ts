@@ -282,20 +282,21 @@ Deno.serve(async (req) => {
             yPos = 20;
         }
 
+        // Always show total row
         const totalWidth = colWidths.cantidad + colWidths.precioU + colWidths.precioT;
         const totalX = startX + colWidths.item + colWidths.detalle;
 
-        // Fondo azul navy para el total
-        doc.setFillColor(...navyColor); 
-        doc.setDrawColor(...navyColor);
+        // Force background fill for visibility
+        doc.setFillColor(37, 42, 92); // Navy hardcoded
+        doc.setDrawColor(37, 42, 92);
         doc.rect(totalX, yPos, totalWidth, 12, 'FD');
         
-        doc.setTextColor(255, 255, 255); // Texto blanco
-        doc.setFontSize(12);
+        doc.setTextColor(255, 255, 255); // White text
+        doc.setFontSize(11);
         doc.setFont(undefined, 'bold');
         
-        doc.text('TOTAL COTIZADO:', totalX + 5, yPos + 8);
-        // Alineado a la derecha del cuadro
+        // Text positioning
+        doc.text('TOTAL:', totalX + 5, yPos + 8);
         doc.text(`$ ${totalGeneral.toFixed(2)}`, totalX + totalWidth - 5, yPos + 8, { align: 'right' });
         
         yPos += 20;
