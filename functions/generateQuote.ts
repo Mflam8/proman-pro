@@ -276,23 +276,29 @@ Deno.serve(async (req) => {
         // ======================
         // TOTAL GENERAL
         // ======================
-        if (yPos + 12 > 260) {
+        yPos += 5;
+        if (yPos + 15 > 260) {
             doc.addPage();
             yPos = 20;
         }
 
+        const totalWidth = colWidths.cantidad + colWidths.precioU + colWidths.precioT;
+        const totalX = startX + colWidths.item + colWidths.detalle;
+
         // Fondo azul navy para el total
         doc.setFillColor(...navyColor); 
         doc.setDrawColor(...navyColor);
-        doc.rect(startX + colWidths.item + colWidths.detalle, yPos, colWidths.cantidad + colWidths.precioU + colWidths.precioT, 10, 'FD');
+        doc.rect(totalX, yPos, totalWidth, 12, 'FD');
         
         doc.setTextColor(255, 255, 255); // Texto blanco
-        doc.setFontSize(11);
+        doc.setFontSize(12);
         doc.setFont(undefined, 'bold');
-        doc.text('TOTAL:', startX + colWidths.item + colWidths.detalle + 3, yPos + 6.5);
-        doc.text(`$ ${totalGeneral.toFixed(2)}`, startX + colWidths.item + colWidths.detalle + colWidths.cantidad + colWidths.precioU + colWidths.precioT - 3, yPos + 6.5, { align: 'right' });
         
-        yPos += 15;
+        doc.text('TOTAL COTIZADO:', totalX + 5, yPos + 8);
+        // Alineado a la derecha del cuadro
+        doc.text(`$ ${totalGeneral.toFixed(2)}`, totalX + totalWidth - 5, yPos + 8, { align: 'right' });
+        
+        yPos += 20;
 
         // ======================
         // NOTA DE IVA
