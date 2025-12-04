@@ -151,7 +151,13 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
 
       if (response.data.success) {
         await queryClient.invalidateQueries({ queryKey: ['clientInquiries'] });
-        window.open(response.data.pdf_url, '_blank');
+        if (response.data.html) {
+          const win = window.open('', '_blank');
+          win.document.write(response.data.html);
+          win.document.close();
+        } else {
+          window.open(response.data.pdf_url, '_blank');
+        }
       }
     } catch (err) {
       console.error('Error generating quote:', err);

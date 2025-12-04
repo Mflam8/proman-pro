@@ -122,7 +122,6 @@ Deno.serve(async (req) => {
   .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
   .logo-container { text-align: left; }
   .logo { height: 60px; width: auto; }
-  .slogan { font-style: italic; font-size: 11px; color: #666; margin-top: 5px; }
   .divider { border-bottom: 2px solid #252a5c; margin: 20px 0 40px 0; }
   
   .main-title { text-align: center; margin-bottom: 40px; }
