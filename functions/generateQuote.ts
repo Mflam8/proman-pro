@@ -164,6 +164,7 @@ Deno.serve(async (req) => {
   @media print {
     body { padding: 20mm; width: 100%; height: auto; margin: 0; }
     .header, .main-title, .info-grid, table, .total-container, .notes { break-inside: avoid; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   }
 </style>
 </head>
