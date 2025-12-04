@@ -225,7 +225,9 @@ Deno.serve(async (req) => {
     <p style="font-weight: normal; margin-top: 10px;">Agradecemos su continuo interés en nuestros servicios.</p>
 </div>
 
-<img src="${LOGO_URL}" class="watermark">
+<div class="bottom-logo-container">
+    <img src="${LOGO_URL}" class="bottom-logo">
+</div>
 
 <div class="footer">
     PROMAN Services - San Salvador, El Salvador - Tel: 6053-1213
