@@ -184,7 +184,7 @@ Deno.serve(async (req) => {
         <div style="flex: 1;">
             <div class="info-row">
                 <span class="label">ATENCIÓN:</span>
-                <span class="value">Sr. ${clientName}</span>
+                <span class="value">${clientName}</span>
             </div>
             <div class="info-row">
                 <span class="label">ASUNTO:</span>
