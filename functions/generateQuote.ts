@@ -168,7 +168,6 @@ Deno.serve(async (req) => {
 <div class="header">
     <div class="logo-container">
         <img src="${LOGO_URL}" alt="PROMAN Logo" class="logo">
-        <div class="slogan">"Generando soluciones en tu ambiente de trabajo"</div>
     </div>
 </div>
 
