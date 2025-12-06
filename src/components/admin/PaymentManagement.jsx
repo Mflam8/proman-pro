@@ -247,7 +247,7 @@ export default function PaymentManagement() {
                           </div>
                           <div className="flex items-center gap-2 text-gray-600">
                             <Calendar className="w-4 h-4 text-proman-yellow" />
-                            <span>{format(new Date(payment.payment_date), "dd MMM yyyy", { locale: es })}</span>
+                            <span>{format(new Date(payment.payment_date + 'T12:00:00'), "dd MMM yyyy", { locale: es })}</span>
                           </div>
                           {payment.transaction_id && (
                             <div className="text-xs text-gray-500 col-span-2">
@@ -604,7 +604,7 @@ function PaymentDetail({ payment, inquiry, customer }) {
           </div>
           <div className="flex justify-between">
             <span className="text-gray-600">Fecha:</span>
-            <span className="font-medium">{format(new Date(payment.payment_date), "dd 'de' MMMM, yyyy", { locale: es })}</span>
+            <span className="font-medium">{format(new Date(payment.payment_date + 'T12:00:00'), "dd 'de' MMMM, yyyy", { locale: es })}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-gray-600">Método:</span>
