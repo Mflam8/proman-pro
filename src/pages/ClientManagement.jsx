@@ -1984,22 +1984,31 @@ function EmployeeSelector({ selectedDate, startTime, duration, onSelect, current
         initialData: [],
     });
 
-    const { data: schedules, isLoading: loadingSchedules } = useQuery({
-        queryKey: ['employeeSchedules', selectedDate],
+    const { data: weeklySchedules, isLoading: loadingSchedules } = useQuery({
+        queryKey: ['employeeWeeklySchedules'],
+        queryFn: () => base44.entities.EmployeeSchedule.filter(),
+        initialData: [],
+    });
+
+    const { data: assignedJobs, isLoading: loadingJobs } = useQuery({
+        queryKey: ['assignedJobsForDate', selectedDate],
         queryFn: async () => {
             if (!selectedDate) return [];
-            const allSchedules = await base44.entities.EmployeeSchedule.filter();
-            return allSchedules.filter(s => s.date === selectedDate);
+            return await base44.entities.ClientInquiry.filter({ scheduled_date: selectedDate });
         },
         enabled: !!selectedDate,
         initialData: [],
-        refetchInterval: 60 * 1000
     });
 
     const availability = useMemo(() => {
-        if (!selectedDate || !startTime || !duration || !employees.length || loadingSchedules) {
+        if (!selectedDate || !startTime || !duration || !employees.length || loadingSchedules || loadingJobs) {
             return {};
         }
+
+        const proposedDate = parseISO(selectedDate);
+        const dayOfWeekNum = proposedDate.getDay();
+        const daysMap = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+        const dayOfWeek = daysMap[dayOfWeekNum];
 
         const proposedStartDateStr = `${selectedDate}T${startTime}:00`;
         const proposedStart = parseISO(proposedStartDateStr);
@@ -2008,26 +2017,56 @@ function EmployeeSelector({ selectedDate, startTime, duration, onSelect, current
         const employeeAvailability = {};
 
         employees.forEach(employee => {
-            const employeeSchedules = schedules.filter(s => s.employee_email === employee.email);
-            let isAvailable = true;
+            let isAvailable = false;
 
-            for (const schedule of employeeSchedules) {
-                const scheduleStart = parseISO(`${schedule.date}T${schedule.start_time}:00`);
-                const scheduleEnd = parseISO(`${schedule.date}T${schedule.end_time}:00`); 
+            const employeeSchedulesForDay = weeklySchedules.filter(
+                s => s.employee_email === employee.email && 
+                     s.day_of_week === dayOfWeek && 
+                     s.is_available
+            );
 
-                if (proposedStart < scheduleEnd && proposedEnd > scheduleStart) {
-                    isAvailable = false;
-                    break;
+            if (employeeSchedulesForDay.length > 0) {
+                for (const schedule of employeeSchedulesForDay) {
+                    const [startHour, startMin] = schedule.start_time.split(':');
+                    const [endHour, endMin] = schedule.end_time.split(':');
+                    
+                    const scheduleStart = new Date(proposedDate);
+                    scheduleStart.setHours(parseInt(startHour), parseInt(startMin), 0);
+                    
+                    const scheduleEnd = new Date(proposedDate);
+                    scheduleEnd.setHours(parseInt(endHour), parseInt(endMin), 0);
+
+                    if (proposedStart >= scheduleStart && proposedEnd <= scheduleEnd) {
+                        isAvailable = true;
+                        break;
+                    }
                 }
             }
+
+            if (isAvailable) {
+                const employeeJobsOnDate = assignedJobs.filter(j => j.assigned_to === employee.email);
+                
+                for (const job of employeeJobsOnDate) {
+                    if (job.scheduled_start_time && job.estimated_duration_hours) {
+                        const jobStart = parseISO(`${job.scheduled_date}T${job.scheduled_start_time}:00`);
+                        const jobEnd = addHours(jobStart, job.estimated_duration_hours);
+
+                        if (proposedStart < jobEnd && proposedEnd > jobStart) {
+                            isAvailable = false;
+                            break;
+                        }
+                    }
+                }
+            }
+
             employeeAvailability[employee.email] = isAvailable;
         });
 
         return employeeAvailability;
 
-    }, [selectedDate, startTime, duration, employees, schedules, loadingSchedules]);
+    }, [selectedDate, startTime, duration, employees, weeklySchedules, assignedJobs, loadingSchedules, loadingJobs]);
 
-    if (loadingEmployees || loadingSchedules) {
+    if (loadingEmployees || loadingSchedules || loadingJobs) {
         return <p className="text-gray-500 text-sm">Cargando disponibilidad de técnicos...</p>;
     }
 
