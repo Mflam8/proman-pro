@@ -731,11 +731,24 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
         if (afterImageFile) handleImageUpload(afterImageFile, 'after_image_url');
     }, [afterImageFile]);
 
-    const handleAutoSaveChange = (field, value) => {
+    const handleAutoSaveChange = async (field, value) => {
         let newData = { ...formData, [field]: value };
         
         if (field === 'status' && value === 'completado') {
             newData.progress_percentage = 100;
+            
+            // Recalcular payment_status automáticamente
+            const allPayments = await base44.entities.Payment.filter({ inquiry_id: inquiry.id });
+            const totalPaid = allPayments.reduce((sum, p) => sum + (p.amount_paid || 0), 0);
+            const finalAmount = formData.final_amount || formData.quote_amount || 0;
+            
+            if (totalPaid >= finalAmount && finalAmount > 0) {
+                newData.payment_status = 'pagado';
+            } else if (totalPaid > 0) {
+                newData.payment_status = 'parcial';
+            } else {
+                newData.payment_status = 'pendiente';
+            }
         }
         
         setFormData(newData);
