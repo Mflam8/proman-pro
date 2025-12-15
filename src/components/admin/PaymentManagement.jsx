@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { DollarSign, Plus, Calendar, CreditCard, FileText, TrendingUp, AlertCircle, ExternalLink, Upload } from "lucide-react";
+import { DollarSign, Plus, Calendar, CreditCard, FileText, TrendingUp, AlertCircle, ExternalLink, Upload, Edit2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -31,7 +31,19 @@ export default function PaymentManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState(null);
+  const [editingPayment, setEditingPayment] = useState(null);
+  const [user, setUser] = React.useState(null);
   const queryClient = useQueryClient();
+
+  React.useEffect(() => {
+    const checkUser = async () => {
+      const currentUser = await base44.auth.me();
+      setUser(currentUser);
+    };
+    checkUser();
+  }, []);
+
+  const isAdmin = user?.role === 'admin';
 
   const { data: payments, isLoading: isLoadingPayments } = useQuery({
     queryKey: ['payments'],
@@ -80,6 +92,37 @@ export default function PaymentManagement() {
       queryClient.invalidateQueries({ queryKey: ['payments'] });
       queryClient.invalidateQueries({ queryKey: ['clientInquiries'] });
       setShowCreateModal(false);
+    },
+  });
+
+  const updatePayment = useMutation({
+    mutationFn: async ({ id, data }) => {
+      const payment = await base44.entities.Payment.update(id, data);
+      
+      // Recalcular estado de pago del inquiry
+      const inquiry = inquiries.find(i => i.id === data.inquiry_id);
+      if (inquiry) {
+        const allPayments = await base44.entities.Payment.filter({ inquiry_id: data.inquiry_id });
+        const totalPaid = allPayments.reduce((sum, p) => sum + (p.amount_paid || 0), 0);
+        const finalAmount = inquiry.final_amount || inquiry.quote_amount || 0;
+        
+        let newPaymentStatus = 'pendiente';
+        if (totalPaid >= finalAmount) {
+          newPaymentStatus = 'pagado';
+        } else if (totalPaid > 0) {
+          newPaymentStatus = 'parcial';
+        }
+        
+        await base44.entities.ClientInquiry.update(inquiry.id, { payment_status: newPaymentStatus });
+      }
+      
+      return payment;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['clientInquiries'] });
+      setEditingPayment(null);
+      setSelectedPayment(null);
     },
   });
 
@@ -299,7 +342,7 @@ export default function PaymentManagement() {
       )}
 
       {/* Payment Detail Modal */}
-      {selectedPayment && (
+      {selectedPayment && !editingPayment && (
         <Dialog open={!!selectedPayment} onOpenChange={() => setSelectedPayment(null)}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
@@ -309,6 +352,27 @@ export default function PaymentManagement() {
               payment={selectedPayment}
               inquiry={getInquiryForPayment(selectedPayment)}
               customer={getCustomerForInquiry(getInquiryForPayment(selectedPayment))}
+              isAdmin={isAdmin}
+              onEdit={() => setEditingPayment(selectedPayment)}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Edit Payment Modal */}
+      {editingPayment && (
+        <Dialog open={!!editingPayment} onOpenChange={() => setEditingPayment(null)}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Editar Pago</DialogTitle>
+            </DialogHeader>
+            <PaymentForm
+              payment={editingPayment}
+              inquiries={inquiries}
+              customers={customers}
+              onSubmit={(data) => updatePayment.mutate({ id: editingPayment.id, data })}
+              isSubmitting={updatePayment.isPending}
+              onCancel={() => setEditingPayment(null)}
             />
           </DialogContent>
         </Dialog>
@@ -317,8 +381,8 @@ export default function PaymentManagement() {
   );
 }
 
-function PaymentForm({ inquiries, customers, onSubmit, isSubmitting, onCancel }) {
-  const [formData, setFormData] = useState({
+function PaymentForm({ payment, inquiries, customers, onSubmit, isSubmitting, onCancel }) {
+  const [formData, setFormData] = useState(payment || {
     inquiry_id: "",
     amount_paid: "",
     payment_date: new Date().toISOString().split('T')[0],
@@ -580,14 +644,14 @@ function PaymentForm({ inquiries, customers, onSubmit, isSubmitting, onCancel })
           className="bg-proman-yellow text-proman-navy hover:opacity-90"
           disabled={isSubmitting || isUploading}
         >
-          {isSubmitting ? "Registrando..." : "Registrar Pago"}
+          {isSubmitting ? (payment ? "Actualizando..." : "Registrando...") : (payment ? "Actualizar Pago" : "Registrar Pago")}
         </Button>
       </div>
     </form>
   );
 }
 
-function PaymentDetail({ payment, inquiry, customer }) {
+function PaymentDetail({ payment, inquiry, customer, isAdmin, onEdit }) {
   const MethodIcon = paymentMethodConfig[payment.payment_method]?.icon || FileText;
   const clientName = customer?.full_name || inquiry?.client_name || "Cliente desconocido";
 
@@ -595,7 +659,20 @@ function PaymentDetail({ payment, inquiry, customer }) {
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>Información del Pago</CardTitle>
+          <div className="flex justify-between items-center">
+            <CardTitle>Información del Pago</CardTitle>
+            {isAdmin && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={onEdit}
+                className="text-proman-navy hover:bg-proman-yellow"
+              >
+                <Edit2 className="w-4 h-4 mr-2" />
+                Editar
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
           <div className="flex justify-between">
@@ -617,6 +694,16 @@ function PaymentDetail({ payment, inquiry, customer }) {
             <div className="flex justify-between">
               <span className="text-gray-600">ID Transacción:</span>
               <span className="font-medium">{payment.transaction_id}</span>
+            </div>
+          )}
+          {payment.destination_account_type && (
+            <div className="flex justify-between">
+              <span className="text-gray-600">Cuenta Destino:</span>
+              <span className="font-medium">
+                {payment.destination_account_type === 'n/a' ? 'N/A (Efectivo)' : 
+                 payment.destination_account_type === 'propia' ? 'Cuenta Propia (Empresa)' : 
+                 'Cuenta de Terceros'}
+              </span>
             </div>
           )}
           {payment.collected_by && (
