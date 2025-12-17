@@ -9,6 +9,7 @@ import Welcome from './pages/Welcome';
 import Careers from './pages/Careers';
 import Sitemap from './pages/Sitemap';
 import PrivacyPolicy from './pages/PrivacyPolicy';
+import WhatsAppSetup from './pages/WhatsAppSetup';
 import __Layout from './Layout.jsx';
 
 
@@ -24,6 +25,7 @@ export const PAGES = {
     "Careers": Careers,
     "Sitemap": Sitemap,
     "PrivacyPolicy": PrivacyPolicy,
+    "WhatsAppSetup": WhatsAppSetup,
 }
 
 export const pagesConfig = {
