@@ -242,6 +242,10 @@ function EditUserModal({ user, isOpen, onClose }) {
   const [employeeName, setEmployeeName] = useState(user.employee_name || user.full_name || '');
   const [employeeType, setEmployeeType] = useState(user.employee_type || 'Empleado');
   const [hireDate, setHireDate] = useState(user.hire_date || '');
+  const [technicianType, setTechnicianType] = useState(user.technician_type || 'planilla');
+  const [promanPercentage, setPromanPercentage] = useState(user.proman_percentage || 100);
+  const [technicianPercentage, setTechnicianPercentage] = useState(user.technician_percentage || 0);
+  const [paymentMethodPref, setPaymentMethodPref] = useState(user.payment_method_preference || 'efectivo');
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('info'); // 'info' or 'calendar'
   const [calendarDate, setCalendarDate] = useState(new Date());
@@ -312,7 +316,11 @@ function EditUserModal({ user, isOpen, onClose }) {
         employee_name: employeeName,
         employee_type: employeeType,
         hire_date: hireDate || null,
-        profile_picture_url: uploadedImageUrl || null
+        profile_picture_url: uploadedImageUrl || null,
+        technician_type: technicianType,
+        proman_percentage: promanPercentage,
+        technician_percentage: technicianPercentage,
+        payment_method_preference: paymentMethodPref
       });
       queryClient.invalidateQueries({ queryKey: ['users'] });
       alert('✅ Usuario actualizado correctamente');
@@ -420,6 +428,8 @@ function EditUserModal({ user, isOpen, onClose }) {
                 </div>
               </CardContent>
             </Card>
+
+            <TechnicianPaymentConfig user={user} onSave={handleSave} />
 
             <Card className="border-2 border-gray-200">
               <CardHeader>
