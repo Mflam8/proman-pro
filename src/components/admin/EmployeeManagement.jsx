@@ -594,3 +594,107 @@ function EditUserModal({ user, isOpen, onClose }) {
     </Dialog>
   );
 }
+
+function TechnicianPaymentConfig({ user, onSave }) {
+  const [technicianType, setTechnicianType] = useState(user.technician_type || 'planilla');
+  const [promanPercentage, setPromanPercentage] = useState(user.proman_percentage || 100);
+  const [technicianPercentage, setTechnicianPercentage] = useState(user.technician_percentage || 0);
+  const [paymentMethodPref, setPaymentMethodPref] = useState(user.payment_method_preference || 'efectivo');
+
+  React.useEffect(() => {
+    // Auto-adjust percentages to sum 100%
+    if (technicianType === 'subcontratado') {
+      setTechnicianPercentage(100 - promanPercentage);
+    } else {
+      setPromanPercentage(100);
+      setTechnicianPercentage(0);
+    }
+  }, [promanPercentage, technicianType]);
+
+  return (
+    <Card className="border-2 border-orange-200">
+      <CardHeader>
+        <CardTitle className="text-base">💰 Esquema de Pago (Mano de Obra)</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-proman-navy mb-2">
+            Tipo de Técnico
+          </label>
+          <Select value={technicianType} onValueChange={setTechnicianType}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="planilla">En Planilla</SelectItem>
+              <SelectItem value="subcontratado">Subcontratado</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {technicianType === 'subcontratado' && (
+          <>
+            <div className="bg-orange-50 border border-orange-200 rounded p-3">
+              <p className="text-xs text-orange-800 mb-3">
+                <strong>⚠️ Importante:</strong> Los porcentajes se calculan SOLO sobre mano de obra. Materiales siempre se registran íntegros.
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-proman-navy mb-2">
+                % PROMAN (de mano de obra)
+              </label>
+              <div className="flex items-center gap-3">
+                <Input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={promanPercentage}
+                  onChange={(e) => setPromanPercentage(parseInt(e.target.value) || 0)}
+                />
+                <span className="text-2xl font-bold text-proman-navy">{promanPercentage}%</span>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-proman-navy mb-2">
+                % Técnico (auto-calculado)
+              </label>
+              <div className="flex items-center gap-3">
+                <Input
+                  type="number"
+                  value={technicianPercentage}
+                  disabled
+                  className="bg-gray-100"
+                />
+                <span className="text-2xl font-bold text-orange-600">{technicianPercentage}%</span>
+              </div>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded p-3">
+              <p className="text-sm text-blue-800">
+                <strong>Ejemplo:</strong> Si la mano de obra es $100 y PROMAN recibe {promanPercentage}%, entonces PROMAN = ${promanPercentage} y Técnico = ${technicianPercentage}
+              </p>
+            </div>
+          </>
+        )}
+
+        <div>
+          <label className="block text-sm font-medium text-proman-navy mb-2">
+            Forma de Pago Habitual
+          </label>
+          <Select value={paymentMethodPref} onValueChange={setPaymentMethodPref}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="efectivo">Efectivo</SelectItem>
+              <SelectItem value="transferencia">Transferencia</SelectItem>
+              <SelectItem value="deposito">Depósito</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
