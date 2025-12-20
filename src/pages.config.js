@@ -10,6 +10,7 @@ import Careers from './pages/Careers';
 import Sitemap from './pages/Sitemap';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import WhatsAppSetup from './pages/WhatsAppSetup';
+import AutomationsControl from './pages/AutomationsControl';
 import __Layout from './Layout.jsx';
 
 
@@ -26,6 +27,7 @@ export const PAGES = {
     "Sitemap": Sitemap,
     "PrivacyPolicy": PrivacyPolicy,
     "WhatsAppSetup": WhatsAppSetup,
+    "AutomationsControl": AutomationsControl,
 }
 
 export const pagesConfig = {
