@@ -39,8 +39,15 @@ const statusConfig = {
   cotizacion_realizada: { label: "Cotización Realizada", color: "bg-purple-100 text-purple-800", icon: FileCheck },
   pendiente_aprobacion: { label: "Trabajo pendiente de aprobación", color: "bg-orange-200 text-orange-900", icon: Clock },
   trabajo_aprobado: { label: "Trabajo Aprobado", color: "bg-teal-100 text-teal-800", icon: ThumbsUp },
+  agendado: { label: "Agendado", color: "bg-indigo-100 text-indigo-800", icon: Calendar },
+  en_ruta: { label: "🚗 En Ruta", color: "bg-yellow-100 text-yellow-800", icon: Clock },
+  en_sitio: { label: "📍 En Sitio", color: "bg-blue-100 text-blue-800", icon: MapPin },
   en_proceso: { label: "Trabajo en Proceso", color: "bg-blue-100 text-blue-800", icon: Clock },
-  completado: { label: "Trabajo Completado", color: "bg-green-100 text-green-800", icon: CheckCircle }
+  terminado: { label: "Terminado", color: "bg-emerald-100 text-emerald-800", icon: CheckCircle },
+  completado: { label: "Completado", color: "bg-green-100 text-green-800", icon: CheckCircle },
+  cerrado: { label: "Cerrado", color: "bg-gray-100 text-gray-800", icon: CheckCircle },
+  incidencia: { label: "⚠️ Incidencia", color: "bg-red-100 text-red-800", icon: AlertCircle },
+  perdido: { label: "Perdido", color: "bg-gray-200 text-gray-700", icon: AlertCircle }
 };
 
 const priorityConfig = {
@@ -157,7 +164,7 @@ export default function ClientManagement() {
   };
 
   // Estados que se consideran "activos" (en progreso)
-  const activeStatuses = ["trabajo_aprobado", "en_proceso", "evaluacion_agendada", "evaluacion_pendiente", "evaluacion_realizada", "cotizacion_pendiente", "cotizacion_realizada", "pendiente_aprobacion"];
+  const activeStatuses = ["trabajo_aprobado", "agendado", "en_ruta", "en_sitio", "en_proceso", "terminado", "evaluacion_agendada", "evaluacion_pendiente", "evaluacion_realizada", "cotizacion_pendiente", "cotizacion_realizada", "pendiente_aprobacion"];
   
   const filteredInquiries = inquiries.filter(inquiry => {
     let matchesTab = false;
