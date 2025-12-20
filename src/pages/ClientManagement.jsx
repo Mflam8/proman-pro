@@ -29,6 +29,7 @@ import ReportsManagement from "../components/admin/ReportsManagement";
 import BillingDetails from "../components/admin/BillingDetails";
 import WorkExpenses from "../components/admin/WorkExpenses";
 import ScheduleCalendar from "../components/admin/ScheduleCalendar";
+import AutomationsControlPanel from "../components/admin/AutomationsControlPanel";
 
 const statusConfig = {
   nuevo: { label: "Nuevo", color: "bg-blue-100 text-blue-800", icon: AlertCircle },
@@ -319,6 +320,9 @@ export default function ClientManagement() {
                 <TabsTrigger value="whatsapp" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
                   💬 WhatsApp Bots
                 </TabsTrigger>
+                <TabsTrigger value="automatizaciones" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
+                  🤖 Automatizaciones
+                </TabsTrigger>
               </>
             )}
           </TabsList>
@@ -564,6 +568,10 @@ export default function ClientManagement() {
 
               <TabsContent value="whatsapp">
                 <WhatsAppBotsSetup />
+              </TabsContent>
+
+              <TabsContent value="automatizaciones">
+                <AutomationsControlPanel />
               </TabsContent>
             </>
           )}
