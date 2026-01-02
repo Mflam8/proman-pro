@@ -26,23 +26,32 @@ Deno.serve(async (req) => {
         try {
             const body = await req.json();
             console.log('📩 Webhook recibido:', JSON.stringify(body, null, 2));
+            console.log('🔍 Body.object:', body.object);
+            console.log('🔍 Entries:', body.entry?.length || 0);
             
             // Responder rápido a Meta (200 OK)
             const response = new Response('EVENT_RECEIVED', { status: 200 });
             
             // Procesar mensajes en segundo plano
             if (body.object === 'whatsapp_business_account') {
+                console.log('✅ Es whatsapp_business_account');
                 for (const entry of body.entry || []) {
+                    console.log('🔄 Procesando entry:', entry.id);
                     for (const change of entry.changes || []) {
+                        console.log('🔄 Change field:', change.field);
                         if (change.field === 'messages') {
                             const messages = change.value.messages || [];
-                            
+                            console.log('📨 Mensajes encontrados:', messages.length);
+
                             for (const message of messages) {
+                                console.log('💬 Procesando mensaje de:', message.from);
                                 await processIncomingMessage(base44, message, change.value);
                             }
                         }
                     }
                 }
+            } else {
+                console.log('❌ Body.object no es whatsapp_business_account:', body.object);
             }
             
             return response;
