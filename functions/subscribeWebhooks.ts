@@ -18,7 +18,18 @@ Deno.serve(async (req) => {
             }, { status: 500 });
         }
 
-        // Suscribir la app a webhooks
+        // Primero verificar si ya estamos suscritos
+        const checkUrl = `https://graph.facebook.com/v21.0/${whatsappBusinessAccountId}/subscribed_apps`;
+        const checkResponse = await fetch(checkUrl, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+        const checkData = await checkResponse.json();
+        console.log('📋 Apps suscritas actualmente:', checkData);
+
+        // Suscribir la app a webhooks con los campos específicos
         const subscribeUrl = `https://graph.facebook.com/v21.0/${whatsappBusinessAccountId}/subscribed_apps`;
         
         const subscribeResponse = await fetch(subscribeUrl, {
@@ -37,12 +48,14 @@ Deno.serve(async (req) => {
             return Response.json({ 
                 success: true,
                 message: 'App suscrita exitosamente a webhooks',
+                previousSubscriptions: checkData,
                 data: subscribeData
             });
         } else {
             return Response.json({ 
                 success: false,
                 message: 'Error al suscribir',
+                previousSubscriptions: checkData,
                 error: subscribeData
             }, { status: 400 });
         }
