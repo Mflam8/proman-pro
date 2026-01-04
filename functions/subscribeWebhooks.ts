@@ -10,7 +10,7 @@ Deno.serve(async (req) => {
         }
 
         const accessToken = Deno.env.get('META_WHATSAPP_TOKEN');
-        const whatsappBusinessAccountId = '522486717629900'; // Tu WABA ID
+        const whatsappBusinessAccountId = '1559594938241932'; // Tu WABA ID
         
         if (!accessToken) {
             return Response.json({ 
