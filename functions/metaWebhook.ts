@@ -127,63 +127,48 @@ async function sendAgentResponse(base44, phoneNumber, customer, messageText) {
     try {
         console.log('🤖 Iniciando respuesta del agente...');
         
-        // Buscar conversación activa del agente para este cliente
-        const conversations = await base44.asServiceRole.agents.listConversations({
-            agent_name: 'base44_whatsapp_agent'
+        // Llamar al agente usando API HTTP directamente
+        const agentApiUrl = `https://api.base44.com/v1/agents/base44_whatsapp_agent/chat`;
+        
+        const payload = {
+            message: messageText,
+            metadata: {
+                customer_id: customer.id,
+                phone: phoneNumber,
+                customer_name: customer.full_name
+            }
+        };
+        
+        console.log('📤 Llamando API del agente...');
+        
+        const response = await fetch(agentApiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${Deno.env.get('BASE44_SERVICE_ROLE_KEY')}`
+            },
+            body: JSON.stringify(payload)
         });
-        console.log('📋 Conversaciones encontradas:', conversations.length);
         
-        let conversation = conversations.find(c => 
-            c.metadata?.customer_id === customer.id || 
-            c.metadata?.phone === phoneNumber
-        );
-        
-        if (!conversation) {
-            console.log('🆕 Creando nueva conversación...');
-            conversation = await base44.asServiceRole.agents.createConversation({
-                agent_name: 'base44_whatsapp_agent',
-                metadata: {
-                    customer_id: customer.id,
-                    phone: phoneNumber,
-                    customer_name: customer.full_name
-                }
-            });
-            console.log('✅ Conversación creada:', conversation.id);
-        } else {
-            console.log('✅ Conversación existente encontrada:', conversation.id);
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ Error API agente:', response.status, errorText);
+            throw new Error(`Agent API error: ${response.status}`);
         }
         
-        console.log('💬 Enviando mensaje al agente...');
-        // Agregar mensaje del usuario usando solo el conversation ID
-        const response = await base44.asServiceRole.agents.addMessage(
-            conversation.id,
-            {
-                role: 'user',
-                content: messageText
-            }
-        );
-        
+        const data = await response.json();
         console.log('📥 Respuesta del agente recibida');
-        console.log('📊 Total mensajes:', response?.messages?.length || 0);
         
-        // La respuesta del agente viene en la conversación actualizada
-        if (response && response.messages) {
-            const lastMessage = response.messages[response.messages.length - 1];
-            console.log('🔍 Último mensaje - role:', lastMessage?.role, '- tiene contenido:', !!lastMessage?.content);
-            
-            if (lastMessage && lastMessage.role === 'assistant' && lastMessage.content) {
-                console.log('📤 Enviando respuesta por WhatsApp:', lastMessage.content.substring(0, 50) + '...');
-                await sendWhatsAppMessage(phoneNumber, lastMessage.content);
-                console.log('✅ Respuesta enviada correctamente');
-            } else {
-                console.log('⚠️ No se encontró respuesta del asistente');
-                console.log('Últimos 3 mensajes:', response.messages.slice(-3).map(m => ({
-                    role: m.role,
-                    contentLength: m.content?.length || 0
-                })));
-            }
+        if (data.response) {
+            console.log('📤 Enviando respuesta por WhatsApp:', data.response.substring(0, 50) + '...');
+            await sendWhatsAppMessage(phoneNumber, data.response);
+            console.log('✅ Respuesta enviada correctamente');
         } else {
-            console.log('❌ Response no tiene mensajes');
+            console.log('⚠️ No se encontró respuesta del agente');
+            await sendWhatsAppMessage(
+                phoneNumber,
+                '¡Hola! 👋 Gracias por contactarnos. Un agente te atenderá pronto. 🔧'
+            );
         }
         
     } catch (error) {
