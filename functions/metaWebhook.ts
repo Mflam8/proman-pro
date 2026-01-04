@@ -149,7 +149,7 @@ async function sendAgentResponse(base44, phoneNumber, customer, messageText) {
         
         // Agregar mensaje del usuario usando la estructura correcta
         const response = await base44.asServiceRole.agents.addMessage(
-            conversation.id,
+            conversation,
             {
                 role: 'user',
                 content: messageText
