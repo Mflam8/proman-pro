@@ -125,10 +125,13 @@ async function processIncomingMessage(base44, message, metadata) {
 
 async function sendAgentResponse(base44, phoneNumber, customer, messageText) {
     try {
+        console.log('🤖 Iniciando respuesta del agente...');
+        
         // Buscar conversación activa del agente para este cliente
         const conversations = await base44.asServiceRole.agents.listConversations({
             agent_name: 'base44_whatsapp_agent'
         });
+        console.log('📋 Conversaciones encontradas:', conversations.length);
         
         let conversation = conversations.find(c => 
             c.metadata?.customer_id === customer.id || 
@@ -136,6 +139,7 @@ async function sendAgentResponse(base44, phoneNumber, customer, messageText) {
         );
         
         if (!conversation) {
+            console.log('🆕 Creando nueva conversación...');
             conversation = await base44.asServiceRole.agents.createConversation({
                 agent_name: 'base44_whatsapp_agent',
                 metadata: {
@@ -144,9 +148,12 @@ async function sendAgentResponse(base44, phoneNumber, customer, messageText) {
                     customer_name: customer.full_name
                 }
             });
-            console.log('🤖 Nueva conversación creada');
+            console.log('✅ Conversación creada:', conversation.id);
+        } else {
+            console.log('✅ Conversación existente encontrada:', conversation.id);
         }
         
+        console.log('💬 Enviando mensaje al agente...');
         // Agregar mensaje del usuario usando la estructura correcta
         const response = await base44.asServiceRole.agents.addMessage(
             conversation,
@@ -156,18 +163,32 @@ async function sendAgentResponse(base44, phoneNumber, customer, messageText) {
             }
         );
         
+        console.log('📥 Respuesta del agente recibida');
+        console.log('📊 Total mensajes:', response?.messages?.length || 0);
+        
         // La respuesta del agente viene en la conversación actualizada
         if (response && response.messages) {
             const lastMessage = response.messages[response.messages.length - 1];
+            console.log('🔍 Último mensaje - role:', lastMessage?.role, '- tiene contenido:', !!lastMessage?.content);
             
             if (lastMessage && lastMessage.role === 'assistant' && lastMessage.content) {
+                console.log('📤 Enviando respuesta por WhatsApp:', lastMessage.content.substring(0, 50) + '...');
                 await sendWhatsAppMessage(phoneNumber, lastMessage.content);
-                console.log('✅ Respuesta enviada');
+                console.log('✅ Respuesta enviada correctamente');
+            } else {
+                console.log('⚠️ No se encontró respuesta del asistente');
+                console.log('Últimos 3 mensajes:', response.messages.slice(-3).map(m => ({
+                    role: m.role,
+                    contentLength: m.content?.length || 0
+                })));
             }
+        } else {
+            console.log('❌ Response no tiene mensajes');
         }
         
     } catch (error) {
-        console.error('❌ Error con agente:', error);
+        console.error('❌ Error con agente:', error.message);
+        console.error('Stack:', error.stack);
         // Si falla el agente, enviar mensaje de respaldo
         await sendWhatsAppMessage(
             phoneNumber,
