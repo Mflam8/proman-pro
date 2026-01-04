@@ -114,9 +114,11 @@ async function processIncomingMessage(base44, message, metadata) {
         }
         
         // NUEVO: Responder con el agente si hay mensaje de texto
-        if (messageText) {
-            await sendAgentResponse(base44, phoneNumber, customer, messageText);
-        }
+        // if (messageText) {
+        //     await sendAgentResponse(base44, phoneNumber, customer, messageText);
+        // }
+
+        // BOT PAUSADO - descomentar líneas de arriba para activar
         
     } catch (error) {
         console.error('❌ Error procesando mensaje:', error);
