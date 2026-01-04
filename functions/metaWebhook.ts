@@ -125,7 +125,7 @@ async function processIncomingMessage(base44, message, metadata) {
 
 async function sendAgentResponse(base44, phoneNumber, customer, messageText) {
     try {
-        // Buscar o crear conversación del agente para este cliente
+        // Buscar conversación activa del agente para este cliente
         const conversations = await base44.asServiceRole.agents.listConversations({
             agent_name: 'base44_whatsapp_agent'
         });
@@ -144,27 +144,35 @@ async function sendAgentResponse(base44, phoneNumber, customer, messageText) {
                     customer_name: customer.full_name
                 }
             });
-            console.log('🤖 Nueva conversación creada para el agente');
+            console.log('🤖 Nueva conversación creada');
         }
         
-        // Agregar mensaje del usuario al agente
-        const updatedConversation = await base44.asServiceRole.agents.addMessage(conversation, {
-            role: 'user',
-            content: messageText
-        });
+        // Agregar mensaje del usuario usando la estructura correcta
+        const response = await base44.asServiceRole.agents.addMessage(
+            conversation.id,
+            {
+                role: 'user',
+                content: messageText
+            }
+        );
         
-        // Obtener la respuesta del agente
-        const agentMessages = updatedConversation.messages || [];
-        const lastMessage = agentMessages[agentMessages.length - 1];
-        
-        if (lastMessage && lastMessage.role === 'assistant' && lastMessage.content) {
-            // Enviar respuesta por WhatsApp
-            await sendWhatsAppMessage(phoneNumber, lastMessage.content);
-            console.log('✅ Respuesta del agente enviada por WhatsApp');
+        // La respuesta del agente viene en la conversación actualizada
+        if (response && response.messages) {
+            const lastMessage = response.messages[response.messages.length - 1];
+            
+            if (lastMessage && lastMessage.role === 'assistant' && lastMessage.content) {
+                await sendWhatsAppMessage(phoneNumber, lastMessage.content);
+                console.log('✅ Respuesta enviada');
+            }
         }
         
     } catch (error) {
         console.error('❌ Error con agente:', error);
+        // Si falla el agente, enviar mensaje de respaldo
+        await sendWhatsAppMessage(
+            phoneNumber,
+            '¡Gracias por contactarnos! Un agente revisará tu mensaje pronto. 🔧'
+        );
     }
 }
 
