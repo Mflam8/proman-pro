@@ -250,7 +250,8 @@ Deno.serve(async (req) => {
         // Crear archivo HTML
         const quoteNum = inquiry.id.substring(0, 8).toUpperCase();
         const timestamp = Date.now();
-        const file = new File([html], `cotizacion-${quoteNum}-${timestamp}.html`, { type: 'text/html; charset=utf-8' });
+        const blob = new Blob([html], { type: 'text/html; charset=utf-8' });
+        const file = new File([blob], `cotizacion-${quoteNum}-${timestamp}.html`, { type: 'text/html; charset=utf-8' });
         
         const { file_url } = await base44.asServiceRole.integrations.Core.UploadFile({ file });
 
