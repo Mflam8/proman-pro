@@ -185,6 +185,11 @@ async function sendAgentResponse(base44, phoneNumber, customer, messageText) {
 }
 
 async function sendWhatsAppMessage(to, message) {
+    // 🚫 BOT COMPLETAMENTE DESACTIVADO
+    console.log('⏸️ Bot pausado - no se envió mensaje a:', to);
+    return { success: false, message: 'Bot pausado' };
+    
+    /* COMENTADO - Descomentar para reactivar
     const accessToken = Deno.env.get('META_WHATSAPP_TOKEN');
     const phoneNumberId = Deno.env.get('META_PHONE_NUMBER_ID');
     
@@ -212,6 +217,7 @@ async function sendWhatsAppMessage(to, message) {
     }
     
     return data;
+    */
 }
 
 async function findOrCreateCustomer(base44, phoneNumber, metadata) {
