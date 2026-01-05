@@ -60,6 +60,12 @@ Deno.serve(async (req) => {
 
         const opciones = Object.values(itemsByOption).sort((a, b) => a.numero - b.numero);
 
+        // Generar número correlativo
+        const allQuotes = await base44.asServiceRole.entities.ClientInquiry.filter({ 
+            quote_pdf_url: { $exists: true, $ne: '' } 
+        });
+        const quoteNumber = String(allQuotes.length + 1).padStart(4, '0');
+        
         // Generar HTML
         const clientName = customer?.full_name || inquiry.client_name || 'N/A';
         const fechaCotizacion = quoteDate ? new Date(quoteDate + 'T12:00:00') : new Date();
@@ -197,6 +203,10 @@ Deno.serve(async (req) => {
         </div>
         <div class="date-section">
             <div class="info-row">
+                <span class="label" style="width: auto; margin-right: 10px;">No.:</span>
+                <span class="value">${quoteNumber}</span>
+            </div>
+            <div class="info-row">
                 <span class="label" style="width: auto; margin-right: 10px;">FECHA:</span>
                 <span class="value">${fechaFormato}</span>
             </div>
@@ -236,7 +246,7 @@ Deno.serve(async (req) => {
 </div>
 
 <div class="footer">
-    PROMAN Services - San Salvador, El Salvador - Tel: 6053-1213
+    PROMAN Services S.A. de C.V. - San Salvador, El Salvador - Tel: 6053-1213
 </div>
 
 <script>
