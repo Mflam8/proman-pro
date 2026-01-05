@@ -126,6 +126,11 @@ async function processIncomingMessage(base44, message, metadata) {
 }
 
 async function sendAgentResponse(base44, phoneNumber, customer, messageText) {
+    // 🚫 FUNCIÓN COMPLETAMENTE DESACTIVADA
+    console.log('⏸️ Bot pausado - función sendAgentResponse no ejecuta nada');
+    return;
+    
+    /* FUNCIÓN COMPLETA DESACTIVADA - Descomentar para reactivar
     try {
         console.log('🤖 Iniciando respuesta del agente...');
         
@@ -182,6 +187,7 @@ async function sendAgentResponse(base44, phoneNumber, customer, messageText) {
             '¡Gracias por contactarnos! Un agente revisará tu mensaje pronto. 🔧'
         );
     }
+    */
 }
 
 async function sendWhatsAppMessage(to, message) {
