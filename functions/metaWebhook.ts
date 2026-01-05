@@ -75,46 +75,31 @@ async function processIncomingMessage(base44, message, metadata) {
         // Buscar o crear cliente
         let customer = await findOrCreateCustomer(base44, phoneNumber, metadata);
         
-        // Buscar inquiry activo del cliente
-        const activeInquiries = await base44.asServiceRole.entities.ClientInquiry.filter({
-            customer_id: customer.id,
-            status: { $in: ['nuevo', 'evaluacion_pendiente', 'cotizacion_pendiente'] }
-        });
-        
-        let inquiry = activeInquiries[0];
-        
-        // Si no hay inquiry activo y hay mensaje, crear uno nuevo
-        if (!inquiry && messageText) {
-            inquiry = await base44.asServiceRole.entities.ClientInquiry.create({
-                customer_id: customer.id,
-                lead_source: 'whatsapp',
-                message: messageText,
-                status: 'nuevo',
-                rubro: 'Hogar',
-                priority: 'media'
-            });
-            console.log('✅ Nuevo lead creado desde WhatsApp');
-        } else if (inquiry && messageText) {
-            const updatedMessage = inquiry.message 
-                ? `${inquiry.message}\n\n[${new Date().toLocaleString('es-SV')}] ${messageText}`
-                : messageText;
+        // Solo guardar el mensaje en las notas del cliente
+        if (messageText) {
+            const timestamp = new Date().toLocaleString('es-SV');
+            const newNote = `[${timestamp}] WhatsApp: ${messageText}`;
+            const updatedNotes = customer.notes ? `${customer.notes}\n${newNote}` : newNote;
             
-            await base44.asServiceRole.entities.ClientInquiry.update(inquiry.id, {
-                message: updatedMessage
+            await base44.asServiceRole.entities.Customer.update(customer.id, {
+                notes: updatedNotes
             });
-            console.log('✅ Mensaje agregado al inquiry existente');
+            console.log('✅ Mensaje guardado en notas del cliente');
         }
         
-        // Guardar tipo de mensaje si no es texto
-        if (messageType !== 'text' && inquiry) {
-            const note = `Mensaje tipo ${messageType} recibido vía WhatsApp`;
-            await base44.asServiceRole.entities.ClientInquiry.update(inquiry.id, {
-                notes: inquiry.notes ? `${inquiry.notes}\n${note}` : note
+        // Si es tipo no-texto, también registrarlo
+        if (messageType !== 'text') {
+            const timestamp = new Date().toLocaleString('es-SV');
+            const note = `[${timestamp}] WhatsApp: Archivo tipo ${messageType} recibido`;
+            const updatedNotes = customer.notes ? `${customer.notes}\n${note}` : note;
+            
+            await base44.asServiceRole.entities.Customer.update(customer.id, {
+                notes: updatedNotes
             });
         }
         
         // ⏸️ BOT COMPLETAMENTE PAUSADO - No se envían respuestas automáticas
-        console.log('⏸️ Bot pausado - mensaje recibido y guardado, sin respuesta automática');
+        console.log('⏸️ Bot pausado - solo guardado en cliente, sin crear trabajo');
         
     } catch (error) {
         console.error('❌ Error procesando mensaje:', error);
