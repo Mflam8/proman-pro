@@ -955,9 +955,44 @@ function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating,
                                     <Button type="button" size="sm" variant="outline" className="w-full" onClick={() => setShowCustomerEdit(false)}>Cancelar</Button>
                                 </div>
                             )}
-                            <div className="pt-2 border-t">
+                            <div className="pt-2 border-t space-y-2">
                                 <InfoRow label="Ubicación" value={(currentInquiry?.location_name || inquiry.location_name) ? `${currentInquiry?.location_name || inquiry.location_name}, ${currentInquiry?.location || inquiry.location}` : (currentInquiry?.location || inquiry.location)} />
-                                <InfoRow label="Servicio" value={`${currentInquiry?.rubro || inquiry.rubro} - ${currentInquiry?.service_type || inquiry.service_type}`} />
+                                
+                                {canEdit ? (
+                                    <>
+                                        <div>
+                                            <Label className="text-xs text-gray-600">Rubro</Label>
+                                            <Select 
+                                                value={formData.rubro} 
+                                                onValueChange={(v) => handleAutoSaveChange('rubro', v)}
+                                                disabled={isUpdating}
+                                            >
+                                                <SelectTrigger className="h-8 text-sm">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="Hogar">Hogar</SelectItem>
+                                                    <SelectItem value="Comercial">Comercial</SelectItem>
+                                                    <SelectItem value="Restaurantes">Restaurantes</SelectItem>
+                                                    <SelectItem value="Hospitales">Hospitales</SelectItem>
+                                                    <SelectItem value="Emergencias">Emergencias</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                        <div>
+                                            <Label className="text-xs text-gray-600">Servicio</Label>
+                                            <Input 
+                                                value={formData.service_type || ''} 
+                                                onChange={(e) => setFormData(p => ({...p, service_type: e.target.value}))}
+                                                className="h-8 text-sm"
+                                                disabled={isUpdating}
+                                            />
+                                        </div>
+                                    </>
+                                ) : (
+                                    <InfoRow label="Servicio" value={`${currentInquiry?.rubro || inquiry.rubro} - ${currentInquiry?.service_type || inquiry.service_type}`} />
+                                )}
+                                
                                 <InfoRow label="Recibido" value={format(new Date(inquiry.created_date), "dd MMM yyyy, HH:mm", { locale: es })} />
                                 {inquiry.message && <p className="text-gray-600 mt-2 italic text-xs">"{inquiry.message}"</p>}
                             </div>
