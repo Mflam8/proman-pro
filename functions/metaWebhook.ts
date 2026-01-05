@@ -113,117 +113,12 @@ async function processIncomingMessage(base44, message, metadata) {
             });
         }
         
-        // NUEVO: Responder con el agente si hay mensaje de texto
-        // if (messageText) {
-        //     await sendAgentResponse(base44, phoneNumber, customer, messageText);
-        // }
-
-        // BOT PAUSADO - descomentar líneas de arriba para activar
+        // ⏸️ BOT COMPLETAMENTE PAUSADO - No se envían respuestas automáticas
+        console.log('⏸️ Bot pausado - mensaje recibido y guardado, sin respuesta automática');
         
     } catch (error) {
         console.error('❌ Error procesando mensaje:', error);
     }
-}
-
-async function sendAgentResponse(base44, phoneNumber, customer, messageText) {
-    // 🚫 FUNCIÓN COMPLETAMENTE DESACTIVADA
-    console.log('⏸️ Bot pausado - función sendAgentResponse no ejecuta nada');
-    return;
-    
-    /* FUNCIÓN COMPLETA DESACTIVADA - Descomentar para reactivar
-    try {
-        console.log('🤖 Iniciando respuesta del agente...');
-        
-        // Llamar al agente usando API HTTP directamente
-        const agentApiUrl = `https://api.base44.com/v1/agents/base44_whatsapp_agent/chat`;
-        
-        const payload = {
-            message: messageText,
-            metadata: {
-                customer_id: customer.id,
-                phone: phoneNumber,
-                customer_name: customer.full_name
-            }
-        };
-        
-        console.log('📤 Llamando API del agente...');
-        
-        const response = await fetch(agentApiUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${Deno.env.get('BASE44_SERVICE_ROLE_KEY')}`
-            },
-            body: JSON.stringify(payload)
-        });
-        
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('❌ Error API agente:', response.status, errorText);
-            throw new Error(`Agent API error: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log('📥 Respuesta del agente recibida');
-        
-        if (data.response) {
-            console.log('📤 Enviando respuesta por WhatsApp:', data.response.substring(0, 50) + '...');
-            await sendWhatsAppMessage(phoneNumber, data.response);
-            console.log('✅ Respuesta enviada correctamente');
-        } else {
-            console.log('⚠️ No se encontró respuesta del agente');
-            await sendWhatsAppMessage(
-                phoneNumber,
-                '¡Hola! 👋 Gracias por contactarnos. Un agente te atenderá pronto. 🔧'
-            );
-        }
-        
-    } catch (error) {
-        console.error('❌ Error con agente:', error.message);
-        console.error('Stack:', error.stack);
-        // Si falla el agente, enviar mensaje de respaldo
-        await sendWhatsAppMessage(
-            phoneNumber,
-            '¡Gracias por contactarnos! Un agente revisará tu mensaje pronto. 🔧'
-        );
-    }
-    */
-}
-
-async function sendWhatsAppMessage(to, message) {
-    // 🚫 BOT COMPLETAMENTE DESACTIVADO
-    console.log('⏸️ Bot pausado - no se envió mensaje a:', to);
-    return { success: false, message: 'Bot pausado' };
-    
-    /* COMENTADO - Descomentar para reactivar
-    const accessToken = Deno.env.get('META_WHATSAPP_TOKEN');
-    const phoneNumberId = Deno.env.get('META_PHONE_NUMBER_ID');
-    
-    const url = `https://graph.facebook.com/v21.0/${phoneNumberId}/messages`;
-    
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            messaging_product: 'whatsapp',
-            to: to,
-            type: 'text',
-            text: { body: message }
-        })
-    });
-    
-    const data = await response.json();
-    
-    if (!response.ok) {
-        console.error('❌ Error enviando mensaje WhatsApp:', data);
-        throw new Error(`WhatsApp API error: ${JSON.stringify(data)}`);
-    }
-    
-    return data;
-    */
 }
 
 async function findOrCreateCustomer(base44, phoneNumber, metadata) {
