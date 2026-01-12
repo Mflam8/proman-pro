@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Plus, Edit2, Trash2, DollarSign, Wrench, FileText, FileDown, CheckCircle, Layers } from "lucide-react";
+import { Plus, Edit2, Trash2, DollarSign, Wrench, FileText, FileDown, CheckCircle, Layers, GripVertical } from "lucide-react";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 const tipoItemConfig = {
   servicio: { label: "Servicio/Trabajo", icon: Wrench, color: "bg-blue-100 text-blue-800" },
@@ -51,12 +52,17 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
   }).map(i => i.data || i);
 
   const createItem = useMutation({
-    mutationFn: (data) => {
+    mutationFn: async (data) => {
       const precioBase = data.cantidad * data.precio_unitario;
+      // Calcular el siguiente orden dentro de la opción
+      const itemsInOpcion = items.filter(i => i.opcion_numero === data.opcion_numero);
+      const maxOrden = itemsInOpcion.length > 0 ? Math.max(...itemsInOpcion.map(i => i.orden || 0)) : -1;
+      
       return base44.entities.DetalleFacturaTrabajo.create({
         ...data,
         inquiry_id: inquiryId,
-        monto_total_item: precioBase
+        monto_total_item: precioBase,
+        orden: maxOrden + 1
       });
     },
     onSuccess: () => {
@@ -111,7 +117,29 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
     },
   });
 
-  // Agrupar por opción
+  const reorderItems = useMutation({
+    mutationFn: async ({ opcionNumero, reorderedItems }) => {
+      // Actualizar el orden de todos los items
+      for (let i = 0; i < reorderedItems.length; i++) {
+        const item = reorderedItems[i];
+        const itemRecord = allItems.find(record => {
+          const data = record.data || record;
+          return data.descripcion === item.descripcion && data.opcion_numero === item.opcion_numero;
+        });
+        
+        if (itemRecord) {
+          await base44.entities.DetalleFacturaTrabajo.update(itemRecord.id, {
+            orden: i
+          });
+        }
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['billingItems', inquiryId] });
+    },
+  });
+
+  // Agrupar por opción y ordenar items
   const itemsByOption = {};
   items.forEach(item => {
     const opcionNum = item.opcion_numero || 1;
@@ -129,7 +157,25 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
     }
   });
 
+  // Ordenar items dentro de cada opción
+  Object.values(itemsByOption).forEach(opcion => {
+    opcion.items.sort((a, b) => (a.orden || 0) - (b.orden || 0));
+  });
+
   const opciones = Object.values(itemsByOption).sort((a, b) => a.numero - b.numero);
+
+  const handleDragEnd = (result, opcionNumero) => {
+    if (!result.destination) return;
+
+    const opcion = opciones.find(o => o.numero === opcionNumero);
+    if (!opcion) return;
+
+    const reorderedItems = Array.from(opcion.items);
+    const [removed] = reorderedItems.splice(result.source.index, 1);
+    reorderedItems.splice(result.destination.index, 0, removed);
+
+    reorderItems.mutate({ opcionNumero, reorderedItems });
+  };
   
   // Total solo de opciones seleccionadas
   const totalSeleccionado = opciones
@@ -308,60 +354,94 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
                       )}
                     </div>
                   </div>
-                  
-                  <div className="p-3 space-y-2">
-                    {opcion.items.map((item, idx) => {
-                      const itemRecord = allItems.find(i => {
-                        const data = i.data || i;
-                        return data.descripcion === item.descripcion && data.opcion_numero === item.opcion_numero;
-                      });
-                      
-                      return (
-                        <div key={idx} className="bg-white rounded p-3 border">
-                          <div className="flex justify-between items-start gap-3">
-                            <div className="flex-1">
-                              <p className="font-medium text-gray-900 mb-1">{item.descripcion}</p>
-                              {item.descripcion_detallada && (
-                                <p className="text-sm text-gray-600 whitespace-pre-line mb-2">
-                                  {item.descripcion_detallada}
-                                </p>
-                              )}
-                              <p className="text-sm text-gray-600">
-                                {item.cantidad} {unidadMedidaConfig[item.unidad_medida] || item.unidad_medida} x ${item.precio_unitario?.toFixed(2)}
-                                {' = '}
-                                <span className="font-semibold">${item.monto_total_item?.toFixed(2)}</span>
-                              </p>
-                            </div>
-                            {canEdit && (
-                              <div className="flex gap-2 ml-2">
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => {
-                                    setEditingItem({ ...item, id: itemRecord?.id });
-                                    setShowItemModal(true);
-                                  }}
-                                >
-                                  <Edit2 className="w-4 h-4" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => {
-                                    if (confirm('¿Eliminar este item?')) {
-                                      deleteItem.mutate(itemRecord?.id);
-                                    }
-                                  }}
-                                >
-                                  <Trash2 className="w-4 h-4 text-red-500" />
-                                </Button>
-                              </div>
-                            )}
-                          </div>
+
+                  <DragDropContext onDragEnd={(result) => handleDragEnd(result, opcion.numero)}>
+                    <Droppable droppableId={`opcion-${opcion.numero}`}>
+                      {(provided) => (
+                        <div 
+                          className="p-3 space-y-2"
+                          {...provided.droppableProps}
+                          ref={provided.innerRef}
+                        >
+                          {opcion.items.map((item, idx) => {
+                            const itemRecord = allItems.find(i => {
+                              const data = i.data || i;
+                              return data.descripcion === item.descripcion && data.opcion_numero === item.opcion_numero;
+                            });
+
+                            return (
+                              <Draggable 
+                                key={itemRecord?.id || idx} 
+                                draggableId={itemRecord?.id || `item-${idx}`} 
+                                index={idx}
+                                isDragDisabled={!canEdit}
+                              >
+                                {(provided, snapshot) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    className={`bg-white rounded p-3 border ${
+                                      snapshot.isDragging ? 'shadow-lg border-proman-yellow' : ''
+                                    }`}
+                                  >
+                                    <div className="flex justify-between items-start gap-3">
+                                      {canEdit && (
+                                        <div 
+                                          {...provided.dragHandleProps}
+                                          className="cursor-grab active:cursor-grabbing pt-1"
+                                        >
+                                          <GripVertical className="w-5 h-5 text-gray-400" />
+                                        </div>
+                                      )}
+                                      <div className="flex-1">
+                                        <p className="font-medium text-gray-900 mb-1">{item.descripcion}</p>
+                                        {item.descripcion_detallada && (
+                                          <p className="text-sm text-gray-600 whitespace-pre-line mb-2">
+                                            {item.descripcion_detallada}
+                                          </p>
+                                        )}
+                                        <p className="text-sm text-gray-600">
+                                          {item.cantidad} {unidadMedidaConfig[item.unidad_medida] || item.unidad_medida} x ${item.precio_unitario?.toFixed(2)}
+                                          {' = '}
+                                          <span className="font-semibold">${item.monto_total_item?.toFixed(2)}</span>
+                                        </p>
+                                      </div>
+                                      {canEdit && (
+                                        <div className="flex gap-2 ml-2">
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => {
+                                              setEditingItem({ ...item, id: itemRecord?.id });
+                                              setShowItemModal(true);
+                                            }}
+                                          >
+                                            <Edit2 className="w-4 h-4" />
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => {
+                                              if (confirm('¿Eliminar este item?')) {
+                                                deleteItem.mutate(itemRecord?.id);
+                                              }
+                                            }}
+                                          >
+                                            <Trash2 className="w-4 h-4 text-red-500" />
+                                          </Button>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </Draggable>
+                            );
+                          })}
+                          {provided.placeholder}
                         </div>
-                      );
-                    })}
-                  </div>
+                      )}
+                    </Droppable>
+                  </DragDropContext>
                 </div>
               );
             })}

@@ -36,9 +36,11 @@ Deno.serve(async (req) => {
             }
         }
 
-        // Obtener items de cotización
+        // Obtener items de cotización y ordenar
         const allItems = await base44.asServiceRole.entities.DetalleFacturaTrabajo.filter({ inquiry_id: inquiryId });
-        const quoteItems = (allItems || []).filter(item => item.es_cotizacion !== false);
+        const quoteItems = (allItems || [])
+            .filter(item => item.es_cotizacion !== false)
+            .sort((a, b) => (a.orden || 0) - (b.orden || 0));
 
         if (quoteItems.length === 0) {
             return Response.json({ 
