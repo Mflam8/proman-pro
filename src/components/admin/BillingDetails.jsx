@@ -134,23 +134,22 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
       const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
       if (newIndex < 0 || newIndex >= opcion.items.length) return;
 
-      // Intercambiar órdenes
-      const item1 = opcion.items[currentIndex];
-      const item2 = opcion.items[newIndex];
-      
-      const record1 = allItems.find(r => {
-        const data = r.data || r;
-        return data.descripcion === item1.descripcion && data.opcion_numero === item1.opcion_numero;
-      });
-      
-      const record2 = allItems.find(r => {
-        const data = r.data || r;
-        return data.descripcion === item2.descripcion && data.opcion_numero === item2.opcion_numero;
-      });
+      // Reordenar array
+      const reorderedItems = [...opcion.items];
+      const [movedItem] = reorderedItems.splice(currentIndex, 1);
+      reorderedItems.splice(newIndex, 0, movedItem);
 
-      if (record1 && record2) {
-        await base44.entities.DetalleFacturaTrabajo.update(record1.id, { orden: newIndex });
-        await base44.entities.DetalleFacturaTrabajo.update(record2.id, { orden: currentIndex });
+      // Actualizar todos los órdenes consecutivamente
+      for (let i = 0; i < reorderedItems.length; i++) {
+        const item = reorderedItems[i];
+        const record = allItems.find(r => {
+          const data = r.data || r;
+          return data.descripcion === item.descripcion && data.opcion_numero === item.opcion_numero;
+        });
+        
+        if (record) {
+          await base44.entities.DetalleFacturaTrabajo.update(record.id, { orden: i });
+        }
       }
     },
     onSuccess: () => {
