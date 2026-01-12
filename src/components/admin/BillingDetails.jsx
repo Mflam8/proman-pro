@@ -44,11 +44,14 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
     initialData: [],
   });
 
-  // Filtrar solo servicios y mano de obra
+  // Filtrar solo servicios y mano de obra, y agregar el id al objeto
   const items = allItems.filter(i => {
     const itemData = i.data || i;
     return itemData.tipo_item === 'servicio' || itemData.tipo_item === 'mano_de_obra';
-  }).map(i => i.data || i);
+  }).map(i => {
+    const itemData = i.data || i;
+    return { ...itemData, _recordId: i.id };
+  });
 
   const createItem = useMutation({
     mutationFn: async (data) => {
@@ -121,14 +124,7 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
       const opcion = opciones.find(o => o.numero === opcionNumero);
       if (!opcion) return;
 
-      const currentIndex = opcion.items.findIndex(i => {
-        const record = allItems.find(r => {
-          const data = r.data || r;
-          return data.descripcion === i.descripcion && data.opcion_numero === i.opcion_numero;
-        });
-        return record?.id === itemId;
-      });
-
+      const currentIndex = opcion.items.findIndex(i => i._recordId === itemId);
       if (currentIndex === -1) return;
       
       const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
@@ -139,16 +135,11 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
       const [movedItem] = reorderedItems.splice(currentIndex, 1);
       reorderedItems.splice(newIndex, 0, movedItem);
 
-      // Actualizar todos los órdenes consecutivamente
+      // Actualizar todos los órdenes
       for (let i = 0; i < reorderedItems.length; i++) {
         const item = reorderedItems[i];
-        const record = allItems.find(r => {
-          const data = r.data || r;
-          return data.descripcion === item.descripcion && data.opcion_numero === item.opcion_numero;
-        });
-        
-        if (record) {
-          await base44.entities.DetalleFacturaTrabajo.update(record.id, { orden: i });
+        if (item._recordId) {
+          await base44.entities.DetalleFacturaTrabajo.update(item._recordId, { orden: i });
         }
       }
     },
@@ -362,13 +353,8 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
 
                   <div className="p-3 space-y-2">
                     {opcion.items.map((item, idx) => {
-                      const itemRecord = allItems.find(i => {
-                        const data = i.data || i;
-                        return data.descripcion === item.descripcion && data.opcion_numero === item.opcion_numero;
-                      });
-
                       return (
-                        <div key={idx} className="bg-white rounded p-3 border">
+                        <div key={item._recordId || idx} className="bg-white rounded p-3 border">
                           <div className="flex justify-between items-start gap-3">
                             {canEdit && (
                               <div className="flex flex-col gap-1 pt-1">
@@ -377,7 +363,7 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
                                   variant="ghost"
                                   className="h-6 w-6 p-0"
                                   onClick={() => moveItem.mutate({ 
-                                    itemId: itemRecord?.id, 
+                                    itemId: item._recordId, 
                                     direction: 'up',
                                     opcionNumero: opcion.numero 
                                   })}
@@ -390,7 +376,7 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
                                   variant="ghost"
                                   className="h-6 w-6 p-0"
                                   onClick={() => moveItem.mutate({ 
-                                    itemId: itemRecord?.id, 
+                                    itemId: item._recordId, 
                                     direction: 'down',
                                     opcionNumero: opcion.numero 
                                   })}
@@ -419,7 +405,7 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => {
-                                    setEditingItem({ ...item, id: itemRecord?.id });
+                                    setEditingItem({ ...item, id: item._recordId });
                                     setShowItemModal(true);
                                   }}
                                 >
@@ -430,7 +416,7 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
                                   variant="ghost"
                                   onClick={() => {
                                     if (confirm('¿Eliminar este item?')) {
-                                      deleteItem.mutate(itemRecord?.id);
+                                      deleteItem.mutate(item._recordId);
                                     }
                                   }}
                                 >
