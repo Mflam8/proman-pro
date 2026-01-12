@@ -9,8 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Plus, Edit2, Trash2, DollarSign, Wrench, FileText, FileDown, CheckCircle, Layers, GripVertical } from "lucide-react";
-import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import { Plus, Edit2, Trash2, DollarSign, Wrench, FileText, FileDown, CheckCircle, Layers, ChevronUp, ChevronDown } from "lucide-react";
 
 const tipoItemConfig = {
   servicio: { label: "Servicio/Trabajo", icon: Wrench, color: "bg-blue-100 text-blue-800" },
@@ -117,21 +116,41 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
     },
   });
 
-  const reorderItems = useMutation({
-    mutationFn: async ({ opcionNumero, reorderedItems }) => {
-      // Actualizar el orden de todos los items
-      for (let i = 0; i < reorderedItems.length; i++) {
-        const item = reorderedItems[i];
-        const itemRecord = allItems.find(record => {
-          const data = record.data || record;
-          return data.descripcion === item.descripcion && data.opcion_numero === item.opcion_numero;
+  const moveItem = useMutation({
+    mutationFn: async ({ itemId, direction, opcionNumero }) => {
+      const opcion = opciones.find(o => o.numero === opcionNumero);
+      if (!opcion) return;
+
+      const currentIndex = opcion.items.findIndex(i => {
+        const record = allItems.find(r => {
+          const data = r.data || r;
+          return data.descripcion === i.descripcion && data.opcion_numero === i.opcion_numero;
         });
-        
-        if (itemRecord) {
-          await base44.entities.DetalleFacturaTrabajo.update(itemRecord.id, {
-            orden: i
-          });
-        }
+        return record?.id === itemId;
+      });
+
+      if (currentIndex === -1) return;
+      
+      const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+      if (newIndex < 0 || newIndex >= opcion.items.length) return;
+
+      // Intercambiar órdenes
+      const item1 = opcion.items[currentIndex];
+      const item2 = opcion.items[newIndex];
+      
+      const record1 = allItems.find(r => {
+        const data = r.data || r;
+        return data.descripcion === item1.descripcion && data.opcion_numero === item1.opcion_numero;
+      });
+      
+      const record2 = allItems.find(r => {
+        const data = r.data || r;
+        return data.descripcion === item2.descripcion && data.opcion_numero === item2.opcion_numero;
+      });
+
+      if (record1 && record2) {
+        await base44.entities.DetalleFacturaTrabajo.update(record1.id, { orden: newIndex });
+        await base44.entities.DetalleFacturaTrabajo.update(record2.id, { orden: currentIndex });
       }
     },
     onSuccess: () => {
@@ -163,19 +182,6 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
   });
 
   const opciones = Object.values(itemsByOption).sort((a, b) => a.numero - b.numero);
-
-  const handleDragEnd = (result, opcionNumero) => {
-    if (!result.destination) return;
-
-    const opcion = opciones.find(o => o.numero === opcionNumero);
-    if (!opcion) return;
-
-    const reorderedItems = Array.from(opcion.items);
-    const [removed] = reorderedItems.splice(result.source.index, 1);
-    reorderedItems.splice(result.destination.index, 0, removed);
-
-    reorderItems.mutate({ opcionNumero, reorderedItems });
-  };
   
   // Total solo de opciones seleccionadas
   const totalSeleccionado = opciones
@@ -355,93 +361,89 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
                     </div>
                   </div>
 
-                  <DragDropContext onDragEnd={(result) => handleDragEnd(result, opcion.numero)}>
-                    <Droppable droppableId={`opcion-${opcion.numero}`}>
-                      {(provided) => (
-                        <div 
-                          className="p-3 space-y-2"
-                          {...provided.droppableProps}
-                          ref={provided.innerRef}
-                        >
-                          {opcion.items.map((item, idx) => {
-                            const itemRecord = allItems.find(i => {
-                              const data = i.data || i;
-                              return data.descripcion === item.descripcion && data.opcion_numero === item.opcion_numero;
-                            });
+                  <div className="p-3 space-y-2">
+                    {opcion.items.map((item, idx) => {
+                      const itemRecord = allItems.find(i => {
+                        const data = i.data || i;
+                        return data.descripcion === item.descripcion && data.opcion_numero === item.opcion_numero;
+                      });
 
-                            return (
-                              <Draggable 
-                                key={itemRecord?.id || idx} 
-                                draggableId={itemRecord?.id || `item-${idx}`} 
-                                index={idx}
-                                isDragDisabled={!canEdit}
-                              >
-                                {(provided, snapshot) => (
-                                  <div
-                                    ref={provided.innerRef}
-                                    {...provided.draggableProps}
-                                    className={`bg-white rounded p-3 border ${
-                                      snapshot.isDragging ? 'shadow-lg border-proman-yellow' : ''
-                                    }`}
-                                  >
-                                    <div className="flex justify-between items-start gap-3">
-                                      {canEdit && (
-                                        <div 
-                                          {...provided.dragHandleProps}
-                                          className="cursor-grab active:cursor-grabbing pt-1"
-                                        >
-                                          <GripVertical className="w-5 h-5 text-gray-400" />
-                                        </div>
-                                      )}
-                                      <div className="flex-1">
-                                        <p className="font-medium text-gray-900 mb-1">{item.descripcion}</p>
-                                        {item.descripcion_detallada && (
-                                          <p className="text-sm text-gray-600 whitespace-pre-line mb-2">
-                                            {item.descripcion_detallada}
-                                          </p>
-                                        )}
-                                        <p className="text-sm text-gray-600">
-                                          {item.cantidad} {unidadMedidaConfig[item.unidad_medida] || item.unidad_medida} x ${item.precio_unitario?.toFixed(2)}
-                                          {' = '}
-                                          <span className="font-semibold">${item.monto_total_item?.toFixed(2)}</span>
-                                        </p>
-                                      </div>
-                                      {canEdit && (
-                                        <div className="flex gap-2 ml-2">
-                                          <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            onClick={() => {
-                                              setEditingItem({ ...item, id: itemRecord?.id });
-                                              setShowItemModal(true);
-                                            }}
-                                          >
-                                            <Edit2 className="w-4 h-4" />
-                                          </Button>
-                                          <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            onClick={() => {
-                                              if (confirm('¿Eliminar este item?')) {
-                                                deleteItem.mutate(itemRecord?.id);
-                                              }
-                                            }}
-                                          >
-                                            <Trash2 className="w-4 h-4 text-red-500" />
-                                          </Button>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-                              </Draggable>
-                            );
-                          })}
-                          {provided.placeholder}
+                      return (
+                        <div key={idx} className="bg-white rounded p-3 border">
+                          <div className="flex justify-between items-start gap-3">
+                            {canEdit && (
+                              <div className="flex flex-col gap-1 pt-1">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => moveItem.mutate({ 
+                                    itemId: itemRecord?.id, 
+                                    direction: 'up',
+                                    opcionNumero: opcion.numero 
+                                  })}
+                                  disabled={idx === 0 || moveItem.isPending}
+                                >
+                                  <ChevronUp className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0"
+                                  onClick={() => moveItem.mutate({ 
+                                    itemId: itemRecord?.id, 
+                                    direction: 'down',
+                                    opcionNumero: opcion.numero 
+                                  })}
+                                  disabled={idx === opcion.items.length - 1 || moveItem.isPending}
+                                >
+                                  <ChevronDown className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            )}
+                            <div className="flex-1">
+                              <p className="font-medium text-gray-900 mb-1">{item.descripcion}</p>
+                              {item.descripcion_detallada && (
+                                <p className="text-sm text-gray-600 whitespace-pre-line mb-2">
+                                  {item.descripcion_detallada}
+                                </p>
+                              )}
+                              <p className="text-sm text-gray-600">
+                                {item.cantidad} {unidadMedidaConfig[item.unidad_medida] || item.unidad_medida} x ${item.precio_unitario?.toFixed(2)}
+                                {' = '}
+                                <span className="font-semibold">${item.monto_total_item?.toFixed(2)}</span>
+                              </p>
+                            </div>
+                            {canEdit && (
+                              <div className="flex gap-2 ml-2">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    setEditingItem({ ...item, id: itemRecord?.id });
+                                    setShowItemModal(true);
+                                  }}
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => {
+                                    if (confirm('¿Eliminar este item?')) {
+                                      deleteItem.mutate(itemRecord?.id);
+                                    }
+                                  }}
+                                >
+                                  <Trash2 className="w-4 h-4 text-red-500" />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      )}
-                    </Droppable>
-                  </DragDropContext>
+                      );
+                    })}
+                  </div>
                 </div>
               );
             })}
