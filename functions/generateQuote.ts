@@ -19,43 +19,43 @@ Deno.serve(async (req) => {
 
         // Obtener el trabajo
         const inquiries = await base44.asServiceRole.entities.ClientInquiry.filter({ id: inquiryId });
-        const inquiryRaw = inquiries[0];
-
-        if (!inquiryRaw) {
+        if (!inquiries || inquiries.length === 0) {
             return Response.json({ error: 'Trabajo no encontrado' }, { status: 404 });
         }
-        
-        const inquiry = inquiryRaw.data ? { ...inquiryRaw, ...inquiryRaw.data } : inquiryRaw;
+        const inquiry = inquiries[0];
 
         // Obtener cliente
         let customer = null;
         const customerId = inquiry.customer_id;
         if (customerId) {
             const customers = await base44.asServiceRole.entities.Customer.filter({ id: customerId });
-            const customerRaw = customers[0];
-            customer = customerRaw?.data ? { ...customerRaw, ...customerRaw.data } : customerRaw;
+            if (customers && customers.length > 0) {
+                customer = customers[0];
+            }
         }
 
         // Obtener items de cotización
         const allItems = await base44.asServiceRole.entities.DetalleFacturaTrabajo.filter({ inquiry_id: inquiryId });
-        const quoteItems = allItems.filter(item => {
-            const itemData = item.data || item;
-            return itemData.es_cotizacion !== false;
-        });
+        const quoteItems = (allItems || []).filter(item => item.es_cotizacion !== false);
+
+        if (quoteItems.length === 0) {
+            return Response.json({ 
+                error: 'No hay items de cotización para este trabajo. Agrega items primero.' 
+            }, { status: 400 });
+        }
 
         // Agrupar por opción
         const itemsByOption = {};
         quoteItems.forEach(item => {
-            const itemData = item.data || item;
-            const opcionNum = itemData.opcion_numero || 1;
+            const opcionNum = item.opcion_numero || 1;
             if (!itemsByOption[opcionNum]) {
                 itemsByOption[opcionNum] = {
                     numero: opcionNum,
-                    titulo: itemData.opcion_titulo || `Opción ${opcionNum}`,
+                    titulo: item.opcion_titulo || `Opción ${opcionNum}`,
                     items: []
                 };
             }
-            itemsByOption[opcionNum].items.push(itemData);
+            itemsByOption[opcionNum].items.push(item);
         });
 
         const opciones = Object.values(itemsByOption).sort((a, b) => a.numero - b.numero);
@@ -67,10 +67,10 @@ Deno.serve(async (req) => {
         const quoteNumber = String(allQuotes.length + 1).padStart(4, '0');
         
         // Generar HTML
-        const clientName = customer?.full_name || inquiry.client_name || 'N/A';
+        const clientName = customer?.full_name || inquiry.client_name || 'Cliente';
         const fechaCotizacion = quoteDate ? new Date(quoteDate + 'T12:00:00') : new Date();
         const fechaFormato = fechaCotizacion.toLocaleDateString('es-SV', { day: 'numeric', month: 'numeric', year: 'numeric' });
-        const asuntoTexto = asunto || inquiry.service_type || 'Servicios varios';
+        const asuntoTexto = asunto || inquiry.service_type || inquiry.rubro || 'Servicios varios';
         
         let totalGeneral = 0;
         let itemsHtml = '';
@@ -89,9 +89,10 @@ Deno.serve(async (req) => {
             let subtotalOpcion = 0;
             
             for (const item of opcion.items) {
-                const descripcion = item.descripcion_detallada || item.descripcion || '';
-                const precioUnit = item.precio_unitario || 0;
-                const precioTotal = (item.cantidad || 1) * precioUnit;
+                const descripcion = item.descripcion_detallada || item.descripcion || 'Servicio';
+                const cantidad = parseFloat(item.cantidad) || 1;
+                const precioUnit = parseFloat(item.precio_unitario) || 0;
+                const precioTotal = cantidad * precioUnit;
                 subtotalOpcion += precioTotal;
                 totalGeneral += precioTotal;
 
@@ -99,13 +100,13 @@ Deno.serve(async (req) => {
                     <tr>
                         <td class="text-center">${itemNum}</td>
                         <td><div style="white-space: pre-line;">${descripcion}</div></td>
-                        <td class="text-center">${item.cantidad || 1} ${item.unidad_medida || 'unidad'}</td>
+                        <td class="text-center">${cantidad} ${item.unidad_medida || 'unidad'}</td>
                         <td class="text-right">$ ${precioUnit.toFixed(2)}</td>
                         <td class="text-right">$ ${precioTotal.toFixed(2)}</td>
                     </tr>
                 `;
                 itemNum++;
-            }
+                }
 
             if (hayMultiplesOpciones) {
                 itemsHtml += `
