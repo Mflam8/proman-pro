@@ -700,7 +700,6 @@ function BillingItemForm({ item, existingOptions, onSubmit, onCancel, isSubmitti
         <Input
           type="number"
           step="0.01"
-          min="0"
           value={formData.precio_unitario}
           onChange={(e) => setFormData({ ...formData, precio_unitario: parseFloat(e.target.value) || 0 })}
           required
