@@ -235,21 +235,19 @@ Deno.serve(async (req) => {
         </table>
 
         <div class="total-container">
-        ${descuentoMonto > 0 ? `
-        <div style="text-align: right; margin-bottom: 10px; font-size: 11pt;">
-        <div style="margin-bottom: 5px;">
+        <div style="text-align: right; margin-bottom: 10px; font-size: 11pt; min-width: 250px;">
+        <div style="margin-bottom: 5px; padding-bottom: 5px;">
             <span style="color: #252a5c;">Subtotal:</span>
-            <span style="font-weight: bold; margin-left: 20px;">$ ${totalGeneral.toFixed(2)}</span>
+            <span style="font-weight: bold; margin-left: 40px;">$ ${totalGeneral.toFixed(2)}</span>
         </div>
-        <div style="margin-bottom: 5px;">
-            <span style="color: #dc2626;">Descuento:</span>
-            <span style="font-weight: bold; color: #dc2626; margin-left: 20px;">- $ ${descuentoMonto.toFixed(2)}</span>
+        <div style="margin-bottom: 5px; padding-bottom: 5px;">
+            <span style="color: ${descuentoMonto > 0 ? '#dc2626' : '#252a5c'};">Descuento:</span>
+            <span style="font-weight: bold; color: ${descuentoMonto > 0 ? '#dc2626' : '#252a5c'}; margin-left: 40px;">${descuentoMonto > 0 ? '- ' : ''}$ ${descuentoMonto.toFixed(2)}</span>
         </div>
+        <div style="border-top: 2px solid #252a5c; padding-top: 8px; margin-top: 8px;">
+            <span style="color: #252a5c; font-weight: bold; font-size: 12pt;">Total:</span>
+            <span style="font-weight: bold; color: #252a5c; margin-left: 40px; font-size: 13pt;">$ ${(totalGeneral - descuentoMonto).toFixed(2)}</span>
         </div>
-        ` : ''}
-        <div class="total-box">
-        <span class="total-label">Total Cotizado</span>
-        <span class="total-amount">$ ${(totalGeneral - descuentoMonto).toFixed(2)}</span>
         </div>
         </div>
 
