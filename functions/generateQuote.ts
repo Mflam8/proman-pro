@@ -11,11 +11,13 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { inquiryId, quoteDate, asunto } = await req.json();
+        const { inquiryId, quoteDate, asunto, descuento } = await req.json();
 
         if (!inquiryId) {
             return Response.json({ error: 'inquiryId is required' }, { status: 400 });
         }
+
+        const descuentoMonto = parseFloat(descuento) || 0;
 
         // Obtener el trabajo
         const inquiries = await base44.asServiceRole.entities.ClientInquiry.filter({ id: inquiryId });
@@ -227,15 +229,27 @@ Deno.serve(async (req) => {
     </thead>
     <tbody>
         ${itemsHtml}
-    </tbody>
-</table>
+        </tbody>
+        </table>
 
-<div class="total-container">
-    <div class="total-box">
+        <div class="total-container">
+        ${descuentoMonto > 0 ? `
+        <div style="text-align: right; margin-bottom: 10px; font-size: 11pt;">
+        <div style="margin-bottom: 5px;">
+            <span style="color: #252a5c;">Subtotal:</span>
+            <span style="font-weight: bold; margin-left: 20px;">$ ${totalGeneral.toFixed(2)}</span>
+        </div>
+        <div style="margin-bottom: 5px;">
+            <span style="color: #dc2626;">Descuento:</span>
+            <span style="font-weight: bold; color: #dc2626; margin-left: 20px;">- $ ${descuentoMonto.toFixed(2)}</span>
+        </div>
+        </div>
+        ` : ''}
+        <div class="total-box">
         <span class="total-label">Total Cotizado</span>
-        <span class="total-amount">$ ${totalGeneral.toFixed(2)}</span>
-    </div>
-</div>
+        <span class="total-amount">$ ${(totalGeneral - descuentoMonto).toFixed(2)}</span>
+        </div>
+        </div>
 
 <div class="notes">
     <p>• Precio NO incluye IVA.</p>

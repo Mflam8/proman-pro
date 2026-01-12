@@ -34,6 +34,7 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
   const [showQuoteOptions, setShowQuoteOptions] = useState(false);
   const [documentType, setDocumentType] = useState("cotizacion"); // "cotizacion" o "factura"
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [descuento, setDescuento] = useState(0);
   const queryClient = useQueryClient();
 
   const { data: allItems, isLoading } = useQuery({
@@ -146,7 +147,8 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
       const response = await base44.functions.invoke('generateQuote', {
         inquiryId: inquiry.id,
         quoteDate: selectedDate,
-        asunto: quoteAsunto || inquiry.service_type
+        asunto: quoteAsunto || inquiry.service_type,
+        descuento: descuento
       });
 
       if (response.data.success) {
@@ -446,6 +448,25 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
                   rows={3}
                 />
               </div>
+
+              {documentType === "cotizacion" && (
+                <div>
+                  <Label className="block text-sm font-medium mb-2">
+                    Descuento ($) - Opcional
+                  </Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={descuento}
+                    onChange={(e) => setDescuento(parseFloat(e.target.value) || 0)}
+                    placeholder="0.00"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Ej: Si el cliente pagó visita técnica que se descuenta del total
+                  </p>
+                </div>
+              )}
               <div className="flex justify-end gap-3">
                 <Button variant="outline" onClick={() => setShowQuoteOptions(false)}>
                   Cancelar
