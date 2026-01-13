@@ -39,9 +39,16 @@ Deno.serve(async (req) => {
                     console.log('🔄 Procesando entry:', entry.id);
                     for (const change of entry.changes || []) {
                         console.log('🔄 Change field:', change.field);
+                        
                         if (change.field === 'messages') {
-                            const messages = change.value.messages || [];
-                            console.log('📨 Mensajes encontrados:', messages.length);
+                            // Guard clause: Ignorar si no hay mensajes reales
+                            if (!change.value.messages || !Array.isArray(change.value.messages) || change.value.messages.length === 0) {
+                                console.log('⏭️ No es mensaje entrante real, ignorado');
+                                continue;
+                            }
+                            
+                            const messages = change.value.messages;
+                            console.log('📨 Mensajes reales encontrados:', messages.length);
 
                             for (const message of messages) {
                                 console.log('💬 Procesando mensaje de:', message.from);
