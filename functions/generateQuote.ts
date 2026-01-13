@@ -235,16 +235,6 @@ Deno.serve(async (req) => {
         </table>
 
         <div class="total-container">
-        <div style="text-align: right; margin-bottom: 8px; font-size: 10pt; color: #666;">
-        <div style="margin-bottom: 3px;">
-            Subtotal: $ ${totalGeneral.toFixed(2)}
-        </div>
-        ${descuentoMonto > 0 ? `
-        <div style="margin-bottom: 3px; color: #dc2626;">
-            Descuento: - $ ${descuentoMonto.toFixed(2)}
-        </div>
-        ` : ''}
-        </div>
         <div class="total-box">
         <span class="total-label">Total Cotizado</span>
         <span class="total-amount">$ ${(totalGeneral - descuentoMonto).toFixed(2)}</span>
