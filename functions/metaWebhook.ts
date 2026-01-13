@@ -41,9 +41,9 @@ Deno.serve(async (req) => {
                         console.log('🔄 Change field:', change.field);
                         
                         if (change.field === 'messages') {
-                            // Guard clause: Ignorar si no hay mensajes reales
-                            if (!change.value.messages || !Array.isArray(change.value.messages) || change.value.messages.length === 0) {
-                                console.log('⏭️ No es mensaje entrante real, ignorado');
+                            // Guard clause: Solo procesar si hay mensajes reales
+                            if (!change.value.messages) {
+                                console.log('⏭️ Status/event ignorado');
                                 continue;
                             }
                             
