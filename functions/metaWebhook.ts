@@ -97,7 +97,7 @@ async function processIncomingMessage(base44, message, metadata) {
         });
         
         // Buscar o crear conversación con el agente
-        const conversations = await base44.asServiceRole.agents.listConversations({
+        const conversations = await base44.agents.listConversations({
             agent_name: 'whatsappAssistant'
         });
         
@@ -106,7 +106,7 @@ async function processIncomingMessage(base44, message, metadata) {
         );
         
         if (!conversation) {
-            conversation = await base44.asServiceRole.agents.createConversation({
+            conversation = await base44.agents.createConversation({
                 agent_name: 'whatsappAssistant',
                 metadata: {
                     phone_number: phoneNumber,
@@ -119,17 +119,18 @@ async function processIncomingMessage(base44, message, metadata) {
         
         // Enviar mensaje al agente y obtener respuesta
         console.log('🤖 Enviando mensaje al agente...');
-        await base44.asServiceRole.agents.addMessage(conversation, {
+        const response = await base44.agents.addMessage(conversation.id, {
             role: 'user',
             content: messageText
         });
         
-        // Esperar un momento para que el agente procese
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Esperar a que el agente responda completamente
+        await new Promise(resolve => setTimeout(resolve, 3000));
         
         // Obtener la respuesta del agente
-        const updatedConversation = await base44.asServiceRole.agents.getConversation(conversation.id);
-        const lastMessage = updatedConversation.messages[updatedConversation.messages.length - 1];
+        const updatedConversation = await base44.agents.getConversation(conversation.id);
+        const messages = updatedConversation.messages || [];
+        const lastMessage = messages[messages.length - 1];
         
         if (lastMessage && lastMessage.role === 'assistant' && lastMessage.content) {
             // Enviar respuesta por WhatsApp
