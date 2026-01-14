@@ -1,9 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.8';
 
 Deno.serve(async (req) => {
-    const base44 = createClientFromRequest(req);
-    
-    // GET: Verificación del webhook
+    // GET: Verificación del webhook (sin autenticación de Base44)
     if (req.method === 'GET') {
         const url = new URL(req.url);
         const mode = url.searchParams.get('hub.mode');
@@ -12,12 +10,21 @@ Deno.serve(async (req) => {
         
         const verifyToken = Deno.env.get('META_WEBHOOK_VERIFY_TOKEN');
         
+        console.log('🔐 Verificación webhook:', { mode, token, verifyToken, challenge });
+        
         if (mode === 'subscribe' && token === verifyToken) {
-            return new Response(challenge, { status: 200 });
+            console.log('✅ Verificación exitosa');
+            return new Response(challenge, { 
+                status: 200,
+                headers: { 'Content-Type': 'text/plain' }
+            });
         } else {
+            console.log('❌ Verificación fallida');
             return new Response('Forbidden', { status: 403 });
         }
     }
+    
+    const base44 = createClientFromRequest(req);
     
     // POST: Recibir mensajes
     if (req.method === 'POST') {
