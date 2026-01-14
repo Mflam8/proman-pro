@@ -26,39 +26,27 @@ Deno.serve(async (req) => {
         try {
             const body = await req.json();
             console.log('📩 Webhook recibido:', JSON.stringify(body, null, 2));
-            console.log('🔍 Body.object:', body.object);
-            console.log('🔍 Entries:', body.entry?.length || 0);
             
             // Responder rápido a Meta (200 OK)
             const response = new Response('EVENT_RECEIVED', { status: 200 });
             
             // Procesar mensajes en segundo plano
             if (body.object === 'whatsapp_business_account') {
-                console.log('✅ Es whatsapp_business_account');
                 for (const entry of body.entry || []) {
-                    console.log('🔄 Procesando entry:', entry.id);
                     for (const change of entry.changes || []) {
-                        console.log('🔄 Change field:', change.field);
-                        
-                        if (change.field === 'messages') {
-                            // Guard clause: Solo procesar si hay mensajes reales
-                            if (!change.value.messages) {
-                                console.log('⏭️ Status/event ignorado');
-                                continue;
-                            }
-                            
+                        if (change.field === 'messages' && change.value.messages) {
                             const messages = change.value.messages;
-                            console.log('📨 Mensajes reales encontrados:', messages.length);
+                            console.log('📨 Mensajes encontrados:', messages.length);
 
                             for (const message of messages) {
                                 console.log('💬 Procesando mensaje de:', message.from);
-                                await processIncomingMessage(base44, message, change.value);
+                                processIncomingMessage(base44, message, change.value).catch(err => {
+                                    console.error('❌ Error en procesamiento:', err);
+                                });
                             }
                         }
                     }
                 }
-            } else {
-                console.log('❌ Body.object no es whatsapp_business_account:', body.object);
             }
             
             return response;
@@ -79,67 +67,66 @@ async function processIncomingMessage(base44, message, metadata) {
         
         console.log(`📱 Mensaje de ${phoneNumber}: ${messageText}`);
         
-        // Solo procesar mensajes de texto
         if (messageType !== 'text' || !messageText) {
-            console.log('⏭️ Tipo de mensaje no soportado, ignorando');
+            console.log('⏭️ Tipo de mensaje no soportado');
             return;
         }
         
         // Buscar o crear cliente
         let customer = await findOrCreateCustomer(base44, phoneNumber, metadata);
         
-        // Obtener historial de conversación (últimos 10 mensajes)
+        // Obtener historial de conversación
         const conversationHistory = customer.whatsapp_conversation || [];
         
-        // Agregar mensaje del cliente al historial
+        // Agregar mensaje del cliente
         conversationHistory.push({
             role: 'user',
             content: messageText,
             timestamp: new Date().toISOString()
         });
         
-        // Construir contexto para el LLM
+        // Construir contexto
         const conversationContext = conversationHistory
-            .slice(-10) // Últimos 10 mensajes
+            .slice(-10)
             .map(msg => `${msg.role === 'user' ? 'Cliente' : 'Asistente'}: ${msg.content}`)
             .join('\n');
         
         // Prompt para el LLM
-        const systemPrompt = `Eres un asistente de atención al cliente de PROMAN Services, empresa de fontanería, electricidad y construcción en El Salvador.
+        const systemPrompt = `Eres un asistente de PROMAN Services, empresa de fontanería y construcción en El Salvador.
 
 Cliente: ${customer.full_name}
 Teléfono: ${phoneNumber}
 
-Conversación anterior:
+Conversación:
 ${conversationContext}
 
 Instrucciones:
-1. Responde de forma amable y profesional al cliente
-2. Si el cliente solicita un servicio y proporciona suficiente información (tipo de servicio, ubicación, descripción), responde con un JSON en este formato:
+1. Responde amablemente
+2. Si el cliente pide un servicio y da suficiente info (servicio, ubicación, descripción), responde JSON:
 {
-  "response": "tu respuesta al cliente",
+  "response": "mensaje al cliente",
   "create_inquiry": true,
   "inquiry_data": {
     "rubro": "Hogar|Comercial|Restaurantes|Hospitales|Emergencias",
-    "service_type": "tipo de servicio",
+    "service_type": "tipo",
     "location": "departamento",
-    "address": "dirección si la dio",
-    "message": "descripción del problema",
+    "address": "dirección",
+    "message": "problema",
     "lead_source": "whatsapp"
   }
 }
 
-3. Si falta información, pregunta lo necesario y responde con:
+3. Si falta info, pregunta y responde:
 {
-  "response": "tu pregunta al cliente",
+  "response": "tu pregunta",
   "create_inquiry": false
 }
 
-Departamentos válidos: San Salvador, La Libertad, Santa Ana, Sonsonate, Ahuachapán, Chalatenango, Cuscatlán, La Paz, Cabañas, San Vicente, Usulután, San Miguel, Morazán, La Unión.
+Departamentos: San Salvador, La Libertad, Santa Ana, Sonsonate, Ahuachapán, Chalatenango, Cuscatlán, La Paz, Cabañas, San Vicente, Usulután, San Miguel, Morazán, La Unión.
 
-Responde SOLO con el JSON, sin texto adicional.`;
+Responde SOLO JSON.`;
 
-        // Llamar al LLM
+        // Llamar LLM
         console.log('🤖 Consultando LLM...');
         const llmResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
             prompt: systemPrompt,
@@ -163,21 +150,20 @@ Responde SOLO con el JSON, sin texto adicional.`;
             }
         });
         
-        console.log('📝 Respuesta del LLM:', JSON.stringify(llmResponse));
+        console.log('📝 LLM responde:', JSON.stringify(llmResponse));
         
-        // Agregar respuesta del asistente al historial
+        // Guardar respuesta en historial
         conversationHistory.push({
             role: 'assistant',
             content: llmResponse.response,
             timestamp: new Date().toISOString()
         });
         
-        // Guardar historial actualizado
         await base44.asServiceRole.entities.Customer.update(customer.id, {
             whatsapp_conversation: conversationHistory
         });
         
-        // Crear inquiry si el LLM lo indica
+        // Crear inquiry si procede
         if (llmResponse.create_inquiry && llmResponse.inquiry_data) {
             try {
                 const inquiry = await base44.asServiceRole.entities.ClientInquiry.create({
@@ -194,19 +180,19 @@ Responde SOLO con el JSON, sin texto adicional.`;
             }
         }
         
-        // Enviar respuesta por WhatsApp
+        // Enviar WhatsApp
         await sendWhatsAppMessage(phoneNumber, llmResponse.response);
-        console.log('✅ Respuesta enviada por WhatsApp');
+        console.log('✅ Mensaje enviado');
         
     } catch (error) {
-        console.error('❌ Error procesando mensaje:', error);
+        console.error('❌ Error:', error);
         try {
             await sendWhatsAppMessage(
                 message.from,
-                'Disculpa, hubo un error procesando tu mensaje. Por favor intenta de nuevo o llámanos al 6053-1213.'
+                'Disculpa, hubo un error. Llámanos al 6053-1213.'
             );
-        } catch (sendError) {
-            console.error('❌ Error enviando mensaje de error:', sendError);
+        } catch (e) {
+            console.error('❌ Error enviando error:', e);
         }
     }
 }
@@ -231,26 +217,24 @@ async function sendWhatsAppMessage(to, text) {
     
     if (!response.ok) {
         const error = await response.text();
-        throw new Error(`Error enviando WhatsApp: ${error}`);
+        throw new Error(`Error WhatsApp: ${error}`);
     }
     
     return response.json();
 }
 
 async function findOrCreateCustomer(base44, phoneNumber, metadata) {
-    // Limpiar número de teléfono
     const cleanPhone = phoneNumber.replace(/\D/g, '');
     
-    // Buscar cliente existente
     const existingCustomers = await base44.asServiceRole.entities.Customer.filter({
-        phone: { $regex: cleanPhone.slice(-8) } // Últimos 8 dígitos
+        phone: { $regex: cleanPhone.slice(-8) }
     });
     
     if (existingCustomers.length > 0) {
+        console.log('✅ Cliente existente');
         return existingCustomers[0];
     }
     
-    // Crear nuevo cliente
     const profileName = metadata.contacts?.[0]?.profile?.name || 'Cliente WhatsApp';
     
     const newCustomer = await base44.asServiceRole.entities.Customer.create({
@@ -259,9 +243,9 @@ async function findOrCreateCustomer(base44, phoneNumber, metadata) {
         status: 'nuevo',
         primary_rubro: 'Hogar',
         preferred_contact: 'whatsapp',
-        notes: 'Cliente creado automáticamente desde WhatsApp'
+        notes: 'Cliente creado desde WhatsApp'
     });
     
-    console.log('✅ Nuevo cliente creado:', profileName);
+    console.log('✅ Cliente creado:', profileName);
     return newCustomer;
 }
