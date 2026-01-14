@@ -79,38 +79,102 @@ async function processIncomingMessage(base44, message, metadata) {
         
         console.log(`📱 Mensaje de ${phoneNumber}: ${messageText}`);
         
+        // Solo procesar mensajes de texto
+        if (messageType !== 'text' || !messageText) {
+            console.log('⏭️ Tipo de mensaje no soportado, ignorando');
+            return;
+        }
+        
         // Buscar o crear cliente
         let customer = await findOrCreateCustomer(base44, phoneNumber, metadata);
         
-        // Solo guardar el mensaje en las notas del cliente
-        if (messageText) {
-            const timestamp = new Date().toLocaleString('es-SV');
-            const newNote = `[${timestamp}] WhatsApp: ${messageText}`;
-            const updatedNotes = customer.notes ? `${customer.notes}\n${newNote}` : newNote;
-            
-            await base44.asServiceRole.entities.Customer.update(customer.id, {
-                notes: updatedNotes
+        // Guardar mensaje en notas del cliente
+        const timestamp = new Date().toLocaleString('es-SV');
+        const newNote = `[${timestamp}] WhatsApp: ${messageText}`;
+        const updatedNotes = customer.notes ? `${customer.notes}\n${newNote}` : newNote;
+        await base44.asServiceRole.entities.Customer.update(customer.id, {
+            notes: updatedNotes
+        });
+        
+        // Buscar o crear conversación con el agente
+        const conversations = await base44.asServiceRole.agents.listConversations({
+            agent_name: 'whatsappAssistant'
+        });
+        
+        let conversation = conversations.find(c => 
+            c.metadata?.phone_number === phoneNumber
+        );
+        
+        if (!conversation) {
+            conversation = await base44.asServiceRole.agents.createConversation({
+                agent_name: 'whatsappAssistant',
+                metadata: {
+                    phone_number: phoneNumber,
+                    customer_id: customer.id,
+                    customer_name: customer.full_name
+                }
             });
-            console.log('✅ Mensaje guardado en notas del cliente');
+            console.log('✅ Nueva conversación creada con el agente');
         }
         
-        // Si es tipo no-texto, también registrarlo
-        if (messageType !== 'text') {
-            const timestamp = new Date().toLocaleString('es-SV');
-            const note = `[${timestamp}] WhatsApp: Archivo tipo ${messageType} recibido`;
-            const updatedNotes = customer.notes ? `${customer.notes}\n${note}` : note;
-            
-            await base44.asServiceRole.entities.Customer.update(customer.id, {
-                notes: updatedNotes
-            });
-        }
+        // Enviar mensaje al agente y obtener respuesta
+        console.log('🤖 Enviando mensaje al agente...');
+        await base44.asServiceRole.agents.addMessage(conversation, {
+            role: 'user',
+            content: messageText
+        });
         
-        // ⏸️ BOT COMPLETAMENTE PAUSADO - No se envían respuestas automáticas
-        console.log('⏸️ Bot pausado - solo guardado en cliente, sin crear trabajo');
+        // Esperar un momento para que el agente procese
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Obtener la respuesta del agente
+        const updatedConversation = await base44.asServiceRole.agents.getConversation(conversation.id);
+        const lastMessage = updatedConversation.messages[updatedConversation.messages.length - 1];
+        
+        if (lastMessage && lastMessage.role === 'assistant' && lastMessage.content) {
+            // Enviar respuesta por WhatsApp
+            await sendWhatsAppMessage(phoneNumber, lastMessage.content);
+            console.log('✅ Respuesta enviada por WhatsApp');
+        }
         
     } catch (error) {
         console.error('❌ Error procesando mensaje:', error);
+        // Enviar mensaje de error al usuario
+        try {
+            await sendWhatsAppMessage(
+                message.from,
+                'Disculpa, hubo un error procesando tu mensaje. Por favor intenta de nuevo o llámanos al 6053-1213.'
+            );
+        } catch (sendError) {
+            console.error('❌ Error enviando mensaje de error:', sendError);
+        }
     }
+}
+
+async function sendWhatsAppMessage(to, text) {
+    const token = Deno.env.get('META_WHATSAPP_TOKEN');
+    const phoneNumberId = Deno.env.get('META_PHONE_NUMBER_ID');
+    
+    const response = await fetch(`https://graph.facebook.com/v18.0/${phoneNumberId}/messages`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            messaging_product: 'whatsapp',
+            to: to,
+            type: 'text',
+            text: { body: text }
+        })
+    });
+    
+    if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Error enviando WhatsApp: ${error}`);
+    }
+    
+    return response.json();
 }
 
 async function findOrCreateCustomer(base44, phoneNumber, metadata) {
