@@ -88,59 +88,118 @@ async function processIncomingMessage(base44, message, metadata) {
         // Buscar o crear cliente
         let customer = await findOrCreateCustomer(base44, phoneNumber, metadata);
         
-        // Guardar mensaje en notas del cliente
-        const timestamp = new Date().toLocaleString('es-SV');
-        const newNote = `[${timestamp}] WhatsApp: ${messageText}`;
-        const updatedNotes = customer.notes ? `${customer.notes}\n${newNote}` : newNote;
-        await base44.asServiceRole.entities.Customer.update(customer.id, {
-            notes: updatedNotes
-        });
+        // Obtener historial de conversación (últimos 10 mensajes)
+        const conversationHistory = customer.whatsapp_conversation || [];
         
-        // Buscar o crear conversación con el agente
-        const conversations = await base44.agents.listConversations({
-            agent_name: 'whatsappAssistant'
-        });
-        
-        let conversation = conversations.find(c => 
-            c.metadata?.phone_number === phoneNumber
-        );
-        
-        if (!conversation) {
-            conversation = await base44.agents.createConversation({
-                agent_name: 'whatsappAssistant',
-                metadata: {
-                    phone_number: phoneNumber,
-                    customer_id: customer.id,
-                    customer_name: customer.full_name
-                }
-            });
-            console.log('✅ Nueva conversación creada con el agente');
-        }
-        
-        // Enviar mensaje al agente y obtener respuesta
-        console.log('🤖 Enviando mensaje al agente...');
-        const response = await base44.agents.addMessage(conversation.id, {
+        // Agregar mensaje del cliente al historial
+        conversationHistory.push({
             role: 'user',
-            content: messageText
+            content: messageText,
+            timestamp: new Date().toISOString()
         });
         
-        // Esperar a que el agente responda completamente
-        await new Promise(resolve => setTimeout(resolve, 3000));
+        // Construir contexto para el LLM
+        const conversationContext = conversationHistory
+            .slice(-10) // Últimos 10 mensajes
+            .map(msg => `${msg.role === 'user' ? 'Cliente' : 'Asistente'}: ${msg.content}`)
+            .join('\n');
         
-        // Obtener la respuesta del agente
-        const updatedConversation = await base44.agents.getConversation(conversation.id);
-        const messages = updatedConversation.messages || [];
-        const lastMessage = messages[messages.length - 1];
+        // Prompt para el LLM
+        const systemPrompt = `Eres un asistente de atención al cliente de PROMAN Services, empresa de fontanería, electricidad y construcción en El Salvador.
+
+Cliente: ${customer.full_name}
+Teléfono: ${phoneNumber}
+
+Conversación anterior:
+${conversationContext}
+
+Instrucciones:
+1. Responde de forma amable y profesional al cliente
+2. Si el cliente solicita un servicio y proporciona suficiente información (tipo de servicio, ubicación, descripción), responde con un JSON en este formato:
+{
+  "response": "tu respuesta al cliente",
+  "create_inquiry": true,
+  "inquiry_data": {
+    "rubro": "Hogar|Comercial|Restaurantes|Hospitales|Emergencias",
+    "service_type": "tipo de servicio",
+    "location": "departamento",
+    "address": "dirección si la dio",
+    "message": "descripción del problema",
+    "lead_source": "whatsapp"
+  }
+}
+
+3. Si falta información, pregunta lo necesario y responde con:
+{
+  "response": "tu pregunta al cliente",
+  "create_inquiry": false
+}
+
+Departamentos válidos: San Salvador, La Libertad, Santa Ana, Sonsonate, Ahuachapán, Chalatenango, Cuscatlán, La Paz, Cabañas, San Vicente, Usulután, San Miguel, Morazán, La Unión.
+
+Responde SOLO con el JSON, sin texto adicional.`;
+
+        // Llamar al LLM
+        console.log('🤖 Consultando LLM...');
+        const llmResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
+            prompt: systemPrompt,
+            response_json_schema: {
+                type: "object",
+                properties: {
+                    response: { type: "string" },
+                    create_inquiry: { type: "boolean" },
+                    inquiry_data: {
+                        type: "object",
+                        properties: {
+                            rubro: { type: "string" },
+                            service_type: { type: "string" },
+                            location: { type: "string" },
+                            address: { type: "string" },
+                            message: { type: "string" },
+                            lead_source: { type: "string" }
+                        }
+                    }
+                }
+            }
+        });
         
-        if (lastMessage && lastMessage.role === 'assistant' && lastMessage.content) {
-            // Enviar respuesta por WhatsApp
-            await sendWhatsAppMessage(phoneNumber, lastMessage.content);
-            console.log('✅ Respuesta enviada por WhatsApp');
+        console.log('📝 Respuesta del LLM:', JSON.stringify(llmResponse));
+        
+        // Agregar respuesta del asistente al historial
+        conversationHistory.push({
+            role: 'assistant',
+            content: llmResponse.response,
+            timestamp: new Date().toISOString()
+        });
+        
+        // Guardar historial actualizado
+        await base44.asServiceRole.entities.Customer.update(customer.id, {
+            whatsapp_conversation: conversationHistory
+        });
+        
+        // Crear inquiry si el LLM lo indica
+        if (llmResponse.create_inquiry && llmResponse.inquiry_data) {
+            try {
+                const inquiry = await base44.asServiceRole.entities.ClientInquiry.create({
+                    customer_id: customer.id,
+                    client_name: customer.full_name,
+                    phone: phoneNumber,
+                    ...llmResponse.inquiry_data,
+                    status: 'nuevo',
+                    priority: 'media'
+                });
+                console.log('✅ ClientInquiry creado:', inquiry.id);
+            } catch (error) {
+                console.error('❌ Error creando inquiry:', error);
+            }
         }
+        
+        // Enviar respuesta por WhatsApp
+        await sendWhatsAppMessage(phoneNumber, llmResponse.response);
+        console.log('✅ Respuesta enviada por WhatsApp');
         
     } catch (error) {
         console.error('❌ Error procesando mensaje:', error);
-        // Enviar mensaje de error al usuario
         try {
             await sendWhatsAppMessage(
                 message.from,
