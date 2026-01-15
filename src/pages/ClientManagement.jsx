@@ -1583,6 +1583,13 @@ function InquiryCreateForm({ customers, onSubmit, isSubmitting, onCancel }) {
             alert('⚠️ Debes seleccionar el rubro del servicio');
             return;
         }
+        
+        console.log('Datos del trabajo a crear:', {
+            location: formData.location,
+            rubro: formData.rubro,
+            customer_id: selectedCustomer?.id
+        });
+        
         const jobData = {
             ...formData,
             customer_id: selectedCustomer?.id,
@@ -1590,6 +1597,8 @@ function InquiryCreateForm({ customers, onSubmit, isSubmitting, onCancel }) {
             phone: selectedCustomer?.phone,
             status: 'nuevo'
         };
+        
+        console.log('JobData completo:', jobData);
         onSubmit(jobData);
     };
 
