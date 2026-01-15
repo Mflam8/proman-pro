@@ -136,7 +136,9 @@ export default function ClientManagement() {
 
   const createInquiry = useMutation({
     mutationFn: async (data) => {
+      console.log('🔥 Intentando crear trabajo con data:', data);
       const newInquiry = await base44.entities.ClientInquiry.create(data);
+      console.log('✅ Trabajo creado exitosamente:', newInquiry);
       
       if (data.customer_id) {
         const customer = customers.find(c => c.id === data.customer_id);
@@ -151,9 +153,14 @@ export default function ClientManagement() {
       return newInquiry;
     },
     onSuccess: () => {
+        console.log('✅ onSuccess ejecutado');
         queryClient.invalidateQueries({ queryKey: ['clientInquiries'] });
         queryClient.invalidateQueries({ queryKey: ['customers'] });
         setShowCreateModal(false);
+    },
+    onError: (error) => {
+        console.error('❌ Error creando trabajo:', error);
+        alert('Error al crear el trabajo: ' + (error.message || 'Error desconocido'));
     }
   });
 
