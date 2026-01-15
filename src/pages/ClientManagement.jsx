@@ -2038,6 +2038,7 @@ function InquiryCreateForm({ customers, onSubmit, isSubmitting, onCancel }) {
                     type="submit" 
                     className="bg-proman-yellow text-proman-navy hover:opacity-90" 
                     disabled={isSubmitting || !formData.location || !formData.rubro}
+                    onClick={() => console.log('🖱️ Botón clickeado. Estado:', { isSubmitting, location: formData.location, rubro: formData.rubro })}
                 >
                     {isSubmitting ? "Creando..." : "Crear Trabajo"}
                 </Button>
