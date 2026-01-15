@@ -100,6 +100,31 @@ export default function AutomationsControl() {
                     </p>
                 </div>
 
+                {/* WhatsApp Agent Connection */}
+                <Card className="mb-8 border-2 border-green-500">
+                    <CardHeader className="bg-green-50">
+                        <CardTitle className="flex items-center gap-2">
+                            <Bot className="w-5 h-5 text-green-600" />
+                            Conectar Asistente WhatsApp
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                        <p className="text-sm text-gray-600 mb-4">
+                            Conecta el asistente administrativo al WhatsApp de la empresa para crear clientes, trabajos y cotizaciones desde WhatsApp.
+                        </p>
+                        <a 
+                            href={base44.agents.getWhatsAppConnectURL('adminAssistant')} 
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            <Button className="bg-green-600 hover:bg-green-700 text-white">
+                                <MessageCircle className="w-5 h-5 mr-2" />
+                                💬 Conectar WhatsApp
+                            </Button>
+                        </a>
+                    </CardContent>
+                </Card>
+
                 {/* Control Panel */}
                 <Card className="mb-8 border-2 border-proman-yellow">
                     <CardHeader className="bg-proman-yellow/10">
