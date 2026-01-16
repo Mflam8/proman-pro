@@ -264,7 +264,7 @@ export default function ClientManagement() {
           <div className="flex gap-3">
                             {(isAdmin || isSupervisor) && (
                               <a 
-                                href={base44.agents.getWhatsAppConnectURL('data_entry_assistant')} 
+                                href={base44.agents.getWhatsAppConnectURL('adminAssistant')} 
                                 target="_blank" 
                                 rel="noopener noreferrer"
                               >
@@ -2282,7 +2282,7 @@ function WhatsAppBotsSetup() {
   const [copiedEmployee, setCopiedEmployee] = useState(false);
   const [copiedClient, setCopiedClient] = useState(false);
 
-  const employeeWhatsAppUrl = base44.agents.getWhatsAppConnectURL('data_entry_assistant');
+  const employeeWhatsAppUrl = base44.agents.getWhatsAppConnectURL('adminAssistant');
   const clientWhatsAppUrl = base44.agents.getWhatsAppConnectURL('base44_whatsapp_agent');
 
   const copyToClipboard = (text, setStateFn) => {
