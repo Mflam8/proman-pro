@@ -300,17 +300,12 @@ RESPONDE SOLO JSON, NADA MÁS.`;
             console.log(`✅ ${result.quote_items.length} items de cotización creados`);
         }
 
-        // Enviar respuesta por WhatsApp
-        await sendWhatsApp(phoneNumber, result.response);
-        console.log('✅ Mensaje enviado a WhatsApp');
+        // MODO SENTINELA: Solo almacenar, NO responder
+        console.log('📝 Mensaje almacenado (modo sentinela - sin respuesta automática)');
 
     } catch (error) {
         console.error('❌ Error en handleMessage:', error);
-        try {
-            await sendWhatsApp(message.from, 'Disculpa, hubo un error. Por favor llámanos al 6053-1213.');
-        } catch (e) {
-            console.error('Error enviando mensaje de error:', e);
-        }
+        // Modo sentinela: no enviar mensajes de error
     }
 }
 
