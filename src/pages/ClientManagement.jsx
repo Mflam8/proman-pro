@@ -262,30 +262,18 @@ export default function ClientManagement() {
             </p>
           </div>
           <div className="flex gap-3">
-                            {(isAdmin || isSupervisor) && (
-                              <a 
-                                href={base44.agents.getWhatsAppConnectURL('adminAssistant')} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                              >
-                                <Button className="bg-blue-500 hover:bg-blue-600 text-white">
-                                  <Bot className="w-4 h-4 mr-2" />
-                                  Agrega datos con el bot
-                                </Button>
-                              </a>
-                            )}
-                            {isAdmin && (
-                              <a 
-                                href={base44.agents.getWhatsAppConnectURL('proman_assistant')} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                              >
-                                <Button className="bg-green-500 hover:bg-green-600 text-white">
-                                  <Bot className="w-4 h-4 mr-2" />
-                                  Conectar WhatsApp Bot
-                                </Button>
-                              </a>
-                            )}
+            {(isAdmin || isSupervisor) && (
+              <a 
+                href={base44.agents.getWhatsAppConnectURL('gestionBot')} 
+                target="_blank" 
+                rel="noopener noreferrer"
+              >
+                <Button className="bg-green-500 hover:bg-green-600 text-white">
+                  <Bot className="w-4 h-4 mr-2" />
+                  Bot de Gestión por WhatsApp
+                </Button>
+              </a>
+            )}
             {mainTab === "trabajos" && (
               <Button onClick={() => setShowCreateModal(true)} className="bg-proman-yellow text-proman-navy hover:opacity-90">
                   Nuevo Trabajo
@@ -2279,11 +2267,9 @@ function GenerateInvoiceButton({ inquiry }) {
 }
 
 function WhatsAppBotsSetup() {
-  const [copiedEmployee, setCopiedEmployee] = useState(false);
-  const [copiedClient, setCopiedClient] = useState(false);
+  const [copiedGestion, setCopiedGestion] = useState(false);
 
-  const employeeWhatsAppUrl = base44.agents.getWhatsAppConnectURL('adminAssistant');
-  const clientWhatsAppUrl = base44.agents.getWhatsAppConnectURL('base44_whatsapp_agent');
+  const gestionBotUrl = base44.agents.getWhatsAppConnectURL('gestionBot');
 
   const copyToClipboard = (text, setStateFn) => {
     navigator.clipboard.writeText(text);
@@ -2293,146 +2279,74 @@ function WhatsAppBotsSetup() {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Agente para Empleados */}
-        <Card className="border-2 border-blue-200">
-          <CardHeader className="bg-blue-50">
-            <CardTitle className="flex items-center gap-3 text-proman-navy">
-              <User className="w-6 h-6 text-blue-600" />
-              Para Empleados y Supervisores
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-6 space-y-4">
-            <div className="bg-blue-100 border border-blue-300 rounded-lg p-4">
-              <h3 className="font-semibold text-blue-900 mb-2">
-                🔧 data_entry_assistant
-              </h3>
-              <p className="text-sm text-blue-800 mb-3">
-                Este bot permite a técnicos y supervisores:
-              </p>
-              <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-                <li>Hacer check-in al llegar a trabajos</li>
-                <li>Actualizar progreso de trabajos</li>
-                <li>Cerrar trabajos completados</li>
-                <li>Registrar pagos recibidos</li>
-              </ul>
-            </div>
+      <Card className="border-2 border-green-500">
+        <CardHeader className="bg-green-500 text-white">
+          <CardTitle className="flex items-center gap-3">
+            <Bot className="w-6 h-6" />
+            Bot de Gestión PROMAN
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-6 space-y-4">
+          <div className="bg-green-50 border border-green-300 rounded-lg p-4">
+            <h3 className="font-semibold text-green-900 mb-2">
+              🤖 gestionBot
+            </h3>
+            <p className="text-sm text-green-800 mb-3">
+              Este bot te permite gestionar por WhatsApp:
+            </p>
+            <ul className="text-sm text-green-800 space-y-1 list-disc list-inside">
+              <li>✅ Crear y modificar clientes</li>
+              <li>📋 Crear y modificar trabajos</li>
+              <li>💰 Crear y modificar items de cotización</li>
+              <li>💵 Registrar pagos</li>
+              <li>📄 Generar cotizaciones en PDF</li>
+            </ul>
+          </div>
 
-            <div>
-              <Label className="block text-sm font-medium text-gray-700 mb-2">
-                Enlace de Conexión:
-              </Label>
-              <div className="flex gap-2">
-                <Input
-                  type="text"
-                  value={employeeWhatsAppUrl}
-                  readOnly
-                  className="flex-1 text-xs bg-gray-50"
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => copyToClipboard(employeeWhatsAppUrl, setCopiedEmployee)}
-                >
-                  {copiedEmployee ? (
-                    <Check className="w-4 h-4 text-green-600" />
-                  ) : (
-                    <Copy className="w-4 h-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
-
-            <a
-              href={employeeWhatsAppUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                <Bot className="w-4 h-4 mr-2" />
-                Conectar WhatsApp de Empleados
+          <div>
+            <Label className="block text-sm font-medium text-gray-700 mb-2">
+              Enlace de Conexión:
+            </Label>
+            <div className="flex gap-2">
+              <Input
+                type="text"
+                value={gestionBotUrl}
+                readOnly
+                className="flex-1 text-xs bg-gray-50"
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => copyToClipboard(gestionBotUrl, setCopiedGestion)}
+              >
+                {copiedGestion ? (
+                  <Check className="w-4 h-4 text-green-600" />
+                ) : (
+                  <Copy className="w-4 h-4" />
+                )}
               </Button>
-            </a>
-
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-              <p className="text-xs text-yellow-800">
-                <strong>📱 Instrucciones:</strong> Cada empleado debe abrir este enlace en su celular,
-                iniciar sesión con su cuenta de PROMAN, y escanear el código QR con WhatsApp.
-              </p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Agente para Clientes */}
-        <Card className="border-2 border-proman-yellow">
-          <CardHeader className="bg-proman-yellow/10">
-            <CardTitle className="flex items-center gap-3 text-proman-navy">
-              <Phone className="w-6 h-6 text-proman-yellow" />
-              Para Clientes (Número de PROMAN)
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-6 space-y-4">
-            <div className="bg-yellow-100 border border-yellow-300 rounded-lg p-4">
-              <h3 className="font-semibold text-yellow-900 mb-2">
-                🤖 base44_whatsapp_agent
-              </h3>
-              <p className="text-sm text-yellow-800 mb-3">
-                Este bot atiende a clientes que vienen de anuncios:
-              </p>
-              <ul className="text-sm text-yellow-800 space-y-1 list-disc list-inside">
-                <li>Captura nombre, teléfono y servicio de interés</li>
-                <li>Recolecta ubicación y descripción del problema</li>
-                <li>Crea el registro de cliente automáticamente</li>
-                <li>Prepara información para atención humana</li>
-                <li>NO da precios ni cierra ventas</li>
-              </ul>
-            </div>
+          <a
+            href={gestionBotUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
+              <Bot className="w-4 h-4 mr-2" />
+              Conectar Bot de Gestión
+            </Button>
+          </a>
 
-            <div>
-              <Label className="block text-sm font-medium text-gray-700 mb-2">
-                Enlace de Conexión:
-              </Label>
-              <div className="flex gap-2">
-                <Input
-                  type="text"
-                  value={clientWhatsAppUrl}
-                  readOnly
-                  className="flex-1 text-xs bg-gray-50"
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => copyToClipboard(clientWhatsAppUrl, setCopiedClient)}
-                >
-                  {copiedClient ? (
-                    <Check className="w-4 h-4 text-green-600" />
-                  ) : (
-                    <Copy className="w-4 h-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
-
-            <a
-              href={clientWhatsAppUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Button className="w-full bg-proman-yellow text-proman-navy hover:opacity-90">
-                <Bot className="w-4 h-4 mr-2" />
-                Conectar WhatsApp de Clientes
-              </Button>
-            </a>
-
-            <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-              <p className="text-xs text-red-800">
-                <strong>⚠️ Importante:</strong> Este enlace debe usarse desde el celular/número oficial
-                de PROMAN Services (6053-1213). Requiere que un administrador inicie sesión.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <p className="text-xs text-blue-800">
+              <strong>📱 Instrucciones:</strong> Abre este enlace en tu celular, inicia sesión, 
+              y escanea el código QR con WhatsApp para conectar el bot.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Instrucciones Generales */}
       <Card className="border-2 border-gray-200">
