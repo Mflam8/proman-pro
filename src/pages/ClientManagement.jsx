@@ -30,6 +30,7 @@ import BillingDetails from "../components/admin/BillingDetails";
 import WorkExpenses from "../components/admin/WorkExpenses";
 import ScheduleCalendar from "../components/admin/ScheduleCalendar";
 import AutomationsControlPanel from "../components/admin/AutomationsControlPanel";
+import EmployeeSelector from "../components/admin/EmployeeSelector";
 
 const statusConfig = {
   nuevo: { label: "Nuevo", color: "bg-blue-100 text-blue-800", icon: AlertCircle },
