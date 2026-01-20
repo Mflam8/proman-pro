@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { statusConfig, priorityConfig } from "@/utils/inquiryConfig";
+import { statusConfig, priorityConfig } from "@/components/utils/inquiryConfig";
 import { InputField, InfoRow } from "@/components/common/FormFields";
 import ImageUploader from "./ImageUploader";
 import QuickPaymentForm from "./QuickPaymentForm";
