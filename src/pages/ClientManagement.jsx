@@ -312,9 +312,6 @@ export default function ClientManagement() {
                 <TabsTrigger value="reportes" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
                   📊 Reportes
                 </TabsTrigger>
-                <TabsTrigger value="whatsapp" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
-                  💬 WhatsApp Bots
-                </TabsTrigger>
                 <TabsTrigger value="automatizaciones" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
                   🤖 Automatizaciones
                 </TabsTrigger>
@@ -559,10 +556,6 @@ export default function ClientManagement() {
 
               <TabsContent value="reportes">
                 <ReportsManagement />
-              </TabsContent>
-
-              <TabsContent value="whatsapp">
-                <WhatsAppBotsSetup />
               </TabsContent>
 
               <TabsContent value="automatizaciones">
@@ -2266,126 +2259,7 @@ function GenerateInvoiceButton({ inquiry }) {
     );
 }
 
-function WhatsAppBotsSetup() {
-  const [copiedGestion, setCopiedGestion] = useState(false);
 
-  const gestionBotUrl = base44.agents.getWhatsAppConnectURL('gestionBot');
-
-  const copyToClipboard = (text, setStateFn) => {
-    navigator.clipboard.writeText(text);
-    setStateFn(true);
-    setTimeout(() => setStateFn(false), 2000);
-  };
-
-  return (
-    <div className="space-y-6">
-      <Card className="border-2 border-green-500">
-        <CardHeader className="bg-green-500 text-white">
-          <CardTitle className="flex items-center gap-3">
-            <Bot className="w-6 h-6" />
-            Bot de Gestión PROMAN
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pt-6 space-y-4">
-          <div className="bg-green-50 border border-green-300 rounded-lg p-4">
-            <h3 className="font-semibold text-green-900 mb-2">
-              🤖 gestionBot
-            </h3>
-            <p className="text-sm text-green-800 mb-3">
-              Este bot te permite gestionar por WhatsApp:
-            </p>
-            <ul className="text-sm text-green-800 space-y-1 list-disc list-inside">
-              <li>✅ Crear y modificar clientes</li>
-              <li>📋 Crear y modificar trabajos</li>
-              <li>💰 Crear y modificar items de cotización</li>
-              <li>💵 Registrar pagos</li>
-              <li>📄 Generar cotizaciones en PDF</li>
-            </ul>
-          </div>
-
-          <div>
-            <Label className="block text-sm font-medium text-gray-700 mb-2">
-              Enlace de Conexión:
-            </Label>
-            <div className="flex gap-2">
-              <Input
-                type="text"
-                value={gestionBotUrl}
-                readOnly
-                className="flex-1 text-xs bg-gray-50"
-              />
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => copyToClipboard(gestionBotUrl, setCopiedGestion)}
-              >
-                {copiedGestion ? (
-                  <Check className="w-4 h-4 text-green-600" />
-                ) : (
-                  <Copy className="w-4 h-4" />
-                )}
-              </Button>
-            </div>
-          </div>
-
-          <a
-            href={gestionBotUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
-              <Bot className="w-4 h-4 mr-2" />
-              Conectar Bot de Gestión
-            </Button>
-          </a>
-
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <p className="text-xs text-blue-800">
-              <strong>📱 Instrucciones:</strong> Abre este enlace en tu celular, inicia sesión, 
-              y escanea el código QR con WhatsApp para conectar el bot.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Instrucciones Generales */}
-      <Card className="border-2 border-gray-200">
-        <CardHeader>
-          <CardTitle className="text-proman-navy">
-            📋 Instrucciones Generales de Configuración
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div>
-            <h4 className="font-semibold text-proman-navy mb-2">Paso 1: Abrir el enlace</h4>
-            <p className="text-sm text-gray-700">
-              Haz clic en el botón "Conectar WhatsApp" o copia el enlace y ábrelo en el navegador del celular.
-            </p>
-          </div>
-          <div>
-            <h4 className="font-semibold text-proman-navy mb-2">Paso 2: Iniciar sesión</h4>
-            <p className="text-sm text-gray-700">
-              Si no has iniciado sesión, el sistema te pedirá que lo hagas con tu cuenta de PROMAN.
-            </p>
-          </div>
-          <div>
-            <h4 className="font-semibold text-proman-navy mb-2">Paso 3: Escanear QR</h4>
-            <p className="text-sm text-gray-700">
-              Aparecerá un código QR. Abre WhatsApp → Configuración → Dispositivos Vinculados → 
-              Vincular dispositivo, y escanea el código.
-            </p>
-          </div>
-          <div>
-            <h4 className="font-semibold text-proman-navy mb-2">Paso 4: Confirmar</h4>
-            <p className="text-sm text-gray-700">
-              Una vez conectado, el agente estará activo y responderá automáticamente a los mensajes.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
 
 function QuickPaymentForm({ onSubmit, isSubmitting, onCancel }) {
     const [formData, setFormData] = useState({

@@ -11,7 +11,6 @@ import Services from './pages/Services';
 import Sitemap from './pages/Sitemap';
 import Welcome from './pages/Welcome';
 import WhatsAppSetup from './pages/WhatsAppSetup';
-import WhatsAppDiagnostics from './pages/WhatsAppDiagnostics';
 import __Layout from './Layout.jsx';
 
 
@@ -29,7 +28,6 @@ export const PAGES = {
     "Sitemap": Sitemap,
     "Welcome": Welcome,
     "WhatsAppSetup": WhatsAppSetup,
-    "WhatsAppDiagnostics": WhatsAppDiagnostics,
 }
 
 export const pagesConfig = {
