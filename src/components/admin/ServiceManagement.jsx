@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox"; // Added Checkbox import
 import { Label } from "@/components/ui/label"; // Added Label import
-import { Plus, Edit2, Clock, DollarSign, Wrench, TrendingUp } from "lucide-react";
+import { Plus, Edit2, Clock, DollarSign, Wrench, TrendingUp, FileText, Download } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const complexityConfig = {
@@ -26,6 +26,7 @@ export default function ServiceManagement() {
   const [activeTab, setActiveTab] = useState("all");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingService, setEditingService] = useState(null);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: services, isLoading } = useQuery({
@@ -83,6 +84,35 @@ export default function ServiceManagement() {
   };
 
   const rubros = ["Hogar", "Comercial", "Restaurantes", "Hospitales", "Emergencias"];
+
+  const handleGenerateReport = async () => {
+    setIsGeneratingReport(true);
+    try {
+      const response = await base44.functions.invoke('generateServicesReport', {});
+      
+      if (response.data.success) {
+        // Descargar como archivo de texto
+        const blob = new Blob([response.data.formatted_text], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `reporte-servicios-${new Date().toISOString().split('T')[0]}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+        
+        alert('✅ Reporte generado y descargado exitosamente');
+      } else {
+        alert('❌ Error al generar reporte');
+      }
+    } catch (error) {
+      console.error('Error generating report:', error);
+      alert('❌ Error: ' + error.message);
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -150,13 +180,24 @@ export default function ServiceManagement() {
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle>Catálogo de Servicios</CardTitle>
-            <Button
-              onClick={() => setShowCreateModal(true)}
-              className="bg-proman-yellow text-proman-navy hover:opacity-90"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Nuevo Servicio
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleGenerateReport}
+                disabled={isGeneratingReport}
+                variant="outline"
+                className="border-green-500 text-green-700 hover:bg-green-50"
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                {isGeneratingReport ? "Generando..." : "Reporte para ChatGPT"}
+              </Button>
+              <Button
+                onClick={() => setShowCreateModal(true)}
+                className="bg-proman-yellow text-proman-navy hover:opacity-90"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Nuevo Servicio
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
