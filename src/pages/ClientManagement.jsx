@@ -1991,7 +1991,7 @@ function InquiryCreateForm({ customers, onSubmit, isSubmitting, onCancel }) {
                     {formData.scheduled_date && formData.scheduled_start_time && formData.estimated_duration_hours && (
                         <div className="border-t pt-4 mt-4">
                             <p className="text-sm font-semibold text-proman-navy mb-3">Verificar Disponibilidad de Técnicos:</p>
-                            <EmployeeSelectorCreate 
+                            <EmployeeSelector 
                                 selectedDate={formData.scheduled_date}
                                 startTime={formData.scheduled_start_time}
                                 duration={parseFloat(formData.estimated_duration_hours)}
@@ -2048,15 +2048,7 @@ const ImageUploader = ({ label, imageUrl, onFileSelect, isUploading, disabled })
 
 
 
-function EmployeeSelectorCreate({ selectedDate, startTime, duration, onSelect, currentAssignee }) {
-    return <EmployeeSelector 
-        selectedDate={selectedDate}
-        startTime={startTime}
-        duration={duration}
-        onSelect={onSelect}
-        currentAssignee={currentAssignee}
-    />;
-}
+
 
 function GenerateInvoiceButton({ inquiry }) {
     const [isGenerating, setIsGenerating] = useState(false);
