@@ -1,63 +1,30 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Slider } from "@/components/ui/slider";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import { createPageUrl } from "@/utils";
-import {
-  Phone, MapPin, Clock, FileText, CheckCircle, AlertCircle, Calendar, DollarSign, User, Filter, Percent, Camera, MessageCircle, Star, Copy, ExternalLink, UserPlus, Edit2, Building, Home as HomeIcon, ClipboardCheck, FileCheck, ThumbsUp, FileDown, Plus, Bot
-} from "lucide-react";
-import { format, parseISO, addHours } from "date-fns";
+import { Phone, AlertCircle, User, Star, DollarSign, Building, Home as HomeIcon, Bot, Plus } from "lucide-react";
+import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { statusConfig, priorityConfig, activeStatuses } from "@/components/utils/inquiryConfig";
 import EmployeeManagement from "../components/admin/EmployeeManagement";
 import ServiceManagement from "../components/admin/ServiceManagement";
 import CustomerManagement from "../components/admin/CustomerManagement";
 import EquipmentManagement from "../components/admin/EquipmentManagement";
 import PaymentManagement from "../components/admin/PaymentManagement";
 import ReportsManagement from "../components/admin/ReportsManagement";
-import BillingDetails from "../components/admin/BillingDetails";
-import WorkExpenses from "../components/admin/WorkExpenses";
 import ScheduleCalendar from "../components/admin/ScheduleCalendar";
 import AutomationsControlPanel from "../components/admin/AutomationsControlPanel";
-import EmployeeSelector from "../components/admin/EmployeeSelector";
-
-const statusConfig = {
-  nuevo: { label: "Nuevo", color: "bg-blue-100 text-blue-800", icon: AlertCircle },
-  evaluacion_agendada: { label: "Evaluación Agendada", color: "bg-indigo-100 text-indigo-800", icon: Calendar },
-  evaluacion_pendiente: { label: "Evaluación Pendiente", color: "bg-yellow-100 text-yellow-800", icon: Clock },
-  evaluacion_realizada: { label: "Evaluación Realizada", color: "bg-green-100 text-green-800", icon: ClipboardCheck },
-  cotizacion_pendiente: { label: "Cotización Pendiente", color: "bg-orange-100 text-orange-800", icon: FileText },
-  cotizacion_realizada: { label: "Cotización Realizada", color: "bg-purple-100 text-purple-800", icon: FileCheck },
-  pendiente_aprobacion: { label: "Trabajo pendiente de aprobación", color: "bg-orange-200 text-orange-900", icon: Clock },
-  trabajo_aprobado: { label: "Trabajo Aprobado", color: "bg-teal-100 text-teal-800", icon: ThumbsUp },
-  agendado: { label: "Agendado", color: "bg-indigo-100 text-indigo-800", icon: Calendar },
-  en_ruta: { label: "🚗 En Ruta", color: "bg-yellow-100 text-yellow-800", icon: Clock },
-  en_sitio: { label: "📍 En Sitio", color: "bg-blue-100 text-blue-800", icon: MapPin },
-  en_proceso: { label: "Trabajo en Proceso", color: "bg-blue-100 text-blue-800", icon: Clock },
-  terminado: { label: "Terminado", color: "bg-emerald-100 text-emerald-800", icon: CheckCircle },
-  completado: { label: "Completado", color: "bg-green-100 text-green-800", icon: CheckCircle },
-  cerrado: { label: "Cerrado", color: "bg-gray-100 text-gray-800", icon: CheckCircle },
-  incidencia: { label: "⚠️ Incidencia", color: "bg-red-100 text-red-800", icon: AlertCircle },
-  perdido: { label: "Perdido", color: "bg-gray-200 text-gray-700", icon: AlertCircle }
-};
-
-const priorityConfig = {
-  baja: { label: "Baja", color: "bg-gray-100 text-gray-700" },
-  media: { label: "Media", color: "bg-blue-100 text-blue-700" },
-  alta: { label: "Alta", color: "bg-orange-100 text-orange-700" },
-  urgente: { label: "Urgente", color: "bg-red-100 text-red-700" }
-};
+import InquiryDetailForm from "../components/admin/InquiryDetailForm";
+import InquiryCreateForm from "../components/admin/InquiryCreateForm";
 
 export default function ClientManagement() {
   const [user, setUser] = useState(null);
