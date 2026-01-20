@@ -139,8 +139,7 @@ export default function ClientManagement() {
     return null;
   };
 
-  // Estados que se consideran "activos" (en progreso)
-  const activeStatuses = ["trabajo_aprobado", "agendado", "en_ruta", "en_sitio", "en_proceso", "terminado", "evaluacion_agendada", "evaluacion_pendiente", "evaluacion_realizada", "cotizacion_pendiente", "cotizacion_realizada", "pendiente_aprobacion"];
+
   
   const filteredInquiries = inquiries.filter(inquiry => {
     let matchesTab = false;
@@ -541,17 +540,17 @@ export default function ClientManagement() {
                     <DialogTitle className="text-2xl">Detalles de Solicitud</DialogTitle>
                 </DialogHeader>
                 <InquiryDetailForm 
-                                        inquiry={selectedInquiry}
-                                        customer={getCustomerForInquiry(selectedInquiry)}
-                                        customers={customers}
-                                        onUpdate={updateInquiry.mutate}
-                                        isUpdating={updateInquiry.isPending}
-                                        isAdmin={isAdmin}
-                                        isSupervisor={isSupervisor}
-                                        getSurveyLink={getSurveyLink}
-                                        getWhatsAppUpdateLink={getWhatsAppUpdateLink}
-                                        onDelete={deleteInquiry.mutate}
-                                    />
+                  inquiry={selectedInquiry}
+                  customer={getCustomerForInquiry(selectedInquiry)}
+                  customers={customers}
+                  onUpdate={updateInquiry.mutate}
+                  isUpdating={updateInquiry.isPending}
+                  isAdmin={isAdmin}
+                  isSupervisor={isSupervisor}
+                  getSurveyLink={getSurveyLink}
+                  getWhatsAppUpdateLink={getWhatsAppUpdateLink}
+                  onDelete={deleteInquiry.mutate}
+                />
             </DialogContent>
         </Dialog>
       )}
@@ -561,10 +560,10 @@ export default function ClientManagement() {
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader><DialogTitle className="text-2xl">Crear Nuevo Trabajo</DialogTitle></DialogHeader>
                 <InquiryCreateForm 
-                    customers={customers}
-                    onSubmit={createInquiry.mutate} 
-                    isSubmitting={createInquiry.isPending}
-                    onCancel={() => setShowCreateModal(false)}
+                  customers={customers}
+                  onSubmit={createInquiry.mutate} 
+                  isSubmitting={createInquiry.isPending}
+                  onCancel={() => setShowCreateModal(false)}
                 />
             </DialogContent>
         </Dialog>
