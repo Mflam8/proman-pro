@@ -571,22 +571,6 @@ export default function ClientManagement() {
     </div>
   );
 }
-
-function InquiryDetailForm({ inquiry, customer, customers, onUpdate, isUpdating, isAdmin, isSupervisor, getSurveyLink, getWhatsAppUpdateLink, onDelete }) {
-    const canEdit = isAdmin || isSupervisor;
-    const [showCustomerEdit, setShowCustomerEdit] = useState(false);
-    const [customerSearch, setCustomerSearch] = useState("");
-    const queryClient = useQueryClient();
-    
-    const [formData, setFormData] = useState({
-                  ...inquiry,
-                  progress_percentage: inquiry.progress_percentage || 0,
-                  scheduled_date: inquiry.scheduled_date || '',
-                  scheduled_start_time: inquiry.scheduled_start_time || '',
-                  estimated_duration_hours: inquiry.estimated_duration_hours || '',
-                  quote_pdf_url: inquiry.quote_pdf_url || '',
-                  location_name: inquiry.location_name || '',
-              });
     const [beforeImageFile, setBeforeImageFile] = useState(null);
     const [afterImageFile, setAfterImageFile] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
