@@ -10,6 +10,8 @@ import { Camera } from "lucide-react";
 export default function QuickPaymentForm({ onSubmit, isSubmitting, onCancel }) {
   const [formData, setFormData] = useState({
     amount_paid: "",
+    mano_de_obra: "",
+    materiales: "",
     payment_date: new Date().toISOString().split('T')[0],
     payment_method: "efectivo",
     transaction_id: "",
@@ -40,37 +42,79 @@ export default function QuickPaymentForm({ onSubmit, isSubmitting, onCancel }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    const manoDeObra = parseFloat(formData.mano_de_obra) || 0;
+    const materiales = parseFloat(formData.materiales) || 0;
+    const total = manoDeObra + materiales;
+    
+    onSubmit({
+      ...formData,
+      amount_paid: total,
+      mano_de_obra: manoDeObra,
+      materiales: materiales
+    });
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label className="block text-sm font-medium text-proman-navy mb-2">
-            Monto Pagado ($) *
-          </Label>
-          <Input
-            type="number"
-            step="0.01"
-            required
-            value={formData.amount_paid}
-            onChange={(e) => setFormData({ ...formData, amount_paid: e.target.value })}
-            placeholder="0.00"
-          />
-        </div>
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
+        <h4 className="font-semibold text-proman-navy">Desglose del Pago</h4>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label className="block text-sm font-medium text-proman-navy mb-2">
+              Mano de Obra ($) *
+            </Label>
+            <Input
+              type="number"
+              step="0.01"
+              min="0"
+              required
+              value={formData.mano_de_obra}
+              onChange={(e) => setFormData({ ...formData, mano_de_obra: e.target.value })}
+              placeholder="0.00"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Sobre este monto se calculan porcentajes del técnico
+            </p>
+          </div>
 
-        <div>
-          <Label className="block text-sm font-medium text-proman-navy mb-2">
-            Fecha de Pago *
-          </Label>
-          <Input
-            type="date"
-            required
-            value={formData.payment_date}
-            onChange={(e) => setFormData({ ...formData, payment_date: e.target.value })}
-          />
+          <div>
+            <Label className="block text-sm font-medium text-proman-navy mb-2">
+              Materiales ($)
+            </Label>
+            <Input
+              type="number"
+              step="0.01"
+              min="0"
+              value={formData.materiales}
+              onChange={(e) => setFormData({ ...formData, materiales: e.target.value })}
+              placeholder="0.00"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Siempre se registra íntegro
+            </p>
+          </div>
         </div>
+        
+        <div className="bg-white rounded p-3 border-2 border-green-500">
+          <div className="flex justify-between items-center">
+            <span className="font-semibold text-gray-700">Total a Pagar:</span>
+            <span className="text-2xl font-bold text-green-600">
+              ${((parseFloat(formData.mano_de_obra) || 0) + (parseFloat(formData.materiales) || 0)).toFixed(2)}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <Label className="block text-sm font-medium text-proman-navy mb-2">
+          Fecha de Pago *
+        </Label>
+        <Input
+          type="date"
+          required
+          value={formData.payment_date}
+          onChange={(e) => setFormData({ ...formData, payment_date: e.target.value })}
+        />
       </div>
 
       <div>
