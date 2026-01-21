@@ -399,11 +399,29 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
                                   {item.descripcion_detallada}
                                 </p>
                               )}
-                              <p className="text-sm text-gray-600">
-                                {item.cantidad} {unidadMedidaConfig[item.unidad_medida] || item.unidad_medida} x ${item.precio_unitario?.toFixed(2)}
-                                {' = '}
-                                <span className="font-semibold">${item.monto_total_item?.toFixed(2)}</span>
-                              </p>
+                              <div className="text-sm text-gray-600">
+                                {item.precio_normal && item.descuento_porcentaje ? (
+                                  <>
+                                    <p className="text-xs text-green-600 font-medium mb-1">
+                                      🎯 Precio Especial: {item.descuento_porcentaje}% OFF
+                                      {item.motivo_descuento && ` (${item.motivo_descuento})`}
+                                    </p>
+                                    <p>
+                                      {item.cantidad} {unidadMedidaConfig[item.unidad_medida] || item.unidad_medida} x{' '}
+                                      <span className="line-through text-gray-400">${item.precio_normal?.toFixed(2)}</span>{' '}
+                                      <span className="text-green-600 font-semibold">${item.precio_unitario?.toFixed(2)}</span>
+                                      {' = '}
+                                      <span className="font-semibold">${item.monto_total_item?.toFixed(2)}</span>
+                                    </p>
+                                  </>
+                                ) : (
+                                  <p>
+                                    {item.cantidad} {unidadMedidaConfig[item.unidad_medida] || item.unidad_medida} x ${item.precio_unitario?.toFixed(2)}
+                                    {' = '}
+                                    <span className="font-semibold">${item.monto_total_item?.toFixed(2)}</span>
+                                  </p>
+                                )}
+                              </div>
                             </div>
                             {canEdit && (
                               <div className="flex gap-2 ml-2">
@@ -576,12 +594,16 @@ function BillingItemForm({ item, existingOptions, onSubmit, onCancel, isSubmitti
     cantidad: item?.cantidad || 1,
     unidad_medida: item?.unidad_medida || 'unidad',
     precio_unitario: item?.precio_unitario || 0,
+    precio_normal: item?.precio_normal || 0,
+    descuento_porcentaje: item?.descuento_porcentaje || 0,
+    motivo_descuento: item?.motivo_descuento || '',
     incluir_iva: item?.incluir_iva || false,
     es_cotizacion: item?.es_cotizacion !== false
   });
   
   const [isNewOption, setIsNewOption] = useState(false);
   const [useCustomTitle, setUseCustomTitle] = useState(!!item?.descripcion);
+  const [aplicarDescuento, setAplicarDescuento] = useState(!!(item?.precio_normal && item?.descuento_porcentaje));
 
   // Fetch services from catalog
   const { data: services } = useQuery({
@@ -765,18 +787,125 @@ function BillingItemForm({ item, existingOptions, onSubmit, onCancel, isSubmitti
         </div>
       </div>
 
-      {/* Precio Unitario */}
-      <div>
-        <Label className="block text-sm font-medium text-proman-navy mb-2">
-          Precio Unitario ($) *
-        </Label>
-        <Input
-          type="number"
-          step="0.01"
-          value={formData.precio_unitario}
-          onChange={(e) => setFormData({ ...formData, precio_unitario: parseFloat(e.target.value) || 0 })}
-          required
-        />
+      {/* Precio con descuento especial */}
+      <div className="border-2 border-blue-200 rounded-lg p-4 bg-blue-50">
+        <div className="flex items-center justify-between mb-3">
+          <Label className="text-sm font-medium text-proman-navy">
+            ¿Aplicar precio especial para cliente?
+          </Label>
+          <Button
+            type="button"
+            size="sm"
+            variant={aplicarDescuento ? "default" : "outline"}
+            onClick={() => {
+              setAplicarDescuento(!aplicarDescuento);
+              if (!aplicarDescuento) {
+                setFormData({
+                  ...formData,
+                  precio_normal: formData.precio_unitario || 0,
+                  descuento_porcentaje: 0
+                });
+              } else {
+                setFormData({
+                  ...formData,
+                  precio_normal: 0,
+                  descuento_porcentaje: 0,
+                  motivo_descuento: ''
+                });
+              }
+            }}
+          >
+            {aplicarDescuento ? '✓ Activado' : 'Activar'}
+          </Button>
+        </div>
+
+        {aplicarDescuento ? (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="block text-sm font-medium text-proman-navy mb-2">
+                  Precio Normal ($)
+                </Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={formData.precio_normal}
+                  onChange={(e) => {
+                    const precioNormal = parseFloat(e.target.value) || 0;
+                    const descuento = formData.descuento_porcentaje || 0;
+                    const precioConDescuento = precioNormal * (1 - descuento / 100);
+                    setFormData({
+                      ...formData,
+                      precio_normal: precioNormal,
+                      precio_unitario: precioConDescuento
+                    });
+                  }}
+                  required
+                />
+              </div>
+              <div>
+                <Label className="block text-sm font-medium text-proman-navy mb-2">
+                  Descuento (%)
+                </Label>
+                <Input
+                  type="number"
+                  step="1"
+                  min="0"
+                  max="100"
+                  value={formData.descuento_porcentaje}
+                  onChange={(e) => {
+                    const descuento = parseFloat(e.target.value) || 0;
+                    const precioNormal = formData.precio_normal || 0;
+                    const precioConDescuento = precioNormal * (1 - descuento / 100);
+                    setFormData({
+                      ...formData,
+                      descuento_porcentaje: descuento,
+                      precio_unitario: precioConDescuento
+                    });
+                  }}
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="bg-green-100 border border-green-300 rounded p-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-green-800">Precio Final con Descuento:</span>
+                <span className="text-xl font-bold text-green-700">${formData.precio_unitario.toFixed(2)}</span>
+              </div>
+              {formData.precio_normal > 0 && formData.descuento_porcentaje > 0 && (
+                <p className="text-xs text-green-700 mt-1">
+                  Ahorro: ${(formData.precio_normal - formData.precio_unitario).toFixed(2)} por unidad
+                </p>
+              )}
+            </div>
+
+            <div>
+              <Label className="block text-sm font-medium text-proman-navy mb-2">
+                Motivo del Descuento
+              </Label>
+              <Textarea
+                value={formData.motivo_descuento}
+                onChange={(e) => setFormData({ ...formData, motivo_descuento: e.target.value })}
+                placeholder="Ej: Cliente corporativo con contrato anual, volumen de trabajo garantizado"
+                rows={2}
+              />
+            </div>
+          </div>
+        ) : (
+          <div>
+            <Label className="block text-sm font-medium text-proman-navy mb-2">
+              Precio Unitario ($) *
+            </Label>
+            <Input
+              type="number"
+              step="0.01"
+              value={formData.precio_unitario}
+              onChange={(e) => setFormData({ ...formData, precio_unitario: parseFloat(e.target.value) || 0 })}
+              required
+            />
+          </div>
+        )}
       </div>
 
       {/* Total */}
