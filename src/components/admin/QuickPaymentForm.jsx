@@ -46,6 +46,11 @@ export default function QuickPaymentForm({ onSubmit, isSubmitting, onCancel }) {
     const materiales = parseFloat(formData.materiales) || 0;
     const total = manoDeObra + materiales;
     
+    if (total <= 0) {
+      alert('Debe ingresar al menos un monto (mano de obra o materiales)');
+      return;
+    }
+    
     onSubmit({
       ...formData,
       amount_paid: total,
@@ -61,13 +66,12 @@ export default function QuickPaymentForm({ onSubmit, isSubmitting, onCancel }) {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label className="block text-sm font-medium text-proman-navy mb-2">
-              Mano de Obra ($) *
+              Mano de Obra ($)
             </Label>
             <Input
               type="number"
               step="0.01"
               min="0"
-              required
               value={formData.mano_de_obra}
               onChange={(e) => setFormData({ ...formData, mano_de_obra: e.target.value })}
               placeholder="0.00"
