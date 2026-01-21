@@ -222,9 +222,15 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
         invoiceDate: selectedDate
       });
 
-      if (response.data.success) {
+      // La respuesta viene directamente, no en response.data
+      if (response.success || response.data?.success) {
         await queryClient.invalidateQueries({ queryKey: ['clientInquiries'] });
-        window.open(response.data.pdf_url, '_blank');
+        const pdfUrl = response.pdf_url || response.data?.pdf_url;
+        if (pdfUrl) {
+          window.open(pdfUrl, '_blank');
+        }
+      } else {
+        alert('Error al generar factura');
       }
     } catch (err) {
       console.error('Error generating invoice:', err);
