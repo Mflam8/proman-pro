@@ -35,6 +35,9 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
   const [documentType, setDocumentType] = useState("cotizacion"); // "cotizacion" o "factura"
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [descuento, setDescuento] = useState(0);
+  const [showCorporateWorkOrder, setShowCorporateWorkOrder] = useState(false);
+  const [fechaInicio, setFechaInicio] = useState("");
+  const [fechaFin, setFechaFin] = useState("");
   const queryClient = useQueryClient();
 
   const { data: allItems, isLoading } = useQuery({
@@ -237,6 +240,43 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
       alert('Error al generar factura: ' + err.message);
     } finally {
       setIsGeneratingInvoice(false);
+    }
+  };
+
+  const handleGenerateCorporateWorkOrder = async () => {
+    if (!inquiry) return;
+    
+    if (!fechaInicio || !fechaFin) {
+      alert('Por favor selecciona el rango de fechas');
+      return;
+    }
+
+    setIsGeneratingQuote(true);
+    
+    try {
+      const response = await base44.functions.invoke('generateCorporateWorkOrder', {
+        customerId: inquiry.customer_id,
+        fechaInicio,
+        fechaFin,
+        asunto: quoteAsunto
+      });
+
+      if (response.success || response.data?.success) {
+        await queryClient.invalidateQueries({ queryKey: ['clientInquiries'] });
+        const html = response.html || response.data?.html;
+        if (html) {
+          const win = window.open('', '_blank');
+          win.document.write(html);
+          win.document.close();
+        }
+        alert(`Orden generada con ${response.trabajos_incluidos || response.data?.trabajos_incluidos} trabajos`);
+      }
+    } catch (err) {
+      console.error('Error generating corporate work order:', err);
+      alert('Error: ' + err.message);
+    } finally {
+      setIsGeneratingQuote(false);
+      setShowCorporateWorkOrder(false);
     }
   };
 
