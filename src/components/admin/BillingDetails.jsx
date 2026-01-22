@@ -289,6 +289,17 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
             Cotización / Facturación
           </CardTitle>
           <div className="flex gap-2 flex-wrap">
+            {canEdit && inquiry?.customer_id && (
+              <Button
+                size="sm"
+                onClick={() => setShowCorporateWorkOrder(true)}
+                disabled={isGeneratingQuote || isGeneratingInvoice}
+                className="bg-blue-600 text-white hover:opacity-90"
+              >
+                <FileText className="w-4 h-4 mr-1" />
+                Orden Corporativa
+              </Button>
+            )}
             {canEdit && items.length > 0 && (
               <Button
                 size="sm"
@@ -614,6 +625,70 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
                   className="bg-proman-yellow text-proman-navy"
                 >
                   {(isGeneratingQuote || isGeneratingInvoice) ? 'Generando...' : `Generar ${documentType === "cotizacion" ? "Cotización" : "Factura"}`}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Modal para Orden de Trabajo Corporativa */}
+      {showCorporateWorkOrder && (
+        <Dialog open={showCorporateWorkOrder} onOpenChange={() => setShowCorporateWorkOrder(false)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Generar Orden de Trabajo Corporativa</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-sm text-blue-900">
+                  Este documento genera un listado de todos los trabajos completados para el cliente corporativo en el rango de fechas especificado.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="block text-sm font-medium mb-2">Fecha Inicio</Label>
+                  <Input 
+                    type="date" 
+                    value={fechaInicio} 
+                    onChange={(e) => setFechaInicio(e.target.value)} 
+                    required
+                  />
+                </div>
+                <div>
+                  <Label className="block text-sm font-medium mb-2">Fecha Fin</Label>
+                  <Input 
+                    type="date" 
+                    value={fechaFin} 
+                    onChange={(e) => setFechaFin(e.target.value)} 
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label className="block text-sm font-medium mb-2">
+                  Asunto del Documento (Opcional)
+                </Label>
+                <Textarea
+                  value={quoteAsunto}
+                  onChange={(e) => setQuoteAsunto(e.target.value)}
+                  placeholder="Ej: Trabajos realizados en restaurantes McDonald's"
+                  rows={2}
+                />
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <Button variant="outline" onClick={() => setShowCorporateWorkOrder(false)}>
+                  Cancelar
+                </Button>
+                <Button 
+                  onClick={handleGenerateCorporateWorkOrder}
+                  disabled={isGeneratingQuote || !fechaInicio || !fechaFin}
+                  className="bg-blue-600 text-white"
+                >
+                  {isGeneratingQuote ? 'Generando...' : 'Generar Orden'}
                 </Button>
               </div>
             </div>
