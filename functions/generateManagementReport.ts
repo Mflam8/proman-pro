@@ -32,9 +32,10 @@ Deno.serve(async (req) => {
         end.setHours(23, 59, 59, 999);
 
         // 1. Fetch Data
-        const [inquiries, payments] = await Promise.all([
+        const [inquiries, payments, customers] = await Promise.all([
             base44.entities.ClientInquiry.list(),
-            base44.entities.Payment.list()
+            base44.entities.Payment.list(),
+            base44.entities.Customer.list()
         ]);
 
         // 2. Filter Data
@@ -306,6 +307,8 @@ Deno.serve(async (req) => {
                     <thead>
                         <tr>
                             <th>Fecha</th>
+                            <th>Cliente</th>
+                            <th>Municipio</th>
                             <th>Responsable / Recibido Por</th>
                             <th>Método / Destino</th>
                             <th class="text-right">Monto</th>
@@ -313,11 +316,18 @@ Deno.serve(async (req) => {
                     </thead>
                     <tbody>
                         ${filteredPayments.sort((a, b) => new Date(b.payment_date) - new Date(a.payment_date)).map(p => {
+                            const inquiry = inquiries.find(i => i.id === p.inquiry_id);
+                            const customer = inquiry ? customers.find(c => c.id === inquiry.customer_id) : null;
+                            const clientName = customer?.full_name || inquiry?.client_name || 'N/A';
+                            const clientLocation = inquiry?.location || 'N/A';
+                            
                             const type = getPaymentType(p);
                             const typeLabel = type === 'propia' ? 'Cta. Empresa' : (type === 'terceros' ? 'Cta. Terceros' : 'Efectivo');
                             return `
                             <tr>
                                 <td>${p.payment_date}</td>
+                                <td>${clientName}</td>
+                                <td>${clientLocation}</td>
                                 <td>${p.collected_by || '-'}</td>
                                 <td>
                                     <div style="font-weight: bold;">${p.payment_method}</div>
