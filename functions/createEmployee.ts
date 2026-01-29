@@ -25,14 +25,12 @@ Deno.serve(async (req) => {
       email: emailToUse,
       full_name: employee_name,
       role: role || 'user',
-      data: {
-        employee_name: employee_name,
-        employee_type: employee_type || 'Empleado',
-        hire_date: hire_date || null,
-        phone: phone || null,
-        profile_picture_url: profile_picture_url || null,
-        onboarding_completed: true
-      }
+      employee_name: employee_name,
+      employee_type: employee_type || 'Empleado',
+      hire_date: hire_date || null,
+      phone: phone || null,
+      profile_picture_url: profile_picture_url || null,
+      onboarding_completed: true
     });
 
     return Response.json({ success: true, user: newUser });
