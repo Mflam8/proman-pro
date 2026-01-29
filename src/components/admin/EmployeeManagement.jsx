@@ -234,7 +234,7 @@ function InviteUserModal({ isOpen, onClose }) {
       const emailToUse = formData.email || `empleado_${Date.now()}@proman.internal`;
       
       // Crear usuario directamente
-      await base44.entities.User.create({
+      const newUser = await base44.entities.User.create({
         email: emailToUse,
         full_name: formData.employee_name,
         employee_name: formData.employee_name,
@@ -246,7 +246,10 @@ function InviteUserModal({ isOpen, onClose }) {
         onboarding_completed: true
       });
       
-      queryClient.invalidateQueries({ queryKey: ['users'] });
+      // Refrescar la lista inmediatamente
+      await queryClient.invalidateQueries({ queryKey: ['users'] });
+      await queryClient.refetchQueries({ queryKey: ['users'] });
+      
       alert('✅ Empleado creado correctamente');
       onClose();
       setFormData({
