@@ -230,23 +230,20 @@ function InviteUserModal({ isOpen, onClose }) {
     setIsSaving(true);
     
     try {
-      // Generar email único si no se proporciona
-      const emailToUse = formData.email || `empleado_${Date.now()}@proman.internal`;
-      
-      // Crear usuario directamente usando asServiceRole
-      const newUser = await base44.asServiceRole.entities.User.create({
-        email: emailToUse,
-        full_name: formData.employee_name,
+      // Llamar al backend function para crear el empleado
+      const response = await base44.functions.invoke('createEmployee', {
+        email: formData.email,
+        employee_name: formData.employee_name,
+        employee_type: formData.employee_type,
         role: formData.role,
-        data: {
-          employee_name: formData.employee_name,
-          employee_type: formData.employee_type,
-          hire_date: formData.hire_date || null,
-          phone: formData.phone || null,
-          profile_picture_url: uploadedImageUrl || null,
-          onboarding_completed: true
-        }
+        hire_date: formData.hire_date || null,
+        phone: formData.phone || null,
+        profile_picture_url: uploadedImageUrl || null
       });
+
+      if (!response.data.success) {
+        throw new Error(response.data.error || 'Error al crear empleado');
+      }
       
       // Refrescar la lista inmediatamente
       await queryClient.invalidateQueries({ queryKey: ['users'] });
