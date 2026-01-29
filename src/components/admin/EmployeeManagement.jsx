@@ -233,17 +233,19 @@ function InviteUserModal({ isOpen, onClose }) {
       // Generar email único si no se proporciona
       const emailToUse = formData.email || `empleado_${Date.now()}@proman.internal`;
       
-      // Crear usuario directamente
-      const newUser = await base44.entities.User.create({
+      // Crear usuario directamente usando asServiceRole
+      const newUser = await base44.asServiceRole.entities.User.create({
         email: emailToUse,
         full_name: formData.employee_name,
-        employee_name: formData.employee_name,
-        employee_type: formData.employee_type,
         role: formData.role,
-        hire_date: formData.hire_date || null,
-        phone: formData.phone || null,
-        profile_picture_url: uploadedImageUrl || null,
-        onboarding_completed: true
+        data: {
+          employee_name: formData.employee_name,
+          employee_type: formData.employee_type,
+          hire_date: formData.hire_date || null,
+          phone: formData.phone || null,
+          profile_picture_url: uploadedImageUrl || null,
+          onboarding_completed: true
+        }
       });
       
       // Refrescar la lista inmediatamente
