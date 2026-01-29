@@ -100,7 +100,7 @@ export default function EmployeeManagement() {
             <CardTitle>Empleados y Supervisores</CardTitle>
             <Button onClick={() => setShowInviteModal(true)} className="bg-proman-yellow text-proman-navy hover:opacity-90">
               <UserPlus className="w-4 h-4 mr-2" />
-              Crear Usuario
+              Invitar Empleado
             </Button>
           </div>
         </CardHeader>
@@ -195,60 +195,24 @@ export default function EmployeeManagement() {
 }
 
 function InviteUserModal({ isOpen, onClose }) {
-  const [formData, setFormData] = useState({
-    email: '',
-    full_name: '',
-    employee_name: '',
-    employee_type: 'Empleado',
-    role: 'user',
-    hire_date: '',
-    phone: ''
-  });
-  const [imageFile, setImageFile] = useState(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadedImageUrl, setUploadedImageUrl] = useState('');
+  const [email, setEmail] = useState('');
+  const [role, setRole] = useState('user');
   const [isSaving, setIsSaving] = useState(false);
   const queryClient = useQueryClient();
-
-  React.useEffect(() => {
-    const uploadImage = async () => {
-      if (!imageFile) return;
-      setIsUploading(true);
-      try {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file: imageFile });
-        setUploadedImageUrl(file_url);
-      } catch (error) {
-        console.error("Error uploading image", error);
-      } finally {
-        setIsUploading(false);
-      }
-    };
-    uploadImage();
-  }, [imageFile]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSaving(true);
     
     try {
-      await base44.entities.User.create({
-        email: formData.email,
-        full_name: formData.full_name || formData.employee_name,
-        employee_name: formData.employee_name,
-        employee_type: formData.employee_type,
-        role: formData.role,
-        hire_date: formData.hire_date || null,
-        phone: formData.phone || null,
-        profile_picture_url: uploadedImageUrl || null,
-        onboarding_completed: true
-      });
-      
+      await base44.users.inviteUser(email, role);
       queryClient.invalidateQueries({ queryKey: ['users'] });
-      alert('✅ Usuario creado correctamente');
+      alert(`✅ Invitación enviada a ${email}\n\nEl empleado recibirá un correo para registrarse. Una vez registrado, podrás configurar su información completa (nombre, foto, tipo, etc.) desde aquí.`);
       onClose();
+      setEmail('');
     } catch (error) {
-      console.error("Error creating user", error);
-      alert('❌ Error al crear usuario: ' + error.message);
+      console.error("Error inviting user", error);
+      alert('❌ Error al invitar usuario: ' + error.message);
     } finally {
       setIsSaving(false);
     }
@@ -256,84 +220,47 @@ function InviteUserModal({ isOpen, onClose }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Crear Nuevo Usuario</DialogTitle>
+          <DialogTitle>Invitar Nuevo Empleado</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-sm text-blue-800">
-              <strong>ℹ️ Nota:</strong> El usuario será creado directamente sin necesidad de invitación por correo.
+              <strong>📧 Cómo funciona:</strong>
             </p>
+            <ol className="list-decimal list-inside text-sm text-blue-800 mt-2 space-y-1">
+              <li>Ingresa el email del empleado</li>
+              <li>Recibirá un correo para registrarse</li>
+              <li>Después de registrarse, edítalo aquí para:
+                <ul className="list-disc list-inside ml-4 text-xs mt-1">
+                  <li>Configurar nombre oficial</li>
+                  <li>Asignar tipo (Empleado/Supervisor)</li>
+                  <li>Subir foto oficial</li>
+                  <li>Fecha de contratación y más</li>
+                </ul>
+              </li>
+            </ol>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-proman-navy mb-2">
-              Email <span className="text-red-500">*</span>
+              Email del Empleado <span className="text-red-500">*</span>
             </label>
             <Input
               type="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              placeholder="ejemplo@correo.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="empleado@ejemplo.com"
               required
             />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-proman-navy mb-2">
-              Nombre del Empleado <span className="text-red-500">*</span>
-            </label>
-            <Input
-              type="text"
-              value={formData.employee_name}
-              onChange={(e) => setFormData({ ...formData, employee_name: e.target.value })}
-              placeholder="Juan Pérez García"
-              required
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Este es el nombre que se mostrará en la app
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-proman-navy mb-2">
-              Teléfono
-            </label>
-            <Input
-              type="tel"
-              value={formData.phone}
-              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              placeholder="7777-7777"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-proman-navy mb-2">
-              Tipo de Empleado <span className="text-red-500">*</span>
-            </label>
-            <Select 
-              value={formData.employee_type} 
-              onValueChange={(v) => setFormData({ ...formData, employee_type: v })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Empleado">Empleado</SelectItem>
-                <SelectItem value="Supervisor">Supervisor</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-proman-navy mb-2">
               Rol de Acceso
             </label>
-            <Select 
-              value={formData.role} 
-              onValueChange={(v) => setFormData({ ...formData, role: v })}
-            >
+            <Select value={role} onValueChange={setRole}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -343,53 +270,26 @@ function InviteUserModal({ isOpen, onClose }) {
               </SelectContent>
             </Select>
             <p className="text-xs text-gray-500 mt-1">
-              Los empleados normalmente no necesitan acceso al sistema
+              💡 Los empleados normalmente son "Usuario" sin acceso al sistema
             </p>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-proman-navy mb-2">
-              Fecha de Contratación
-            </label>
-            <Input
-              type="date"
-              value={formData.hire_date}
-              onChange={(e) => setFormData({ ...formData, hire_date: e.target.value })}
-            />
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+            <p className="text-xs text-yellow-800">
+              <strong>⚠️ Importante:</strong> Después del registro, regresa aquí para completar toda su información (foto, tipo, etc.)
+            </p>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-proman-navy mb-2">
-              Foto de Perfil (Opcional)
-            </label>
-            {uploadedImageUrl && (
-              <div className="flex justify-center mb-3">
-                <img 
-                  src={uploadedImageUrl} 
-                  alt="Preview" 
-                  className="w-24 h-24 rounded-full border-4 border-proman-yellow object-cover"
-                />
-              </div>
-            )}
-            <Input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setImageFile(e.target.files[0])}
-              disabled={isUploading}
-            />
-            {isUploading && <p className="text-sm text-gray-500 mt-2">Subiendo imagen...</p>}
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4">
+          <div className="flex justify-end gap-3 pt-2">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancelar
             </Button>
             <Button 
               type="submit"
               className="bg-proman-yellow text-proman-navy hover:opacity-90"
-              disabled={isSaving || isUploading || !formData.email || !formData.employee_name}
+              disabled={isSaving || !email}
             >
-              {isSaving ? "Creando..." : "Crear Usuario"}
+              {isSaving ? "Enviando Invitación..." : "Enviar Invitación"}
             </Button>
           </div>
         </form>
