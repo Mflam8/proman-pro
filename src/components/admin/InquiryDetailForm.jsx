@@ -218,6 +218,8 @@ export default function InquiryDetailForm({
           
           await base44.entities.ProgressLog.create({
             inquiry_id: id,
+            log_type: 'avance_tecnico',
+            timestamp: new Date().toISOString(),
             progress_percentage: formData.progress_percentage || 0,
             hours_worked: formData.current_hours_worked || 0,
             work_date: formData.current_work_date || new Date().toISOString().split('T')[0],
