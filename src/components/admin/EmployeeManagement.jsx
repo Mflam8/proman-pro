@@ -230,9 +230,12 @@ function InviteUserModal({ isOpen, onClose }) {
     setIsSaving(true);
     
     try {
+      // Generar email único si no se proporciona
+      const emailToUse = formData.email || `empleado_${Date.now()}@proman.internal`;
+      
       // Crear usuario directamente
       await base44.entities.User.create({
-        email: formData.email,
+        email: emailToUse,
         full_name: formData.employee_name,
         employee_name: formData.employee_name,
         employee_type: formData.employee_type,
@@ -278,15 +281,17 @@ function InviteUserModal({ isOpen, onClose }) {
 
           <div>
             <label className="block text-sm font-medium text-proman-navy mb-2">
-              Email <span className="text-red-500">*</span>
+              Email (Opcional)
             </label>
             <Input
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              placeholder="empleado@ejemplo.com"
-              required
+              placeholder="empleado@ejemplo.com (dejar vacío si no tiene)"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              Si no tiene correo, se generará uno automático
+            </p>
           </div>
 
           <div>
@@ -393,7 +398,7 @@ function InviteUserModal({ isOpen, onClose }) {
             <Button 
               type="submit"
               className="bg-proman-yellow text-proman-navy hover:opacity-90"
-              disabled={isSaving || isUploading || !formData.email || !formData.employee_name}
+              disabled={isSaving || isUploading || !formData.employee_name}
             >
               {isSaving ? "Creando..." : "Crear Empleado"}
             </Button>
