@@ -245,11 +245,16 @@ function InviteUserModal({ isOpen, onClose }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!formData.employee_name?.trim()) {
+      alert('❌ El nombre del empleado es obligatorio');
+      return;
+    }
+
     setIsSaving(true);
-    
+
     try {
-      // Llamar al backend function para crear el empleado
-      const response = await base44.functions.invoke('createEmployee', {
+      console.log('📤 Enviando datos:', {
         email: formData.email,
         employee_name: formData.employee_name,
         employee_type: formData.employee_type,
@@ -259,27 +264,34 @@ function InviteUserModal({ isOpen, onClose }) {
         profile_picture_url: uploadedImageUrl || null
       });
 
-      if (!response.data.success) {
-        throw new Error(response.data.error || 'Error al crear empleado');
-      }
-      
-      alert('✅ Empleado creado correctamente');
-      
-      // Recargar la página para mostrar el nuevo empleado
-      window.location.reload();
-      setFormData({
-        email: '',
-        employee_name: '',
-        employee_type: 'Empleado',
-        role: 'user',
-        hire_date: '',
-        phone: ''
+      const response = await base44.functions.invoke('createEmployee', {
+        email: formData.email || null,
+        employee_name: formData.employee_name,
+        employee_type: formData.employee_type,
+        role: formData.role,
+        hire_date: formData.hire_date || null,
+        phone: formData.phone || null,
+        profile_picture_url: uploadedImageUrl || null
       });
-      setUploadedImageUrl('');
+
+      console.log('📥 Respuesta del servidor:', response);
+
+      if (response.status !== 200) {
+        throw new Error(`Error HTTP ${response.status}: ${response.data?.error || 'Error desconocido'}`);
+      }
+
+      if (!response.data?.success) {
+        throw new Error(response.data?.error || 'Error al crear empleado');
+      }
+
+      console.log('✅ Usuario creado:', response.data.user);
+      alert(`✅ Empleado "${formData.employee_name}" creado correctamente`);
+
+      // Recargar la página
+      window.location.reload();
     } catch (error) {
-      console.error("Error creating user", error);
+      console.error("❌ Error completo:", error);
       alert('❌ Error al crear empleado: ' + error.message);
-    } finally {
       setIsSaving(false);
     }
   };
