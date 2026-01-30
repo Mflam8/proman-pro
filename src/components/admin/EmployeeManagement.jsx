@@ -21,10 +21,12 @@ export default function EmployeeManagement() {
   const [editingUser, setEditingUser] = useState(null);
   const queryClient = useQueryClient();
 
-  const { data: users, isLoading } = useQuery({
+  const { data: users, isLoading, refetch } = useQuery({
     queryKey: ['users'],
     queryFn: () => base44.entities.User.list('-created_date'),
     initialData: [],
+    refetchOnMount: true,
+    refetchOnWindowFocus: true
   });
 
   const filteredUsers = users.filter(u =>
@@ -245,15 +247,17 @@ function InviteUserModal({ isOpen, onClose }) {
         throw new Error(response.data.error || 'Error al crear empleado');
       }
       
-      // Refrescar la lista inmediatamente y esperar
-      await queryClient.invalidateQueries({ queryKey: ['users'] });
+      // Refrescar la lista de forma agresiva
+      queryClient.invalidateQueries({ queryKey: ['users'] });
       
-      // Esperar un momento para asegurar que la DB se actualizó
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Esperar a que se actualice la DB
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      await queryClient.refetchQueries({ queryKey: ['users'] });
+      // Hacer un fetch manual para forzar la actualización
+      const updatedUsers = await base44.entities.User.list('-created_date');
+      queryClient.setQueryData(['users'], updatedUsers);
       
-      alert('✅ Empleado creado correctamente');
+      alert('✅ Empleado creado correctamente. Recarga la página si no aparece.');
       onClose();
       setFormData({
         email: '',
