@@ -23,9 +23,14 @@ export default function EmployeeManagement() {
 
   const { data: users, isLoading, refetch } = useQuery({
     queryKey: ['users'],
-    queryFn: () => base44.entities.User.list('-created_date'),
+    queryFn: async () => {
+      const allUsers = await base44.entities.User.list('-created_date');
+      console.log('🔍 Total usuarios cargados:', allUsers.length);
+      console.log('👥 Usuarios:', allUsers.map(u => ({ email: u.email, name: getDisplayName(u), type: u.employee_type })));
+      return allUsers;
+    },
     initialData: [],
-    refetchOnMount: true,
+    refetchOnMount: 'always',
     refetchOnWindowFocus: true
   });
 
@@ -173,7 +178,18 @@ export default function EmployeeManagement() {
           </div>
 
           {filteredUsers.length === 0 && !isLoading && (
-            <p className="text-center text-gray-500 py-8">No se encontraron usuarios</p>
+            <div className="text-center py-8">
+              <p className="text-gray-500 mb-2">No se encontraron usuarios</p>
+              <p className="text-sm text-gray-400">Total en sistema: {users.length}</p>
+              <Button 
+                onClick={() => refetch()} 
+                variant="outline" 
+                size="sm"
+                className="mt-3"
+              >
+                Recargar Lista
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>
