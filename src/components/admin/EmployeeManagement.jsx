@@ -245,8 +245,12 @@ function InviteUserModal({ isOpen, onClose }) {
         throw new Error(response.data.error || 'Error al crear empleado');
       }
       
-      // Refrescar la lista inmediatamente
+      // Refrescar la lista inmediatamente y esperar
       await queryClient.invalidateQueries({ queryKey: ['users'] });
+      
+      // Esperar un momento para asegurar que la DB se actualizó
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       await queryClient.refetchQueries({ queryKey: ['users'] });
       
       alert('✅ Empleado creado correctamente');
