@@ -263,18 +263,10 @@ function InviteUserModal({ isOpen, onClose }) {
         throw new Error(response.data.error || 'Error al crear empleado');
       }
       
-      // Refrescar la lista de forma agresiva
-      queryClient.invalidateQueries({ queryKey: ['users'] });
+      alert('✅ Empleado creado correctamente');
       
-      // Esperar a que se actualice la DB
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Hacer un fetch manual para forzar la actualización
-      const updatedUsers = await base44.entities.User.list('-created_date');
-      queryClient.setQueryData(['users'], updatedUsers);
-      
-      alert('✅ Empleado creado correctamente. Recarga la página si no aparece.');
-      onClose();
+      // Recargar la página para mostrar el nuevo empleado
+      window.location.reload();
       setFormData({
         email: '',
         employee_name: '',
