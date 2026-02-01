@@ -27,6 +27,7 @@ import ScheduleCalendar from "../components/admin/ScheduleCalendar";
 import AutomationsControlPanel from "../components/admin/AutomationsControlPanel";
 import InquiryDetailForm from "../components/admin/InquiryDetailForm";
 import InquiryCreateForm from "../components/admin/InquiryCreateForm";
+import TrustedDirectory from "../components/admin/TrustedDirectory";
 
 export default function ClientManagement() {
   const [user, setUser] = useState(null);
@@ -296,6 +297,9 @@ export default function ClientManagement() {
                 <TabsTrigger value="automatizaciones" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
                   🤖 Automatizaciones
                 </TabsTrigger>
+                <TabsTrigger value="directorio" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
+                  🛡️ Directorio Bot
+                </TabsTrigger>
               </>
             )}
           </TabsList>
@@ -556,6 +560,7 @@ export default function ClientManagement() {
               <TabsContent value="empleados"><EmployeeManagement /></TabsContent>
               <TabsContent value="reportes"><ReportsManagement /></TabsContent>
               <TabsContent value="automatizaciones"><AutomationsControlPanel /></TabsContent>
+              <TabsContent value="directorio"><TrustedDirectory /></TabsContent>
             </>
           )}
         </Tabs>
