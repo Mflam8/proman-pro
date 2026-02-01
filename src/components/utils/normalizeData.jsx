@@ -49,12 +49,13 @@ const VALID_RUBROS = ['Hogar', 'Comercial', 'Restaurantes', 'Hospitales', 'Emerg
  * @returns {string} - Rubro normalizado
  */
 export function normalizeRubro(rubro) {
-  if (!rubro) return null;
+  if (!rubro) return rubro;
   
   const cleaned = rubro.trim();
   const normalized = RUBRO_MAPPING[cleaned.toLowerCase()] || cleaned;
   
-  return VALID_RUBROS.includes(normalized) ? normalized : null;
+  // Si el normalizado está en válidos, usarlo; si no, mantener el original
+  return VALID_RUBROS.includes(normalized) ? normalized : rubro;
 }
 
 /**
@@ -121,13 +122,23 @@ export function normalizePhone(phone) {
  * @returns {object} - Datos normalizados
  */
 export function normalizeInquiryData(inquiry) {
-  return {
+  const normalized = {
     ...inquiry,
-    rubro: normalizeRubro(inquiry.rubro),
-    service_type: normalizeServiceName(inquiry.service_type),
-    phone: normalizePhone(inquiry.phone),
     source: detectDataSource(inquiry)
   };
+  
+  // Solo normalizar si hay valor presente
+  if (inquiry.rubro) {
+    normalized.rubro = normalizeRubro(inquiry.rubro);
+  }
+  if (inquiry.service_type) {
+    normalized.service_type = normalizeServiceName(inquiry.service_type);
+  }
+  if (inquiry.phone) {
+    normalized.phone = normalizePhone(inquiry.phone);
+  }
+  
+  return normalized;
 }
 
 /**
@@ -145,6 +156,9 @@ export function groupInquiriesByCustomer(inquiries, customers) {
     
     if (!grouped[customerId]) {
       const customer = customers.find(c => c.id === customerId);
+      // Skip si no se encuentra el customer
+      if (!customer) return;
+      
       grouped[customerId] = {
         customer,
         jobs: [],
@@ -162,7 +176,7 @@ export function groupInquiriesByCustomer(inquiries, customers) {
     }
   });
   
-  return Object.values(grouped);
+  return Object.values(grouped).filter(g => g.customer); // Filtrar entradas sin customer
 }
 
 /**

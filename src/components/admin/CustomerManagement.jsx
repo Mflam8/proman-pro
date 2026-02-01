@@ -805,6 +805,8 @@ function CustomerFormModal({ customer, isOpen, onClose, onSubmit, isSubmitting }
 }
 
 function CustomerDetailModal({ customer, jobs, isOpen, onClose, onEdit, onUpdateStatus }) {
+  const queryClient = useQueryClient();
+  
   const { data: customerPayments } = useQuery({
     queryKey: ['customerPayments', customer.id],
     queryFn: async () => {
