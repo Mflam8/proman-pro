@@ -35,6 +35,9 @@ export default function ClientManagement() {
   const [sortOrder, setSortOrder] = useState("desc");
   const [mainTab, setMainTab] = useState("trabajos");
   const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
+  const ITEMS_PER_PAGE = 20;
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -57,14 +60,26 @@ export default function ClientManagement() {
   const hasManagementAccess = isAdmin || isSupervisor;
 
   const { data: inquiries, isLoading: isLoadingInquiries } = useQuery({
-    queryKey: ['clientInquiries', sortOrder],
+    queryKey: ['clientInquiries', sortOrder, currentPage],
     queryFn: async () => {
       const orderBy = sortOrder === "desc" ? '-created_date' : 'created_date';
-      const rawData = await base44.entities.ClientInquiry.filter({}, orderBy);
+      const skip = (currentPage - 1) * ITEMS_PER_PAGE;
+      const rawData = await base44.entities.ClientInquiry.filter({}, orderBy, ITEMS_PER_PAGE, skip);
       return rawData.map(item => item.data ? { ...item, ...item.data } : item);
     },
     enabled: !!user && hasManagementAccess,
     initialData: [],
+  });
+
+  // Get total count for pagination
+  const { data: totalCount } = useQuery({
+    queryKey: ['inquiriesCount'],
+    queryFn: async () => {
+      const all = await base44.entities.ClientInquiry.list();
+      return all.length;
+    },
+    enabled: !!user && hasManagementAccess,
+    onSuccess: (count) => setTotalRecords(count),
   });
 
   const { data: customers } = useQuery({
@@ -80,16 +95,16 @@ export default function ClientManagement() {
       await queryClient.refetchQueries({ queryKey: ['clientInquiries'] });
       await queryClient.invalidateQueries({ queryKey: ['employeeSchedules'] }); 
       await queryClient.invalidateQueries({ queryKey: ['customers'] });
+      await queryClient.invalidateQueries({ queryKey: ['inquiriesCount'] });
       
-      setTimeout(() => {
-        if (selectedInquiry) {
-          const updatedInquiries = queryClient.getQueryData(['clientInquiries', sortOrder]);
-          const updatedInquiry = updatedInquiries?.find(i => i.id === selectedInquiry.id);
-          if (updatedInquiry) {
-            setSelectedInquiry(updatedInquiry);
-          }
-        }
-      }, 300);
+      // Update selected inquiry immediately from cache
+      if (selectedInquiry) {
+        queryClient.setQueryData(['clientInquiries', sortOrder, currentPage], (oldData) => {
+          if (!oldData) return oldData;
+          return oldData.map(i => i.id === selectedInquiry.id ? { ...i, ...variables.data } : i);
+        });
+        setSelectedInquiry(prev => ({ ...prev, ...variables.data }));
+      }
     },
   });
 
@@ -153,11 +168,15 @@ export default function ClientManagement() {
   });
 
   const stats = {
-    total: inquiries.length,
+    total: totalRecords || 0,
     nuevo: inquiries.filter(i => i.status === "nuevo").length,
     activos: inquiries.filter(i => activeStatuses.includes(i.status)).length,
     completado: inquiries.filter(i => i.status === "completado").length
   };
+
+  const totalPages = Math.ceil(totalRecords / ITEMS_PER_PAGE);
+  const handlePrevPage = () => setCurrentPage(p => Math.max(1, p - 1));
+  const handleNextPage = () => setCurrentPage(p => Math.min(totalPages, p + 1));
 
   const getWhatsAppLink = (inquiry) => {
     const customer = getCustomerForInquiry(inquiry);
@@ -334,8 +353,36 @@ export default function ClientManagement() {
               </CardContent>
             </Card>
 
-            <div className="grid gap-4">
-              {filteredInquiries.map((inquiry) => {
+            <div className="space-y-4">
+              {/* Pagination Controls Top */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between bg-white p-4 rounded-lg border">
+                  <div className="text-sm text-gray-600">
+                    Página {currentPage} de {totalPages} • Mostrando {inquiries.length} de {totalRecords} trabajos
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handlePrevPage}
+                      disabled={currentPage === 1}
+                    >
+                      ← Anterior
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleNextPage}
+                      disabled={currentPage === totalPages}
+                    >
+                      Siguiente →
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid gap-4">
+                {filteredInquiries.map((inquiry) => {
                 const StatusIcon = statusConfig[inquiry.status]?.icon || AlertCircle;
                 const customer = getCustomerForInquiry(inquiry);
                 const displayName = customer?.full_name || inquiry.client_name;
@@ -403,10 +450,39 @@ export default function ClientManagement() {
                     </CardContent>
                   </Card>
                 );
-              })}
+                })}
+              </div>
+
+              {/* Pagination Controls Bottom */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between bg-white p-4 rounded-lg border">
+                  <div className="text-sm text-gray-600">
+                    Página {currentPage} de {totalPages}
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handlePrevPage}
+                      disabled={currentPage === 1}
+                    >
+                      ← Anterior
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleNextPage}
+                      disabled={currentPage === totalPages}
+                    >
+                      Siguiente →
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {filteredInquiries.length === 0 && !isLoadingInquiries && <p className="text-center text-gray-500 mt-8">No se encontraron solicitudes.</p>}
+              {isLoadingInquiries && <p className="text-center text-gray-500 mt-8">Cargando solicitudes...</p>}
             </div>
-            {filteredInquiries.length === 0 && !isLoadingInquiries && <p className="text-center text-gray-500 mt-8">No se encontraron solicitudes.</p>}
-            {isLoadingInquiries && <p className="text-center text-gray-500 mt-8">Cargando solicitudes...</p>}
           </TabsContent>
 
           <TabsContent value="calendario">
