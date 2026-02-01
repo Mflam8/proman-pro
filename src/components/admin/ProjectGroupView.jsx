@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { User, Briefcase, DollarSign, TrendingUp, AlertCircle } from "lucide-react";
-import { calculateProjectMetrics } from "@/utils/normalizeData";
+import { calculateProjectMetrics } from "@/components/utils/normalizeData";
 
 /**
  * Vista agrupada de trabajos por proyecto

@@ -15,7 +15,7 @@ import { Phone, MapPin, FileText, Clock, AlertCircle, User, Star, DollarSign, Bu
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { statusConfig, priorityConfig, activeStatuses } from "@/components/utils/inquiryConfig";
-import { groupInquiriesByCustomer, normalizeInquiryData } from "@/utils/normalizeData";
+import { groupInquiriesByCustomer, normalizeInquiryData } from "@/components/utils/normalizeData";
 import ProjectGroupView from "../components/admin/ProjectGroupView";
 import EmployeeManagement from "../components/admin/EmployeeManagement";
 import ServiceManagement from "../components/admin/ServiceManagement";
