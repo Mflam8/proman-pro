@@ -3,10 +3,23 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { phone_number } = await req.json();
+    
+    // Verificar método HTTP
+    if (req.method !== 'POST') {
+      return Response.json({ 
+        error: "Método no permitido. Use POST",
+        usage: "POST con body: { \"phone_number\": \"+50370000000\" }"
+      }, { status: 405 });
+    }
+
+    const body = await req.json().catch(() => ({}));
+    const { phone_number } = body;
 
     if (!phone_number) {
-      return Response.json({ error: "Falta phone_number" }, { status: 400 });
+      return Response.json({ 
+        error: "Falta phone_number",
+        usage: "Envíe: { \"phone_number\": \"+50370000000\" }"
+      }, { status: 400 });
     }
 
     // 1. Buscar en el Directorio de Confianza

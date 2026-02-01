@@ -3,11 +3,22 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { related_id } = await req.json();
+    
+    // Verificar método HTTP
+    if (req.method !== 'POST') {
+      return Response.json({ 
+        error: "Método no permitido. Use POST",
+        usage: "POST con body: { \"related_id\": \"empleado@example.com\" }"
+      }, { status: 405 });
+    }
+
+    const body = await req.json().catch(() => ({}));
+    const { related_id } = body;
 
     if (!related_id) {
       return Response.json({ 
-        text: "❌ Error: No tienes ID de empleado asociado en el sistema." 
+        error: "Falta related_id",
+        usage: "Envíe: { \"related_id\": \"email_empleado@example.com\" }"
       }, { status: 400 });
     }
 
