@@ -21,20 +21,16 @@ Deno.serve(async (req) => {
     const emailToUse = email || `empleado_${Date.now()}@proman.internal`;
 
     // Crear usuario con service role
-    const userData = {
+    const newUser = await base44.asServiceRole.entities.User.create({
       email: emailToUse,
       full_name: employee_name,
-      role: role || 'user'
-    };
-    
-    // Los campos personalizados van sin prefijo
-    if (employee_name) userData.employee_name = employee_name;
-    if (employee_type) userData.employee_type = employee_type;
-    if (hire_date) userData.hire_date = hire_date;
-    if (profile_picture_url) userData.profile_picture_url = profile_picture_url;
-    userData.onboarding_completed = true;
-    
-    const newUser = await base44.asServiceRole.entities.User.create(userData);
+      role: role || 'user',
+      employee_name: employee_name,
+      employee_type: employee_type || 'Empleado',
+      hire_date: hire_date || null,
+      profile_picture_url: profile_picture_url || null,
+      onboarding_completed: true
+    });
 
     return Response.json({ success: true, user: newUser });
   } catch (error) {
