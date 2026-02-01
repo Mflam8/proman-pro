@@ -15,6 +15,8 @@ import { Phone, MapPin, FileText, Clock, AlertCircle, User, Star, DollarSign, Bu
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { statusConfig, priorityConfig, activeStatuses } from "@/components/utils/inquiryConfig";
+import { groupInquiriesByCustomer, normalizeInquiryData } from "@/utils/normalizeData";
+import ProjectGroupView from "../components/admin/ProjectGroupView";
 import EmployeeManagement from "../components/admin/EmployeeManagement";
 import ServiceManagement from "../components/admin/ServiceManagement";
 import CustomerManagement from "../components/admin/CustomerManagement";
@@ -37,6 +39,7 @@ export default function ClientManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
+  const [viewMode, setViewMode] = useState("individual"); // "individual" o "grouped"
   const ITEMS_PER_PAGE = 20;
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -65,7 +68,11 @@ export default function ClientManagement() {
       const orderBy = sortOrder === "desc" ? '-created_date' : 'created_date';
       const skip = (currentPage - 1) * ITEMS_PER_PAGE;
       const rawData = await base44.entities.ClientInquiry.filter({}, orderBy, ITEMS_PER_PAGE, skip);
-      return rawData.map(item => item.data ? { ...item, ...item.data } : item);
+      // Normalizar datos al recibirlos
+      return rawData.map(item => {
+        const normalized = item.data ? { ...item, ...item.data } : item;
+        return normalizeInquiryData(normalized);
+      });
     },
     enabled: !!user && hasManagementAccess,
     initialData: [],
@@ -166,6 +173,11 @@ export default function ClientManagement() {
       inquiry.rubro?.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesTab && matchesSearch;
   });
+
+  // Agrupar por cliente si está en modo agrupado
+  const groupedProjects = viewMode === "grouped" 
+    ? groupInquiriesByCustomer(filteredInquiries, customers)
+    : [];
 
   const stats = {
     total: totalRecords || 0,
@@ -289,8 +301,8 @@ export default function ClientManagement() {
           </TabsList>
 
           <TabsContent value="trabajos">
-            {isAdmin && (customers.filter(c => c.created_by === 'system' || c.notes?.includes('WhatsApp')).length > 0 || 
-              inquiries.filter(i => i.created_by === 'system' || i.notes?.includes('WhatsApp')).length > 0) && (
+            {isAdmin && (customers.filter(c => c.source === 'whatsapp_bot').length > 0 || 
+              inquiries.filter(i => i.source === 'whatsapp_bot').length > 0) && (
               <Card className="mb-6 border-2 border-green-500 bg-green-50">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-4">
@@ -301,8 +313,8 @@ export default function ClientManagement() {
                       <h3 className="font-bold text-green-800">🤖 Actividad del Bot de WhatsApp</h3>
                       <p className="text-sm text-green-700">
                         El bot ha capturado automáticamente: 
-                        <strong> {customers.filter(c => c.created_by === 'system' || c.notes?.includes('WhatsApp')).length} cliente(s)</strong> y 
-                        <strong> {inquiries.filter(i => i.created_by === 'system' || i.notes?.includes('WhatsApp')).length} trabajo(s)</strong> desde WhatsApp
+                        <strong> {customers.filter(c => c.source === 'whatsapp_bot').length} cliente(s)</strong> y 
+                        <strong> {inquiries.filter(i => i.source === 'whatsapp_bot').length} trabajo(s)</strong> desde WhatsApp
                       </p>
                     </div>
                     <Badge className="bg-green-600 text-white">Bot Activo</Badge>
@@ -330,6 +342,15 @@ export default function ClientManagement() {
                         className="w-full"
                       />
                     </div>
+                    <Select value={viewMode} onValueChange={setViewMode}>
+                      <SelectTrigger className="w-full sm:w-48">
+                        <SelectValue placeholder="Modo de vista" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="individual">Vista Individual</SelectItem>
+                        <SelectItem value="grouped">Vista por Proyecto</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <Select value={sortOrder} onValueChange={setSortOrder}>
                       <SelectTrigger className="w-full sm:w-48">
                         <SelectValue placeholder="Ordenar por fecha" />
@@ -382,7 +403,22 @@ export default function ClientManagement() {
               )}
 
               <div className="grid gap-4">
-                {filteredInquiries.map((inquiry) => {
+                {viewMode === "grouped" ? (
+                  // Vista agrupada por proyecto
+                  groupedProjects.map((projectData) => (
+                    <ProjectGroupView
+                      key={projectData.customer.id}
+                      customerData={projectData}
+                      onClick={() => {
+                        // Abrir el primer trabajo activo
+                        const firstActive = projectData.jobs.find(j => j.status !== 'completado' && j.status !== 'cancelado');
+                        setSelectedInquiry(firstActive || projectData.jobs[0]);
+                      }}
+                    />
+                  ))
+                ) : (
+                  // Vista individual (original)
+                  filteredInquiries.map((inquiry) => {
                 const StatusIcon = statusConfig[inquiry.status]?.icon || AlertCircle;
                 const customer = getCustomerForInquiry(inquiry);
                 const displayName = customer?.full_name || inquiry.client_name;
@@ -417,9 +453,27 @@ export default function ClientManagement() {
                                 <Badge className={priorityConfig[inquiry.priority]?.color}>
                                   {priorityConfig[inquiry.priority]?.label}
                                 </Badge>
+                                {inquiry.source === 'whatsapp_bot' && (
+                                  <Badge className="bg-green-100 text-green-800">
+                                    <Bot className="w-3 h-3 mr-1" />WhatsApp Bot
+                                  </Badge>
+                                )}
                                 {inquiry.satisfaction_rating && <Badge className="bg-yellow-100 text-yellow-800"><Star className="w-3 h-3 mr-1"/> {inquiry.satisfaction_rating}/5</Badge>}
-                                {inquiry.payment_status === 'pendiente' && <Badge className="bg-red-100 text-red-800"><DollarSign className="w-3 h-3 mr-1"/> Pendiente de Pago</Badge>}
-                                {inquiry.payment_status === 'parcial' && <Badge className="bg-orange-100 text-orange-800"><DollarSign className="w-3 h-3 mr-1"/> Pago Parcial</Badge>}
+                                {inquiry.payment_status === 'pendiente' && inquiry.final_amount > 0 && (
+                                  <Badge className="bg-red-100 text-red-800">
+                                    <DollarSign className="w-3 h-3 mr-1"/> ${inquiry.final_amount} Pendiente
+                                  </Badge>
+                                )}
+                                {inquiry.payment_status === 'parcial' && (
+                                  <Badge className="bg-orange-100 text-orange-800">
+                                    <DollarSign className="w-3 h-3 mr-1"/> Pago Parcial
+                                  </Badge>
+                                )}
+                                {inquiry.payment_status === 'pagado' && (
+                                  <Badge className="bg-green-100 text-green-800">
+                                    <DollarSign className="w-3 h-3 mr-1"/> Pagado
+                                  </Badge>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -450,7 +504,8 @@ export default function ClientManagement() {
                     </CardContent>
                   </Card>
                 );
-                })}
+                  })
+                )}
               </div>
 
               {/* Pagination Controls Bottom */}

@@ -37,6 +37,12 @@ export default function CustomerManagement() {
     initialData: [],
   });
 
+  const { data: allPayments } = useQuery({
+    queryKey: ['allPayments'],
+    queryFn: () => base44.entities.Payment.list(),
+    initialData: [],
+  });
+
   const createCustomer = useMutation({
     mutationFn: (data) => base44.entities.Customer.create(data),
     onSuccess: () => {
@@ -80,6 +86,23 @@ export default function CustomerManagement() {
 
   const getCustomerJobs = (customerId) => {
     return allJobs.filter(j => j.customer_id === customerId);
+  };
+
+  const getCustomerPayments = (customerId) => {
+    const customerJobs = getCustomerJobs(customerId);
+    const jobIds = customerJobs.map(j => j.id);
+    return allPayments.filter(p => jobIds.includes(p.inquiry_id));
+  };
+
+  const getCustomerFinancials = (customerId) => {
+    const jobs = getCustomerJobs(customerId);
+    const payments = getCustomerPayments(customerId);
+    
+    const totalBilled = jobs.reduce((sum, j) => sum + parseFloat(j.final_amount || j.quote_amount || 0), 0);
+    const totalPaid = payments.reduce((sum, p) => sum + parseFloat(p.amount_paid || 0), 0);
+    const totalPending = totalBilled - totalPaid;
+    
+    return { totalBilled, totalPaid, totalPending };
   };
 
   const getStatusConfig = (status) => {
@@ -296,6 +319,7 @@ export default function CustomerManagement() {
           <div className="space-y-3">
             {filteredCustomers.map((customer) => {
               const customerJobs = getCustomerJobs(customer.id);
+              const financials = getCustomerFinancials(customer.id);
               const primaryAddress = customer.addresses?.find(a => a.is_primary) || customer.addresses?.[0];
               const statusConfig = getStatusConfig(customer.status);
               const rubroConfig = getRubroConfig(customer.primary_rubro);
@@ -376,10 +400,22 @@ export default function CustomerManagement() {
                       </div>
 
                       <div className="flex flex-col items-end gap-2">
-                        {customer.total_spent > 0 && (
-                          <div className="text-right">
-                            <div className="text-lg font-bold text-green-600">${customer.total_spent}</div>
-                            <div className="text-xs text-gray-500">Total gastado</div>
+                        {financials.totalBilled > 0 && (
+                          <div className="text-right space-y-1">
+                            <div>
+                              <div className="text-lg font-bold text-proman-navy">${financials.totalBilled.toFixed(2)}</div>
+                              <div className="text-xs text-gray-500">Total Facturado</div>
+                            </div>
+                            <div>
+                              <div className="text-base font-bold text-green-600">${financials.totalPaid.toFixed(2)}</div>
+                              <div className="text-xs text-gray-500">Pagado</div>
+                            </div>
+                            {financials.totalPending > 0 && (
+                              <div>
+                                <div className="text-base font-bold text-red-600">${financials.totalPending.toFixed(2)}</div>
+                                <div className="text-xs text-gray-500">Pendiente</div>
+                              </div>
+                            )}
                           </div>
                         )}
                         <Button
@@ -769,6 +805,17 @@ function CustomerFormModal({ customer, isOpen, onClose, onSubmit, isSubmitting }
 }
 
 function CustomerDetailModal({ customer, jobs, isOpen, onClose, onEdit, onUpdateStatus }) {
+  const { data: customerPayments } = useQuery({
+    queryKey: ['customerPayments', customer.id],
+    queryFn: async () => {
+      const jobIds = jobs.map(j => j.id);
+      const allPayments = await base44.entities.Payment.list();
+      return allPayments.filter(p => jobIds.includes(p.inquiry_id));
+    },
+    initialData: [],
+    enabled: isOpen
+  });
+
   const getStatusConfig = (status) => {
     const configs = {
       nuevo: { label: "Nuevo", color: "bg-blue-100 text-blue-800" },
@@ -780,6 +827,11 @@ function CustomerDetailModal({ customer, jobs, isOpen, onClose, onEdit, onUpdate
   };
 
   const statusConfig = getStatusConfig(customer.status);
+  
+  // Calcular financieros
+  const totalBilled = jobs.reduce((sum, j) => sum + parseFloat(j.final_amount || j.quote_amount || 0), 0);
+  const totalPaid = customerPayments.reduce((sum, p) => sum + parseFloat(p.amount_paid || 0), 0);
+  const totalPending = totalBilled - totalPaid;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -966,53 +1018,96 @@ function CustomerDetailModal({ customer, jobs, isOpen, onClose, onEdit, onUpdate
             </Card>
           )}
 
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-4">
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-proman-navy">{jobs.length}</div>
-                <div className="text-sm text-gray-600">Trabajos</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-green-600">${customer.total_spent || 0}</div>
-                <div className="text-sm text-gray-600">Total Gastado</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-proman-navy">{customer.rating || "—"}</div>
-                <div className="text-sm text-gray-600">Calificación</div>
-              </CardContent>
-            </Card>
-          </div>
+          {/* Stats Financieros - Vista 360 */}
+          <Card className="bg-gradient-to-br from-proman-navy to-blue-900 text-white">
+            <CardHeader>
+              <CardTitle className="text-white">💰 Resumen Financiero</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-4 gap-4 text-center">
+                <div>
+                  <div className="text-2xl font-bold">{jobs.length}</div>
+                  <div className="text-xs text-blue-100">Trabajos</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-proman-yellow">${totalBilled.toFixed(2)}</div>
+                  <div className="text-xs text-blue-100">Facturado</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-green-300">${totalPaid.toFixed(2)}</div>
+                  <div className="text-xs text-blue-100">Pagado</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-red-300">${totalPending.toFixed(2)}</div>
+                  <div className="text-xs text-blue-100">Pendiente</div>
+                </div>
+              </div>
+              {customer.rating && (
+                <div className="text-center mt-4 pt-4 border-t border-blue-700">
+                  <div className="text-3xl font-bold text-proman-yellow">{customer.rating}/5</div>
+                  <div className="text-xs text-blue-100">Calificación Promedio</div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
-          {/* Jobs History */}
+          {/* Jobs History - Vista 360 Completa */}
           {jobs.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Historial de Trabajos</CardTitle>
+                <CardTitle className="text-lg">📊 Historial Completo de Trabajos ({jobs.length})</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  {jobs.slice(0, 5).map((job) => (
-                    <div key={job.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <div className="font-medium text-sm">{job.service_type || job.rubro}</div>
-                        <div className="text-xs text-gray-500">
-                          {format(new Date(job.created_date), "dd MMM yyyy", { locale: es })}
+                <div className="space-y-3">
+                  {jobs.map((job) => {
+                    const jobPayments = customerPayments.filter(p => p.inquiry_id === job.id);
+                    const jobTotalPaid = jobPayments.reduce((sum, p) => sum + parseFloat(p.amount_paid || 0), 0);
+                    const jobAmount = parseFloat(job.final_amount || job.quote_amount || 0);
+                    const jobPending = jobAmount - jobTotalPaid;
+                    
+                    return (
+                      <div key={job.id} className="border-2 border-gray-200 rounded-lg p-4 hover:border-proman-yellow transition-colors">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <div className="font-semibold text-proman-navy">{job.service_type || job.rubro}</div>
+                              <Badge className={
+                                job.status === "completado" ? "bg-green-100 text-green-800" :
+                                job.status === "en_proceso" ? "bg-blue-100 text-blue-800" :
+                                job.status === "nuevo" ? "bg-gray-100 text-gray-800" :
+                                "bg-orange-100 text-orange-800"
+                              }>
+                                {job.status}
+                              </Badge>
+                              {job.progress_percentage > 0 && (
+                                <Badge variant="outline">{job.progress_percentage}% completado</Badge>
+                              )}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              📅 {format(new Date(job.created_date), "dd MMM yyyy", { locale: es })}
+                              {job.scheduled_date && ` • Programado: ${format(new Date(job.scheduled_date), "dd MMM", { locale: es })}`}
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Desglose financiero del trabajo */}
+                        <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t text-center text-xs">
+                          <div>
+                            <div className="font-bold text-proman-navy">${jobAmount.toFixed(2)}</div>
+                            <div className="text-gray-500">Total</div>
+                          </div>
+                          <div>
+                            <div className="font-bold text-green-600">${jobTotalPaid.toFixed(2)}</div>
+                            <div className="text-gray-500">Pagado</div>
+                          </div>
+                          <div>
+                            <div className="font-bold text-red-600">${jobPending.toFixed(2)}</div>
+                            <div className="text-gray-500">Pendiente</div>
+                          </div>
                         </div>
                       </div>
-                      <Badge className={
-                        job.status === "completado" ? "bg-green-100 text-green-800" :
-                        job.status === "en_proceso" ? "bg-blue-100 text-blue-800" :
-                        "bg-gray-100 text-gray-800"
-                      }>
-                        {job.status}
-                      </Badge>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
