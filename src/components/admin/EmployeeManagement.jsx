@@ -285,10 +285,12 @@ function InviteUserModal({ isOpen, onClose }) {
       }
 
       console.log('✅ Usuario creado:', response.data.user);
+      
+      // Invalidar y refrescar datos
+      await queryClient.invalidateQueries({ queryKey: ['users'] });
+      
       alert(`✅ Empleado "${formData.employee_name}" creado correctamente`);
-
-      // Recargar la página
-      window.location.reload();
+      onClose();
     } catch (error) {
       console.error("❌ Error completo:", error);
       alert('❌ Error al crear empleado: ' + error.message);
