@@ -24,10 +24,11 @@ export default function EmployeeManagement() {
   const { data: users, isLoading, refetch } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      const allUsers = await base44.entities.User.list('-created_date');
-      console.log('🔍 Total usuarios cargados:', allUsers.length);
-      console.log('👥 Usuarios:', allUsers.map(u => ({ email: u.email, name: getDisplayName(u), type: u.employee_type })));
-      return allUsers;
+      // Usar el endpoint de backend para obtener todos los usuarios
+      const response = await base44.functions.invoke('listAllUsers', {});
+      console.log('🔍 Total usuarios cargados:', response.data.users.length);
+      console.log('👥 Usuarios:', response.data.users.map(u => ({ email: u.email, name: getDisplayName(u), type: u.employee_type })));
+      return response.data.users;
     },
     initialData: [],
     refetchOnMount: 'always',
