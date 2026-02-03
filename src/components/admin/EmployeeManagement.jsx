@@ -286,17 +286,22 @@ function InviteUserModal({ isOpen, onClose }) {
       }
 
       console.log('✅ Usuario creado:', response.data.user);
-      
-      // Refrescar lista de usuarios
-      await queryClient.refetchQueries({ queryKey: ['users'] });
-      
+
       alert(`✅ Empleado "${formData.employee_name}" creado correctamente`);
+
+      // Cerrar modal primero
       onClose();
-    } catch (error) {
+
+      // Luego refrescar lista (con delay para asegurar sincronización)
+      setTimeout(() => {
+        queryClient.refetchQueries({ queryKey: ['users'] });
+      }, 500);
+      } catch (error) {
       console.error("❌ Error completo:", error);
       alert('❌ Error al crear empleado: ' + error.message);
+      } finally {
       setIsSaving(false);
-    }
+      }
   };
 
   return (
