@@ -45,7 +45,10 @@ export default function InquiryCreateForm({ customers, onSubmit, isSubmitting, o
 
   const { data: employees, isLoading: loadingEmployees } = useQuery({
     queryKey: ['employees'],
-    queryFn: () => base44.entities.User.filter({ employee_type: 'Empleado' }),
+    queryFn: async () => {
+      const response = await base44.functions.invoke('listAllUsers', {});
+      return response.data.users.filter(u => u.employee_type === 'Empleado' || u.employee_type === 'Supervisor');
+    },
     initialData: [],
   });
 

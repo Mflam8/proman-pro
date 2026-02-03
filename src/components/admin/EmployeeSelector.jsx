@@ -20,9 +20,10 @@ export default function EmployeeSelector({ selectedDate, startTime, duration, on
   const { data: employees } = useQuery({
     queryKey: ['employees'],
     queryFn: async () => {
-      const users = await base44.entities.User.list();
-      return users.filter(u => u.role === 'Empleado' || u.role === 'Supervisor');
+      const response = await base44.functions.invoke('listAllUsers', {});
+      return response.data.users.filter(u => u.employee_type === 'Empleado' || u.employee_type === 'Supervisor');
     },
+    initialData: [],
   });
 
   const { data: allSchedules } = useQuery({
