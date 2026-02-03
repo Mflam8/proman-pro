@@ -286,8 +286,8 @@ function InviteUserModal({ isOpen, onClose }) {
 
       console.log('✅ Usuario creado:', response.data.user);
       
-      // Invalidar y refrescar datos
-      await queryClient.invalidateQueries({ queryKey: ['users'] });
+      // Refrescar lista de usuarios
+      await queryClient.refetchQueries({ queryKey: ['users'] });
       
       alert(`✅ Empleado "${formData.employee_name}" creado correctamente`);
       onClose();
