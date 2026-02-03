@@ -20,27 +20,24 @@ Deno.serve(async (req) => {
     // Generar email único si no se proporciona
     const emailToUse = email?.trim() || `empleado_${Date.now()}@proman.internal`;
 
-    // Crear usuario con el método oficial de Base44
-    await base44.users.inviteUser(emailToUse, role || 'user');
-    
-    // Obtener el usuario recién creado
-    const allUsers = await base44.asServiceRole.entities.User.list('-created_date', 1);
-    const newUser = allUsers[0];
-    
-    // Actualizar con datos del empleado
-    await base44.asServiceRole.entities.User.update(newUser.id, {
+    console.log('🔄 Creando empleado:', employee_name, 'con email:', emailToUse);
+
+    // Crear usuario directamente con service role (sin invitación)
+    const newUser = await base44.asServiceRole.entities.User.create({
+      email: emailToUse,
+      full_name: employee_name,
+      role: role || 'user',
       employee_name: employee_name,
       employee_type: employee_type || 'Empleado',
       hire_date: hire_date || null,
-      phone: phone || null,
       profile_picture_url: profile_picture_url || null,
-      onboarding_completed: true
+      onboarding_completed: true,
+      is_verified: true
     });
 
-    // Obtener el usuario actualizado
-    const updatedUser = await base44.asServiceRole.entities.User.filter({ id: newUser.id });
+    console.log('✅ Empleado creado exitosamente:', newUser.id, newUser.employee_name);
 
-    return Response.json({ success: true, user: updatedUser[0] });
+    return Response.json({ success: true, user: newUser });
   } catch (error) {
     console.error('Error creating employee:', error);
     return Response.json({ error: error.message }, { status: 500 });
