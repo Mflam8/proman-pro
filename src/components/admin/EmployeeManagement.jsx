@@ -255,31 +255,37 @@ function InviteUserModal({ isOpen, onClose }) {
     setIsSaving(true);
 
     try {
-      const response = await base44.functions.invoke('createEmployee', {
-        email: formData.email || null,
-        employee_name: formData.employee_name,
-        employee_type: formData.employee_type,
-        role: formData.role,
-        hire_date: formData.hire_date || null,
-        phone: formData.phone || null,
-        profile_picture_url: uploadedImageUrl || null
-      });
+        const response = await base44.functions.invoke('createEmployee', {
+          email: formData.email || null,
+          employee_name: formData.employee_name,
+          employee_type: formData.employee_type,
+          role: formData.role,
+          hire_date: formData.hire_date || null,
+          phone: formData.phone || null,
+          profile_picture_url: uploadedImageUrl || null
+        });
 
-      if (response.status !== 200 || !response.data?.success) {
-        throw new Error(response.data?.error || 'Error al crear empleado');
+        if (response.status !== 200 || !response.data?.success) {
+          throw new Error(response.data?.error || 'Error al crear empleado');
+        }
+
+        // Invalidar TODOS los queries que usen empleados
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['users'] }),
+          queryClient.invalidateQueries({ queryKey: ['employees'] })
+        ]);
+
+        // Esperar medio segundo para asegurar propagación
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        alert(`✅ Empleado "${formData.employee_name}" creado correctamente`);
+        onClose();
+      } catch (error) {
+        console.error("❌ Error:", error);
+        alert('❌ Error al crear empleado: ' + error.message);
+      } finally {
+        setIsSaving(false);
       }
-
-      // IMPORTANTE: Refrescar ANTES de cerrar modal
-      await queryClient.refetchQueries({ queryKey: ['users'] });
-      
-      alert(`✅ Empleado "${formData.employee_name}" creado correctamente`);
-      onClose();
-    } catch (error) {
-      console.error("❌ Error:", error);
-      alert('❌ Error al crear empleado: ' + error.message);
-    } finally {
-      setIsSaving(false);
-    }
   };
 
   return (
