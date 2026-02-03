@@ -10,8 +10,11 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    // Listar TODOS los usuarios con service role
-    const allUsers = await base44.asServiceRole.entities.User.list('-created_date');
+    // Listar TODOS los usuarios con service role (sin límite)
+    const allUsers = await base44.asServiceRole.entities.User.filter({}, '-created_date', 1000);
+    
+    console.log('🔍 Total usuarios encontrados:', allUsers.length);
+    console.log('📋 IDs de usuarios:', allUsers.map(u => ({ id: u.id, email: u.email, name: u.employee_name || u.full_name })));
 
     return Response.json({ success: true, users: allUsers });
   } catch (error) {
