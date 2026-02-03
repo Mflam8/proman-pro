@@ -255,23 +255,18 @@ function InviteUserModal({ isOpen, onClose }) {
     setIsSaving(true);
 
     try {
-        // Generar email único si no se proporciona
-        const emailToUse = formData.email?.trim() || `empleado_${Date.now()}@proman.internal`;
-
-        // Crear empleado directamente desde el frontend
-        const newEmployee = await base44.entities.User.create({
-          email: emailToUse,
-          full_name: formData.employee_name,
-          role: formData.role || 'user',
+        // Llamar a la función de backend para crear el empleado
+        const response = await base44.functions.invoke('createEmployee', {
+          email: formData.email?.trim() || null,
           employee_name: formData.employee_name,
           employee_type: formData.employee_type || 'Empleado',
+          role: formData.role || 'user',
           hire_date: formData.hire_date || null,
-          profile_picture_url: uploadedImageUrl || null,
-          onboarding_completed: true,
-          is_verified: true
+          phone: formData.phone || null,
+          profile_picture_url: uploadedImageUrl || null
         });
 
-        console.log('✅ Empleado creado:', newEmployee);
+        console.log('✅ Empleado creado:', response.data);
 
         // Invalidar queries
         queryClient.invalidateQueries({ queryKey: ['users'] });
