@@ -10,19 +10,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    // Obtener TODOS los usuarios sin filtros (usando list sin límite)
-    let allUsers = [];
-    let skip = 0;
-    const batchSize = 100;
-    
-    // Paginar hasta obtener todos
-    while (true) {
-      const batch = await base44.asServiceRole.entities.User.list('-created_date', batchSize, skip);
-      if (batch.length === 0) break;
-      allUsers = allUsers.concat(batch);
-      if (batch.length < batchSize) break;
-      skip += batchSize;
-    }
+    // Obtener TODOS los usuarios usando filter sin límites
+    const allUsers = await base44.asServiceRole.entities.User.filter({});
     
     console.log('🔍 Total usuarios encontrados:', allUsers.length);
     console.log('📋 Usuarios:', allUsers.map(u => ({ id: u.id, email: u.email, name: u.employee_name || u.full_name, type: u.employee_type })));
