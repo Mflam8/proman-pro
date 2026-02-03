@@ -255,28 +255,26 @@ function InviteUserModal({ isOpen, onClose }) {
     setIsSaving(true);
 
     try {
-        const response = await base44.functions.invoke('createEmployee', {
-          email: formData.email || null,
+        // Generar email único si no se proporciona
+        const emailToUse = formData.email?.trim() || `empleado_${Date.now()}@proman.internal`;
+
+        // Crear empleado directamente desde el frontend
+        const newEmployee = await base44.entities.User.create({
+          email: emailToUse,
+          full_name: formData.employee_name,
+          role: formData.role || 'user',
           employee_name: formData.employee_name,
-          employee_type: formData.employee_type,
-          role: formData.role,
+          employee_type: formData.employee_type || 'Empleado',
           hire_date: formData.hire_date || null,
-          phone: formData.phone || null,
-          profile_picture_url: uploadedImageUrl || null
+          profile_picture_url: uploadedImageUrl || null,
+          onboarding_completed: true,
+          is_verified: true
         });
 
-        if (response.status !== 200 || !response.data?.success) {
-          throw new Error(response.data?.error || 'Error al crear empleado');
-        }
+        console.log('✅ Empleado creado:', newEmployee);
 
-        // Invalidar TODOS los queries que usen empleados
-        await Promise.all([
-          queryClient.invalidateQueries({ queryKey: ['users'] }),
-          queryClient.invalidateQueries({ queryKey: ['employees'] })
-        ]);
-
-        // Esperar medio segundo para asegurar propagación
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Invalidar queries
+        queryClient.invalidateQueries({ queryKey: ['users'] });
 
         alert(`✅ Empleado "${formData.employee_name}" creado correctamente`);
         onClose();
