@@ -18,32 +18,22 @@ Deno.serve(async (req) => {
     }
 
     // Generar email único si no se proporciona
-    const emailToUse = email || `empleado_${Date.now()}@proman.internal`;
+    const emailToUse = email?.trim() || `empleado_${Date.now()}@proman.internal`;
 
-    // Invitar usuario (esto lo crea en el sistema)
-    await base44.users.inviteUser(emailToUse, role || 'user');
-
-    // Esperar un momento para que se cree
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    // Buscar el usuario recién creado
-    const users = await base44.asServiceRole.entities.User.list();
-    const newUser = users.find(u => u.email === emailToUse);
-
-    if (!newUser) {
-      return Response.json({ error: 'Usuario creado pero no encontrado' }, { status: 500 });
-    }
-
-    // Actualizar con los datos adicionales
-    const updatedUser = await base44.asServiceRole.entities.User.update(newUser.id, {
+    // Crear usuario directamente con service role
+    const newUser = await base44.asServiceRole.entities.User.create({
+      email: emailToUse,
+      full_name: employee_name,
+      role: role || 'user',
       employee_name: employee_name,
       employee_type: employee_type || 'Empleado',
       hire_date: hire_date || null,
+      phone: phone || null,
       profile_picture_url: profile_picture_url || null,
       onboarding_completed: true
     });
 
-    return Response.json({ success: true, user: updatedUser });
+    return Response.json({ success: true, user: newUser });
   } catch (error) {
     console.error('Error creating employee:', error);
     return Response.json({ error: error.message }, { status: 500 });
