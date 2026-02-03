@@ -22,22 +22,32 @@ Deno.serve(async (req) => {
 
     console.log('🔄 Creando empleado:', employee_name, 'con email:', emailToUse);
 
-    // Crear usuario directamente con service role
-    const newUser = await base44.asServiceRole.entities.User.create({
-      email: emailToUse,
-      full_name: employee_name,
-      role: role || 'user',
+    // Crear usuario usando inviteUser (forma correcta)
+    await base44.asServiceRole.users.inviteUser(emailToUse, role || 'user');
+    
+    // Esperar un momento para que el usuario se cree
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Buscar el usuario recién creado
+    const users = await base44.asServiceRole.entities.User.filter({ email: emailToUse });
+    const newUser = users[0];
+    
+    if (!newUser) {
+      throw new Error('Usuario creado pero no encontrado');
+    }
+
+    // Actualizar con los datos del empleado
+    await base44.asServiceRole.entities.User.update(newUser.id, {
       employee_name: employee_name,
       employee_type: employee_type || 'Empleado',
       hire_date: hire_date || null,
       profile_picture_url: profile_picture_url || null,
-      onboarding_completed: true,
-      is_verified: true
+      onboarding_completed: true
     });
 
-    console.log('✅ Empleado creado exitosamente:', newUser.id, newUser.employee_name);
+    console.log('✅ Empleado creado exitosamente:', newUser.id, employee_name);
 
-    return Response.json({ success: true, user: newUser });
+    return Response.json({ success: true, user: { ...newUser, employee_name } });
   } catch (error) {
     console.error('Error creating employee:', error);
     return Response.json({ error: error.message }, { status: 500 });
