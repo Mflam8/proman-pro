@@ -22,6 +22,25 @@ Deno.serve(async (req) => {
 
     console.log('🔄 Creando empleado:', employee_name, 'con email:', emailToUse);
 
+    // Verificar si el email ya existe
+    const existingUsers = await base44.asServiceRole.entities.User.filter({ email: emailToUse });
+    
+    if (existingUsers.length > 0) {
+      console.log('⚠️ Email ya existe, actualizando usuario existente');
+      const existingUser = existingUsers[0];
+      
+      await base44.asServiceRole.entities.User.update(existingUser.id, {
+        employee_name: employee_name,
+        employee_type: employee_type || 'Empleado',
+        hire_date: hire_date || null,
+        profile_picture_url: profile_picture_url || null,
+        onboarding_completed: true
+      });
+      
+      const updated = await base44.asServiceRole.entities.User.filter({ id: existingUser.id });
+      return Response.json({ success: true, user: updated[0], updated: true });
+    }
+
     // Crear usuario directamente con service role (sin invitación)
     const newUser = await base44.asServiceRole.entities.User.create({
       email: emailToUse,
