@@ -22,25 +22,15 @@ Deno.serve(async (req) => {
 
     console.log('🔄 Creando empleado:', employee_name, 'con email:', emailToUse);
 
-    // Crear usuario usando inviteUser (con autenticación de usuario, no service role)
-    await base44.auth.inviteUser(emailToUse, role || 'user');
-    
-    // Esperar un momento para que el usuario se cree
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Buscar el usuario recién creado usando service role
-    const users = await base44.asServiceRole.entities.User.filter({ email: emailToUse });
-    const newUser = users[0];
-    
-    if (!newUser) {
-      throw new Error('Usuario creado pero no encontrado');
-    }
-
-    // Actualizar con los datos del empleado usando service role
-    await base44.asServiceRole.entities.User.update(newUser.id, {
+    // Crear el usuario directamente con todos los datos (usando service role)
+    const newUser = await base44.asServiceRole.entities.User.create({
+      email: emailToUse,
+      full_name: employee_name,
       employee_name: employee_name,
       employee_type: employee_type || 'Empleado',
+      role: role || 'user',
       hire_date: hire_date || null,
+      phone: phone || null,
       profile_picture_url: profile_picture_url || null,
       onboarding_completed: true
     });
