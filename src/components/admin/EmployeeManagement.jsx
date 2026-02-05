@@ -255,33 +255,30 @@ function InviteUserModal({ isOpen, onClose }) {
     setIsSaving(true);
 
     try {
-        // Generar email único
-        const emailToUse = formData.email?.trim() || `empleado_${Date.now()}@proman.internal`;
-
-        console.log('🔄 Creando empleado directamente con email:', emailToUse);
-
-        // Crear usuario directamente desde el frontend (tu sesión de admin lo permite)
-        const newUser = await base44.entities.User.create({
-          email: emailToUse,
-          full_name: formData.employee_name,
+        // Llamar a la función de backend para crear el empleado
+        const response = await base44.functions.invoke('createEmployee', {
+          email: formData.email?.trim() || null,
           employee_name: formData.employee_name,
           employee_type: formData.employee_type || 'Empleado',
           role: formData.role || 'user',
           hire_date: formData.hire_date || null,
           phone: formData.phone || null,
-          profile_picture_url: uploadedImageUrl || null,
-          onboarding_completed: true
+          profile_picture_url: uploadedImageUrl || null
         });
 
-        console.log('✅ Empleado creado exitosamente:', newUser.id, newUser.employee_name);
+        if (!response.data.success) {
+          throw new Error(response.data.error || 'Error desconocido');
+        }
 
-        // Invalidar queries para refrescar la lista
-        queryClient.invalidateQueries({ queryKey: ['users'] });
+        console.log('✅ Empleado creado:', response.data.user);
+
+        // Invalidar queries
+        await queryClient.invalidateQueries({ queryKey: ['users'] });
 
         alert(`✅ Empleado "${formData.employee_name}" creado correctamente`);
         onClose();
       } catch (error) {
-        console.error("❌ Error completo:", error);
+        console.error("❌ Error:", error);
         alert('❌ Error al crear empleado: ' + error.message);
       } finally {
         setIsSaving(false);
