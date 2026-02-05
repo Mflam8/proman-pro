@@ -255,18 +255,34 @@ function InviteUserModal({ isOpen, onClose }) {
     setIsSaving(true);
 
     try {
-        // Llamar a la función de backend para crear el empleado
-        const response = await base44.functions.invoke('createEmployee', {
-          email: formData.email?.trim() || null,
+        // Generar email si no se proporciona
+        const emailToUse = formData.email?.trim() || `empleado_${Date.now()}@proman.internal`;
+
+        // Crear usuario usando inviteUser
+        await base44.auth.inviteUser(emailToUse, formData.role || 'user');
+        
+        // Esperar a que se cree
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // Buscar el usuario recién creado
+        const users = await base44.entities.User.filter({ email: emailToUse });
+        const newUser = users[0];
+        
+        if (!newUser) {
+          throw new Error('Usuario creado pero no encontrado en la base de datos');
+        }
+
+        // Actualizar con los datos del empleado
+        await base44.entities.User.update(newUser.id, {
           employee_name: formData.employee_name,
           employee_type: formData.employee_type || 'Empleado',
-          role: formData.role || 'user',
           hire_date: formData.hire_date || null,
           phone: formData.phone || null,
-          profile_picture_url: uploadedImageUrl || null
+          profile_picture_url: uploadedImageUrl || null,
+          onboarding_completed: true
         });
 
-        console.log('✅ Empleado creado:', response.data);
+        console.log('✅ Empleado creado:', newUser.id, formData.employee_name);
 
         // Invalidar queries
         queryClient.invalidateQueries({ queryKey: ['users'] });
