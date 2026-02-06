@@ -255,22 +255,36 @@ function InviteUserModal({ isOpen, onClose }) {
     setIsSaving(true);
 
     try {
-        // Llamar a la función de backend para crear el empleado
-        const response = await base44.functions.invoke('createEmployee', {
-          email: formData.email?.trim() || null,
-          employee_name: formData.employee_name,
-          employee_type: formData.employee_type || 'Empleado',
-          role: formData.role || 'user',
-          hire_date: formData.hire_date || null,
-          phone: formData.phone || null,
-          profile_picture_url: uploadedImageUrl || null
-        });
+        // Generar email único si no se proporciona
+        const emailToUse = formData.email?.trim() || `empleado_${Date.now()}@proman.internal`;
 
-        if (!response.data.success) {
-          throw new Error(response.data.error || 'Error desconocido');
+        console.log('🔄 Invitando usuario:', emailToUse);
+
+        // Invitar usuario desde el frontend (admin autenticado)
+        await base44.users.inviteUser(emailToUse, formData.role || 'user');
+
+        // Esperar a que se cree
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Buscar el usuario recién creado
+        const users = await base44.entities.User.filter({ email: emailToUse });
+        const newUser = users[0];
+
+        if (!newUser) {
+          throw new Error('Usuario creado pero no encontrado');
         }
 
-        console.log('✅ Empleado creado:', response.data.user);
+        // Actualizar con datos del empleado
+        await base44.entities.User.update(newUser.id, {
+          employee_name: formData.employee_name,
+          employee_type: formData.employee_type || 'Empleado',
+          hire_date: formData.hire_date || null,
+          phone: formData.phone || null,
+          profile_picture_url: uploadedImageUrl || null,
+          onboarding_completed: true
+        });
+
+        console.log('✅ Empleado creado:', newUser.id, formData.employee_name);
 
         // Invalidar queries
         await queryClient.invalidateQueries({ queryKey: ['users'] });
