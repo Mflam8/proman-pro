@@ -255,46 +255,32 @@ function InviteUserModal({ isOpen, onClose }) {
     setIsSaving(true);
 
     try {
-        // Generar email único si no se proporciona
         const emailToUse = formData.email?.trim() || `empleado_${Date.now()}@proman.internal`;
 
-        console.log('🔄 Invitando usuario:', emailToUse);
+        console.log('🔄 Creando empleado:', formData.employee_name, emailToUse);
 
-        // Invitar usuario desde el frontend (admin autenticado)
-        await base44.users.inviteUser(emailToUse, formData.role || 'user');
-
-        // Esperar a que se cree
-        await new Promise(resolve => setTimeout(resolve, 3000));
-
-        // Buscar el usuario recién creado usando listAllUsers
-        const response = await base44.functions.invoke('listAllUsers', {});
-        const allUsers = response.data.users;
-        const newUser = allUsers.find(u => u.email === emailToUse);
-
-        if (!newUser) {
-          throw new Error('Usuario creado pero no encontrado. Espera unos segundos y recarga la lista.');
-        }
-
-        // Actualizar con datos del empleado
-        await base44.entities.User.update(newUser.id, {
+        // Crear directamente el usuario SIN invitar
+        const newUser = await base44.entities.User.create({
+          email: emailToUse,
+          full_name: formData.employee_name,
           employee_name: formData.employee_name,
           employee_type: formData.employee_type || 'Empleado',
+          role: formData.role || 'user',
           hire_date: formData.hire_date || null,
           phone: formData.phone || null,
           profile_picture_url: uploadedImageUrl || null,
           onboarding_completed: true
         });
 
-        console.log('✅ Empleado creado:', newUser.id, formData.employee_name);
+        console.log('✅ Empleado creado exitosamente:', newUser.id, formData.employee_name);
 
-        // Invalidar queries
         await queryClient.invalidateQueries({ queryKey: ['users'] });
 
         alert(`✅ Empleado "${formData.employee_name}" creado correctamente`);
         onClose();
       } catch (error) {
-        console.error("❌ Error:", error);
-        alert('❌ Error al crear empleado: ' + error.message);
+        console.error("❌ Error completo:", error);
+        alert('❌ Error: ' + (error.message || 'No se pudo crear el empleado'));
       } finally {
         setIsSaving(false);
       }
