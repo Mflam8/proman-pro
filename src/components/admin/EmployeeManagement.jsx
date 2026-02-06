@@ -274,10 +274,15 @@ function InviteUserModal({ isOpen, onClose }) {
 
         console.log('✅ Empleado creado exitosamente:', newUser.id, formData.employee_name);
 
+        // Forzar recarga inmediata
         await queryClient.invalidateQueries({ queryKey: ['users'] });
+        await queryClient.refetchQueries({ queryKey: ['users'] });
 
         alert(`✅ Empleado "${formData.employee_name}" creado correctamente`);
         onClose();
+        
+        // Recargar la página para mostrar el nuevo empleado
+        window.location.reload();
       } catch (error) {
         console.error("❌ Error completo:", error);
         alert('❌ Error: ' + (error.message || 'No se pudo crear el empleado'));
