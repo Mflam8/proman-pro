@@ -264,14 +264,15 @@ function InviteUserModal({ isOpen, onClose }) {
         await base44.users.inviteUser(emailToUse, formData.role || 'user');
 
         // Esperar a que se cree
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 3000));
 
-        // Buscar el usuario recién creado
-        const users = await base44.entities.User.filter({ email: emailToUse });
-        const newUser = users[0];
+        // Buscar el usuario recién creado usando listAllUsers
+        const response = await base44.functions.invoke('listAllUsers', {});
+        const allUsers = response.data.users;
+        const newUser = allUsers.find(u => u.email === emailToUse);
 
         if (!newUser) {
-          throw new Error('Usuario creado pero no encontrado');
+          throw new Error('Usuario creado pero no encontrado. Espera unos segundos y recarga la lista.');
         }
 
         // Actualizar con datos del empleado
