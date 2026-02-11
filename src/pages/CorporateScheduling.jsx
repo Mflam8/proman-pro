@@ -197,7 +197,6 @@ function SchedulingForm({ onSuccess }) {
               <SelectContent>
                 <SelectItem value="McDonald's">McDonald's</SelectItem>
                 <SelectItem value="Panda Express">Panda Express</SelectItem>
-                <SelectItem value="Otro">Otro</SelectItem>
               </SelectContent>
             </Select>
           </div>
