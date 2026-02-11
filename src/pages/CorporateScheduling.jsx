@@ -65,11 +65,11 @@ export default function CorporateScheduling() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 py-4 sm:py-8 px-3 sm:px-4">
       <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Portal de Agendamiento Corporativo</h1>
-          <p className="text-gray-600">Programa tus servicios de mantenimiento - Disponibilidad: 7:00 PM - 4:00 AM</p>
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Portal de Agendamiento Corporativo</h1>
+          <p className="text-sm sm:text-base text-gray-600">Programa tus servicios de mantenimiento - Disponibilidad: 7:00 PM - 4:00 AM</p>
         </div>
 
         {showSuccess && (
@@ -84,14 +84,13 @@ export default function CorporateScheduling() {
           </Card>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6">
           <SchedulingForm 
             onSuccess={() => {
               setShowSuccess(true);
               setTimeout(() => setShowSuccess(false), 5000);
             }} 
           />
-          <ScheduleList />
         </div>
       </div>
     </div>
@@ -161,6 +160,11 @@ function SchedulingForm({ onSuccess }) {
     });
   };
 
+  const isDayBlocked = (date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    return schedules.some(s => s.scheduled_date === dateStr);
+  };
+
   const getDaysInView = () => {
     if (viewMode === 'month') {
       const start = startOfWeek(startOfMonth(currentDate), { weekStartsOn: 0 });
@@ -195,20 +199,20 @@ function SchedulingForm({ onSuccess }) {
   const days = getDaysInView();
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+    <Card className="shadow-xl">
+      <CardHeader className="border-b bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+        <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Calendar className="w-5 h-5" />
-            Selecciona una Fecha
+            <span className="text-lg sm:text-xl">Selecciona una Fecha</span>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-1.5 w-full sm:w-auto">
             <Button
               type="button"
               size="sm"
               variant={viewMode === 'month' ? 'default' : 'outline'}
               onClick={() => setViewMode('month')}
-              className={viewMode === 'month' ? 'bg-blue-600' : ''}
+              className={`flex-1 sm:flex-none ${viewMode === 'month' ? 'bg-white text-blue-600 hover:bg-gray-100' : 'bg-blue-500 text-white hover:bg-blue-400 border-white/20'}`}
             >
               Mes
             </Button>
@@ -217,7 +221,7 @@ function SchedulingForm({ onSuccess }) {
               size="sm"
               variant={viewMode === 'week' ? 'default' : 'outline'}
               onClick={() => setViewMode('week')}
-              className={viewMode === 'week' ? 'bg-blue-600' : ''}
+              className={`flex-1 sm:flex-none ${viewMode === 'week' ? 'bg-white text-blue-600 hover:bg-gray-100' : 'bg-blue-500 text-white hover:bg-blue-400 border-white/20'}`}
             >
               Semana
             </Button>
@@ -226,35 +230,35 @@ function SchedulingForm({ onSuccess }) {
               size="sm"
               variant={viewMode === 'day' ? 'default' : 'outline'}
               onClick={() => setViewMode('day')}
-              className={viewMode === 'day' ? 'bg-blue-600' : ''}
+              className={`flex-1 sm:flex-none ${viewMode === 'day' ? 'bg-white text-blue-600 hover:bg-gray-100' : 'bg-blue-500 text-white hover:bg-blue-400 border-white/20'}`}
             >
               Día
             </Button>
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-3 sm:p-6">
         {/* Calendar Navigation */}
-        <div className="flex items-center justify-between mb-4 bg-gray-50 p-3 rounded-lg">
-          <Button type="button" variant="outline" size="sm" onClick={handlePrevious}>
-            <ChevronLeft className="w-4 h-4" />
+        <div className="flex items-center justify-between mb-4 bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-lg border border-blue-200">
+          <Button type="button" variant="outline" size="sm" onClick={handlePrevious} className="hover:bg-white">
+            <ChevronLeft className="w-5 h-5" />
           </Button>
-          <h3 className="font-bold text-lg text-gray-900">
+          <h3 className="font-bold text-base sm:text-lg text-gray-900 text-center px-2 capitalize">
             {viewMode === 'month' && format(currentDate, "MMMM yyyy", { locale: es })}
             {viewMode === 'week' && `${format(startOfWeek(currentDate), "d MMM", { locale: es })} - ${format(endOfWeek(currentDate), "d MMM yyyy", { locale: es })}`}
             {viewMode === 'day' && format(currentDate, "EEEE, d 'de' MMMM yyyy", { locale: es })}
           </h3>
-          <Button type="button" variant="outline" size="sm" onClick={handleNext}>
-            <ChevronRight className="w-4 h-4" />
+          <Button type="button" variant="outline" size="sm" onClick={handleNext} className="hover:bg-white">
+            <ChevronRight className="w-5 h-5" />
           </Button>
         </div>
 
         {/* Calendar Grid */}
         <div className="mb-6">
           {viewMode === 'month' && (
-            <div className="grid grid-cols-7 gap-1">
+            <div className="grid grid-cols-7 gap-0.5 sm:gap-1 bg-gray-200 p-0.5 sm:p-1 rounded-lg">
               {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(day => (
-                <div key={day} className="text-center text-xs font-semibold text-gray-600 py-2">
+                <div key={day} className="text-center text-[10px] sm:text-xs font-bold text-gray-700 py-1 sm:py-2 bg-gray-100">
                   {day}
                 </div>
               ))}
@@ -264,24 +268,32 @@ function SchedulingForm({ onSuccess }) {
                 const isToday = isSameDay(day, new Date());
                 const isCurrentMonth = isSameMonth(day, currentDate);
                 const isPast = day < new Date() && !isSameDay(day, new Date());
+                const isBlocked = isDayBlocked(day);
                 
                 return (
                   <button
                     key={idx}
                     type="button"
-                    disabled={isPast}
-                    onClick={() => setFormData({ ...formData, scheduled_date: format(day, 'yyyy-MM-dd') })}
+                    disabled={isPast || isBlocked}
+                    onClick={() => !isBlocked && setFormData({ ...formData, scheduled_date: format(day, 'yyyy-MM-dd') })}
                     className={`
-                      relative p-2 min-h-[60px] text-sm border rounded transition-all
+                      relative p-1.5 sm:p-2 min-h-[50px] sm:min-h-[65px] text-xs sm:text-sm transition-all
                       ${!isCurrentMonth ? 'text-gray-300 bg-gray-50' : ''}
-                      ${isPast ? 'opacity-40 cursor-not-allowed' : 'hover:border-blue-500'}
-                      ${isSelected ? 'bg-blue-600 text-white border-blue-600' : 'bg-white'}
-                      ${isToday && !isSelected ? 'border-2 border-blue-400' : ''}
+                      ${isPast ? 'opacity-30 cursor-not-allowed bg-gray-100' : ''}
+                      ${isBlocked && !isPast ? 'bg-red-50 text-red-400 cursor-not-allowed opacity-60' : ''}
+                      ${!isPast && !isBlocked ? 'hover:scale-105 hover:shadow-md active:scale-95' : ''}
+                      ${isSelected ? 'bg-blue-600 text-white shadow-lg scale-105 ring-2 ring-blue-400' : 'bg-white'}
+                      ${isToday && !isSelected && !isBlocked ? 'ring-2 ring-blue-300 font-bold' : ''}
                     `}
                   >
                     <div className="font-semibold">{format(day, 'd')}</div>
-                    {daySchedules.length > 0 && (
-                      <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1">
+                    {isBlocked && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-[10px] sm:text-xs font-bold text-red-500 bg-white/80 px-1 rounded">Ocupado</div>
+                      </div>
+                    )}
+                    {daySchedules.length > 0 && !isBlocked && (
+                      <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
                         {daySchedules.slice(0, 3).map((_, i) => (
                           <div key={i} className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white' : 'bg-blue-600'}`} />
                         ))}
@@ -294,30 +306,36 @@ function SchedulingForm({ onSuccess }) {
           )}
 
           {viewMode === 'week' && (
-            <div className="grid grid-cols-7 gap-2">
+            <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
               {days.map((day, idx) => {
                 const daySchedules = getSchedulesForDate(day);
                 const isSelected = formData.scheduled_date === format(day, 'yyyy-MM-dd');
                 const isToday = isSameDay(day, new Date());
                 const isPast = day < new Date() && !isSameDay(day, new Date());
+                const isBlocked = isDayBlocked(day);
                 
                 return (
                   <button
                     key={idx}
                     type="button"
-                    disabled={isPast}
-                    onClick={() => setFormData({ ...formData, scheduled_date: format(day, 'yyyy-MM-dd') })}
+                    disabled={isPast || isBlocked}
+                    onClick={() => !isBlocked && setFormData({ ...formData, scheduled_date: format(day, 'yyyy-MM-dd') })}
                     className={`
-                      p-3 border rounded-lg transition-all min-h-[100px]
-                      ${isPast ? 'opacity-40 cursor-not-allowed' : 'hover:border-blue-500'}
-                      ${isSelected ? 'bg-blue-600 text-white border-blue-600' : 'bg-white'}
-                      ${isToday && !isSelected ? 'border-2 border-blue-400' : ''}
+                      p-2 sm:p-3 border-2 rounded-xl transition-all min-h-[90px] sm:min-h-[110px] relative
+                      ${isPast ? 'opacity-30 cursor-not-allowed bg-gray-100' : ''}
+                      ${isBlocked && !isPast ? 'bg-red-50 border-red-200 cursor-not-allowed opacity-60' : ''}
+                      ${!isPast && !isBlocked ? 'hover:scale-105 hover:shadow-lg active:scale-95' : ''}
+                      ${isSelected ? 'bg-blue-600 text-white border-blue-600 shadow-xl scale-105' : 'bg-white border-gray-200'}
+                      ${isToday && !isSelected && !isBlocked ? 'border-blue-400 ring-2 ring-blue-200' : ''}
                     `}
                   >
-                    <div className="text-xs font-medium">{format(day, 'EEE', { locale: es })}</div>
-                    <div className="text-2xl font-bold mt-1">{format(day, 'd')}</div>
-                    {daySchedules.length > 0 && (
-                      <div className={`text-xs mt-2 ${isSelected ? 'text-white' : 'text-blue-600'}`}>
+                    <div className="text-[10px] sm:text-xs font-semibold uppercase">{format(day, 'EEE', { locale: es })}</div>
+                    <div className="text-xl sm:text-3xl font-bold mt-1">{format(day, 'd')}</div>
+                    {isBlocked && (
+                      <div className="text-[10px] sm:text-xs font-bold text-red-600 mt-1">Ocupado</div>
+                    )}
+                    {daySchedules.length > 0 && !isBlocked && (
+                      <div className={`text-[10px] sm:text-xs mt-2 font-medium ${isSelected ? 'text-white' : 'text-blue-600'}`}>
                         {daySchedules.length} servicio{daySchedules.length > 1 ? 's' : ''}
                       </div>
                     )}
@@ -329,27 +347,30 @@ function SchedulingForm({ onSuccess }) {
 
           {viewMode === 'day' && (
             <div className="space-y-3">
-              <button
-                type="button"
-                onClick={() => setFormData({ ...formData, scheduled_date: format(currentDate, 'yyyy-MM-dd') })}
-                className={`
-                  w-full p-6 border-2 rounded-lg transition-all
-                  ${formData.scheduled_date === format(currentDate, 'yyyy-MM-dd') 
-                    ? 'bg-blue-600 text-white border-blue-600' 
-                    : 'bg-white hover:border-blue-500'}
-                `}
-              >
-                <div className="text-center">
-                  <div className="text-3xl font-bold">{format(currentDate, 'd')}</div>
-                  <div className="text-lg mt-2">{format(currentDate, 'MMMM yyyy', { locale: es })}</div>
+              {isDayBlocked(currentDate) ? (
+                <div className="bg-red-50 border-2 border-red-200 p-8 rounded-2xl text-center">
+                  <div className="text-6xl mb-3">🚫</div>
+                  <h3 className="text-xl font-bold text-red-900 mb-2">Día Ocupado</h3>
+                  <p className="text-red-700">Ya existe un servicio agendado para este día</p>
+                  <p className="text-sm text-red-600 mt-2">Selecciona otra fecha disponible</p>
                 </div>
-              </button>
-              {getSchedulesForDate(currentDate).length > 0 && (
-                <div className="bg-blue-50 p-3 rounded-lg">
-                  <p className="text-sm font-semibold text-blue-900">
-                    {getSchedulesForDate(currentDate).length} servicio(s) ya agendado(s) este día
-                  </p>
-                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, scheduled_date: format(currentDate, 'yyyy-MM-dd') })}
+                  className={`
+                    w-full p-8 sm:p-10 border-4 rounded-2xl transition-all
+                    ${formData.scheduled_date === format(currentDate, 'yyyy-MM-dd') 
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-2xl scale-105' 
+                      : 'bg-white hover:border-blue-500 hover:shadow-xl hover:scale-102 active:scale-98 border-gray-300'}
+                  `}
+                >
+                  <div className="text-center">
+                    <div className="text-5xl sm:text-6xl font-bold">{format(currentDate, 'd')}</div>
+                    <div className="text-lg sm:text-xl mt-3 capitalize">{format(currentDate, "EEEE", { locale: es })}</div>
+                    <div className="text-base sm:text-lg opacity-80 capitalize">{format(currentDate, "MMMM yyyy", { locale: es })}</div>
+                  </div>
+                </button>
               )}
             </div>
           )}
@@ -357,12 +378,12 @@ function SchedulingForm({ onSuccess }) {
 
         {/* Form Fields */}
         {formData.scheduled_date && (
-          <form onSubmit={handleSubmit} className="space-y-4 border-t pt-4"
-          >
-            <div className="bg-blue-50 p-3 rounded-lg mb-4">
-              <p className="text-sm font-semibold text-blue-900">
-                📅 Fecha seleccionada: {format(parseISO(formData.scheduled_date), "EEEE, d 'de' MMMM yyyy", { locale: es })}
+          <form onSubmit={handleSubmit} className="space-y-4 border-t-2 border-blue-100 pt-6 mt-6">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-4 rounded-xl mb-4 text-white shadow-lg">
+              <p className="text-sm sm:text-base font-bold capitalize">
+                📅 {format(parseISO(formData.scheduled_date), "EEEE, d 'de' MMMM yyyy", { locale: es })}
               </p>
+              <p className="text-xs opacity-90 mt-1">Horario: 7:00 PM - 4:00 AM</p>
             </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -431,128 +452,13 @@ function SchedulingForm({ onSuccess }) {
 
             <Button 
               type="submit" 
-              className="w-full bg-blue-600 hover:bg-blue-700"
+              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-6 text-lg shadow-xl hover:shadow-2xl transition-all"
               disabled={createMutation.isPending}
             >
-              {createMutation.isPending ? "Agendando..." : "Confirmar Agendamiento"}
+              {createMutation.isPending ? "⏳ Agendando..." : "✅ Confirmar Agendamiento"}
             </Button>
           </form>
         )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function ScheduleList() {
-  const { data: schedules, isLoading } = useQuery({
-    queryKey: ['corporate-schedule'],
-    queryFn: async () => {
-      const items = await base44.entities.ClientInquiry.filter({
-        lead_source: 'corporativo'
-      }, '-scheduled_date');
-      return items.filter(item => item.scheduled_date);
-    },
-    initialData: [],
-    refetchInterval: 30000
-  });
-
-  const handleDownload = () => {
-    const csv = [
-      ['Fecha', 'Agendado Por', 'Restaurante', 'Sucursal', 'Descripción'].join(','),
-      ...schedules.map(s => [
-        s.scheduled_date || '',
-        `${s.scheduled_by_name || ''} ${s.scheduled_by_lastname || ''}`.trim(),
-        s.restaurant_name || '',
-        s.location_name || '',
-        s.message || ''
-      ].join(','))
-    ].join('\n');
-
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `agenda_corporativa_${format(new Date(), 'yyyy-MM-dd')}.csv`;
-    a.click();
-  };
-
-  const groupedByDate = schedules.reduce((acc, item) => {
-    const date = item.scheduled_date;
-    if (!acc[date]) acc[date] = [];
-    acc[date].push(item);
-    return acc;
-  }, {});
-
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="w-5 h-5" />
-            Servicios Agendados
-          </CardTitle>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={handleDownload}
-            disabled={schedules.length === 0}
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Descargar
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {isLoading && (
-          <div className="text-center py-8">
-            <p className="text-gray-500">Cargando agenda...</p>
-          </div>
-        )}
-
-        {!isLoading && schedules.length === 0 && (
-          <div className="text-center py-8">
-            <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-500">No hay servicios agendados</p>
-          </div>
-        )}
-
-        <div className="space-y-4 max-h-[600px] overflow-y-auto">
-          {Object.keys(groupedByDate).sort().map(date => (
-            <div key={date}>
-              <div className="flex items-center gap-2 mb-2 sticky top-0 bg-white py-2">
-                <Calendar className="w-4 h-4 text-blue-600" />
-                <h3 className="font-semibold text-gray-900">
-                  {format(parseISO(date), "EEEE, d 'de' MMMM yyyy", { locale: es })}
-                </h3>
-              </div>
-              <div className="space-y-2 pl-6">
-                {groupedByDate[date].map(item => (
-                  <Card key={item.id} className="border-l-4 border-blue-500 bg-blue-50">
-                    <CardContent className="p-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="font-bold text-blue-900 text-lg">{item.restaurant_name}</span>
-                          </div>
-                          <div className="text-sm text-gray-700 space-y-1">
-                            <div className="flex items-center gap-2">
-                              <MapPin className="w-3 h-3" />
-                              <span className="font-medium">{item.location_name}</span>
-                            </div>
-                            <p className="text-xs text-gray-600">Agendado por: {item.scheduled_by_name} {item.scheduled_by_lastname}</p>
-                            {item.message && (
-                              <p className="text-xs text-gray-600 mt-1 italic">{item.message}</p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
       </CardContent>
     </Card>
   );
