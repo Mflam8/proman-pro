@@ -28,6 +28,7 @@ import AutomationsControlPanel from "../components/admin/AutomationsControlPanel
 import InquiryDetailForm from "../components/admin/InquiryDetailForm";
 import InquiryCreateForm from "../components/admin/InquiryCreateForm";
 import TrustedDirectory from "../components/admin/TrustedDirectory";
+import CorporateSchedulingManagement from "../components/admin/CorporateSchedulingManagement";
 
 export default function ClientManagement() {
   const [user, setUser] = useState(null);
@@ -300,6 +301,9 @@ export default function ClientManagement() {
                 <TabsTrigger value="directorio" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
                   🛡️ Directorio Bot
                 </TabsTrigger>
+                <TabsTrigger value="corporativo" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
+                  🏢 Agendamientos Corporativos
+                </TabsTrigger>
               </>
             )}
           </TabsList>
@@ -561,6 +565,7 @@ export default function ClientManagement() {
               <TabsContent value="reportes"><ReportsManagement /></TabsContent>
               <TabsContent value="automatizaciones"><AutomationsControlPanel /></TabsContent>
               <TabsContent value="directorio"><TrustedDirectory /></TabsContent>
+              <TabsContent value="corporativo"><CorporateSchedulingManagement /></TabsContent>
             </>
           )}
         </Tabs>

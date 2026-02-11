@@ -51,6 +51,7 @@ import AutomationsControl from './pages/AutomationsControl';
 import Careers from './pages/Careers';
 import ClientManagement from './pages/ClientManagement';
 import Contact from './pages/Contact';
+import CorporateScheduling from './pages/CorporateScheduling';
 import EmployeeDashboard from './pages/EmployeeDashboard';
 import Gallery from './pages/Gallery';
 import Home from './pages/Home';
@@ -60,7 +61,6 @@ import Services from './pages/Services';
 import Sitemap from './pages/Sitemap';
 import Welcome from './pages/Welcome';
 import WhatsAppSetup from './pages/WhatsAppSetup';
-import CorporateScheduling from './pages/CorporateScheduling';
 import __Layout from './Layout.jsx';
 
 
@@ -69,6 +69,7 @@ export const PAGES = {
     "Careers": Careers,
     "ClientManagement": ClientManagement,
     "Contact": Contact,
+    "CorporateScheduling": CorporateScheduling,
     "EmployeeDashboard": EmployeeDashboard,
     "Gallery": Gallery,
     "Home": Home,
@@ -78,7 +79,6 @@ export const PAGES = {
     "Sitemap": Sitemap,
     "Welcome": Welcome,
     "WhatsAppSetup": WhatsAppSetup,
-    "CorporateScheduling": CorporateScheduling,
 }
 
 export const pagesConfig = {
