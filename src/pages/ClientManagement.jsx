@@ -267,46 +267,123 @@ export default function ClientManagement() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Tabs value={mainTab} onValueChange={setMainTab} className="mb-6">
-          <TabsList className="bg-gray-100">
-            <TabsTrigger value="trabajos" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
-              📋 Gestión de Trabajos
-            </TabsTrigger>
-            <TabsTrigger value="calendario" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
-              📅 Calendario
-            </TabsTrigger>
-            <TabsTrigger value="clientes" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
-              👥 Gestión de Clientes
-            </TabsTrigger>
-            {isAdmin && (
-              <>
-                <TabsTrigger value="servicios" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
-                  🛠️ Gestión de Servicios
-                </TabsTrigger>
-                <TabsTrigger value="pagos" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
-                  💰 Gestión de Pagos
-                </TabsTrigger>
-                <TabsTrigger value="inventario" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
-                  📦 Inventario
-                </TabsTrigger>
-                <TabsTrigger value="empleados" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
-                  👤 Gestión de Empleados
-                </TabsTrigger>
-                <TabsTrigger value="reportes" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
-                  📊 Reportes
-                </TabsTrigger>
-                <TabsTrigger value="automatizaciones" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
-                  🤖 Automatizaciones
-                </TabsTrigger>
-                <TabsTrigger value="directorio" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
-                  🛡️ Directorio Bot
-                </TabsTrigger>
-                <TabsTrigger value="corporativo" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
-                  🏢 Agendamientos Corporativos
-                </TabsTrigger>
-              </>
-            )}
-          </TabsList>
+        <div className="flex gap-6">
+          {/* Sidebar de navegación */}
+          <div className="w-64 flex-shrink-0">
+            <Card className="sticky top-24">
+              <CardContent className="p-2">
+                <nav className="space-y-1">
+                  <button
+                    onClick={() => setMainTab("trabajos")}
+                    className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors flex items-center gap-3 ${
+                      mainTab === "trabajos" ? "bg-proman-yellow text-proman-navy" : "hover:bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    <span className="text-lg">📋</span>
+                    <span>Gestión de Trabajos</span>
+                  </button>
+                  <button
+                    onClick={() => setMainTab("calendario")}
+                    className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors flex items-center gap-3 ${
+                      mainTab === "calendario" ? "bg-proman-yellow text-proman-navy" : "hover:bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    <span className="text-lg">📅</span>
+                    <span>Calendario</span>
+                  </button>
+                  <button
+                    onClick={() => setMainTab("clientes")}
+                    className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors flex items-center gap-3 ${
+                      mainTab === "clientes" ? "bg-proman-yellow text-proman-navy" : "hover:bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    <span className="text-lg">👥</span>
+                    <span>Gestión de Clientes</span>
+                  </button>
+                  {isAdmin && (
+                    <>
+                      <button
+                        onClick={() => setMainTab("servicios")}
+                        className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors flex items-center gap-3 ${
+                          mainTab === "servicios" ? "bg-proman-yellow text-proman-navy" : "hover:bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        <span className="text-lg">🛠️</span>
+                        <span>Gestión de Servicios</span>
+                      </button>
+                      <button
+                        onClick={() => setMainTab("pagos")}
+                        className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors flex items-center gap-3 ${
+                          mainTab === "pagos" ? "bg-proman-yellow text-proman-navy" : "hover:bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        <span className="text-lg">💰</span>
+                        <span>Gestión de Pagos</span>
+                      </button>
+                      <button
+                        onClick={() => setMainTab("inventario")}
+                        className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors flex items-center gap-3 ${
+                          mainTab === "inventario" ? "bg-proman-yellow text-proman-navy" : "hover:bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        <span className="text-lg">📦</span>
+                        <span>Inventario</span>
+                      </button>
+                      <button
+                        onClick={() => setMainTab("empleados")}
+                        className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors flex items-center gap-3 ${
+                          mainTab === "empleados" ? "bg-proman-yellow text-proman-navy" : "hover:bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        <span className="text-lg">👤</span>
+                        <span>Gestión de Empleados</span>
+                      </button>
+                      <button
+                        onClick={() => setMainTab("reportes")}
+                        className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors flex items-center gap-3 ${
+                          mainTab === "reportes" ? "bg-proman-yellow text-proman-navy" : "hover:bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        <span className="text-lg">📊</span>
+                        <span>Reportes</span>
+                      </button>
+                      <button
+                        onClick={() => setMainTab("automatizaciones")}
+                        className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors flex items-center gap-3 ${
+                          mainTab === "automatizaciones" ? "bg-proman-yellow text-proman-navy" : "hover:bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        <span className="text-lg">🤖</span>
+                        <span>Automatizaciones</span>
+                      </button>
+                      <button
+                        onClick={() => setMainTab("directorio")}
+                        className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors flex items-center gap-3 ${
+                          mainTab === "directorio" ? "bg-proman-yellow text-proman-navy" : "hover:bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        <span className="text-lg">🛡️</span>
+                        <span>Directorio Bot</span>
+                      </button>
+                      <button
+                        onClick={() => setMainTab("corporativo")}
+                        className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors flex items-center gap-3 ${
+                          mainTab === "corporativo" ? "bg-proman-yellow text-proman-navy" : "hover:bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        <span className="text-lg">🏢</span>
+                        <span>Agendamientos Corporativos</span>
+                      </button>
+                    </>
+                  )}
+                </nav>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Contenido principal */}
+          <div className="flex-1 min-w-0">
+            <Tabs value={mainTab} onValueChange={setMainTab}>
 
           <TabsContent value="trabajos">
             {isAdmin && (customers.filter(c => c.source === 'whatsapp_bot').length > 0 || 
@@ -569,6 +646,8 @@ export default function ClientManagement() {
             </>
           )}
         </Tabs>
+          </div>
+        </div>
       </div>
       
       {selectedInquiry && (
