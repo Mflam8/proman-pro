@@ -103,12 +103,8 @@ function SchedulingForm({ onSuccess }) {
     scheduled_by_name: '',
     scheduled_by_lastname: '',
     restaurant_name: '',
-    location: '',
     location_name: '',
-    service_type: '',
     scheduled_date: '',
-    scheduled_start_time: '19:00',
-    estimated_duration_hours: 2,
     message: ''
   });
 
@@ -130,12 +126,8 @@ function SchedulingForm({ onSuccess }) {
         scheduled_by_name: '',
         scheduled_by_lastname: '',
         restaurant_name: '',
-        location: '',
         location_name: '',
-        service_type: '',
         scheduled_date: '',
-        scheduled_start_time: '19:00',
-        estimated_duration_hours: 2,
         message: ''
       });
       onSuccess();
@@ -144,11 +136,16 @@ function SchedulingForm({ onSuccess }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.scheduled_by_name || !formData.scheduled_by_lastname || !formData.restaurant_name || !formData.location || !formData.scheduled_date || !formData.service_type) {
+    if (!formData.scheduled_by_name || !formData.scheduled_by_lastname || !formData.restaurant_name || !formData.location_name || !formData.scheduled_date) {
       alert('⚠️ Por favor completa todos los campos obligatorios');
       return;
     }
-    createMutation.mutate(formData);
+    createMutation.mutate({
+      ...formData,
+      scheduled_start_time: '19:00',
+      estimated_duration_hours: 4,
+      service_type: 'Mantenimiento nocturno'
+    });
   };
 
   return (
@@ -203,98 +200,38 @@ function SchedulingForm({ onSuccess }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Ubicación (Departamento) <span className="text-red-500">*</span>
-            </label>
-            <Select value={formData.location} onValueChange={(v) => setFormData({ ...formData, location: v })}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecciona departamento" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="San Salvador">San Salvador</SelectItem>
-                <SelectItem value="La Libertad">La Libertad</SelectItem>
-                <SelectItem value="Santa Ana">Santa Ana</SelectItem>
-                <SelectItem value="San Miguel">San Miguel</SelectItem>
-                <SelectItem value="Sonsonate">Sonsonate</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Sucursal/Local Específico
+              Sucursal <span className="text-red-500">*</span>
             </label>
             <Input
               value={formData.location_name}
               onChange={(e) => setFormData({ ...formData, location_name: e.target.value })}
-              placeholder="Ej: McDonald's Plaza Mundo, Panda Express Metrocentro"
+              placeholder="Ej: Plaza Mundo, Metrocentro, Santa Elena"
+              required
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Tipo de Servicio <span className="text-red-500">*</span>
-            </label>
-            <Select value={formData.service_type} onValueChange={(v) => setFormData({ ...formData, service_type: v })}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecciona servicio" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Fontanería">Fontanería</SelectItem>
-                <SelectItem value="Electricidad">Electricidad</SelectItem>
-                <SelectItem value="Limpieza de Trampas">Limpieza de Trampas</SelectItem>
-                <SelectItem value="Mantenimiento General">Mantenimiento General</SelectItem>
-                <SelectItem value="Reparación de Equipos">Reparación de Equipos</SelectItem>
-                <SelectItem value="Otro">Otro</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Fecha Deseada <span className="text-red-500">*</span>
+              Fecha del Servicio <span className="text-red-500">*</span>
             </label>
             <Input
               type="date"
               value={formData.scheduled_date}
               onChange={(e) => setFormData({ ...formData, scheduled_date: e.target.value })}
               min={format(new Date(), 'yyyy-MM-dd')}
+              required
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Hora de Inicio (7:00 PM - 4:00 AM)
-            </label>
-            <Input
-              type="time"
-              value={formData.scheduled_start_time}
-              onChange={(e) => setFormData({ ...formData, scheduled_start_time: e.target.value })}
-            />
-            <p className="text-xs text-gray-500 mt-1">Horario disponible: 19:00 - 04:00</p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Duración Estimada (horas)
-            </label>
-            <Input
-              type="number"
-              min="1"
-              max="8"
-              value={formData.estimated_duration_hours}
-              onChange={(e) => setFormData({ ...formData, estimated_duration_hours: parseInt(e.target.value) })}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Descripción del Servicio
+              Notas Adicionales (Opcional)
             </label>
             <Textarea
               value={formData.message}
               onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-              placeholder="Describe brevemente el servicio requerido..."
-              rows={4}
+              placeholder="Información adicional sobre el servicio..."
+              rows={3}
             />
           </div>
 
@@ -326,17 +263,13 @@ function ScheduleList() {
 
   const handleDownload = () => {
     const csv = [
-      ['Fecha', 'Hora', 'Agendado Por', 'Restaurante', 'Ubicación', 'Local', 'Servicio', 'Duración (hrs)', 'Estado'].join(','),
+      ['Fecha', 'Agendado Por', 'Restaurante', 'Sucursal', 'Notas'].join(','),
       ...schedules.map(s => [
         s.scheduled_date || '',
-        s.scheduled_start_time || '',
         `${s.scheduled_by_name || ''} ${s.scheduled_by_lastname || ''}`.trim(),
         s.restaurant_name || '',
-        s.location || '',
         s.location_name || '',
-        s.service_type || '',
-        s.estimated_duration_hours || '',
-        s.status || ''
+        s.message || ''
       ].join(','))
     ].join('\n');
 
@@ -403,22 +336,17 @@ function ScheduleList() {
                     <CardContent className="p-3">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Clock className="w-4 h-4 text-blue-600" />
-                            <span className="font-semibold text-blue-900">
-                              {item.scheduled_start_time} 
-                              {item.estimated_duration_hours && ` (${item.estimated_duration_hours}h)`}
-                            </span>
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="font-bold text-blue-900 text-lg">{item.restaurant_name}</span>
                           </div>
-                          <div className="text-sm text-gray-700">
+                          <div className="text-sm text-gray-700 space-y-1">
                             <div className="flex items-center gap-2">
                               <MapPin className="w-3 h-3" />
-                              <span>{item.location}</span>
-                              {item.location_name && <span className="text-gray-500">• {item.location_name}</span>}
+                              <span className="font-medium">{item.location_name}</span>
                             </div>
-                            <p className="mt-1 font-medium">{item.service_type}</p>
+                            <p className="text-xs text-gray-600">Agendado por: {item.scheduled_by_name} {item.scheduled_by_lastname}</p>
                             {item.message && (
-                              <p className="text-xs text-gray-600 mt-1 line-clamp-2">{item.message}</p>
+                              <p className="text-xs text-gray-600 mt-1 italic">{item.message}</p>
                             )}
                           </div>
                         </div>
