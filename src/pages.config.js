@@ -60,6 +60,7 @@ import Services from './pages/Services';
 import Sitemap from './pages/Sitemap';
 import Welcome from './pages/Welcome';
 import WhatsAppSetup from './pages/WhatsAppSetup';
+import CorporateScheduling from './pages/CorporateScheduling';
 import __Layout from './Layout.jsx';
 
 
@@ -77,6 +78,7 @@ export const PAGES = {
     "Sitemap": Sitemap,
     "Welcome": Welcome,
     "WhatsAppSetup": WhatsAppSetup,
+    "CorporateScheduling": CorporateScheduling,
 }
 
 export const pagesConfig = {
