@@ -136,7 +136,7 @@ function SchedulingForm({ onSuccess }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.scheduled_by_name || !formData.scheduled_by_lastname || !formData.restaurant_name || !formData.location_name || !formData.scheduled_date) {
+    if (!formData.scheduled_by_name || !formData.scheduled_by_lastname || !formData.restaurant_name || !formData.location_name || !formData.scheduled_date || !formData.message) {
       alert('⚠️ Por favor completa todos los campos obligatorios');
       return;
     }
@@ -225,13 +225,14 @@ function SchedulingForm({ onSuccess }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Notas Adicionales (Opcional)
+              Descripción del Trabajo <span className="text-red-500">*</span>
             </label>
             <Textarea
               value={formData.message}
               onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-              placeholder="Información adicional sobre el servicio..."
+              placeholder="Describe el trabajo a realizar..."
               rows={3}
+              required
             />
           </div>
 
@@ -263,7 +264,7 @@ function ScheduleList() {
 
   const handleDownload = () => {
     const csv = [
-      ['Fecha', 'Agendado Por', 'Restaurante', 'Sucursal', 'Notas'].join(','),
+      ['Fecha', 'Agendado Por', 'Restaurante', 'Sucursal', 'Descripción'].join(','),
       ...schedules.map(s => [
         s.scheduled_date || '',
         `${s.scheduled_by_name || ''} ${s.scheduled_by_lastname || ''}`.trim(),
