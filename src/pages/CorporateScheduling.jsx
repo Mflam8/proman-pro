@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Clock, MapPin, AlertCircle, CheckCircle2, Download } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { Calendar, Clock, MapPin, AlertCircle, CheckCircle2, Download, ChevronLeft, ChevronRight } from "lucide-react";
+import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek, addWeeks, subWeeks, addDays, subDays } from "date-fns";
 import { es } from "date-fns/locale";
 
 const VALID_TOKEN = "proman2024secure";
@@ -99,6 +99,8 @@ export default function CorporateScheduling() {
 }
 
 function SchedulingForm({ onSuccess }) {
+  const [viewMode, setViewMode] = useState('month'); // 'month', 'week', 'day'
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [formData, setFormData] = useState({
     scheduled_by_name: '',
     scheduled_by_lastname: '',
@@ -109,6 +111,17 @@ function SchedulingForm({ onSuccess }) {
   });
 
   const queryClient = useQueryClient();
+
+  const { data: schedules } = useQuery({
+    queryKey: ['corporate-schedule-form'],
+    queryFn: async () => {
+      const items = await base44.entities.ClientInquiry.filter({
+        lead_source: 'corporativo'
+      });
+      return items.filter(item => item.scheduled_date);
+    },
+    initialData: [],
+  });
 
   const createMutation = useMutation({
     mutationFn: async (data) => {
@@ -148,16 +161,209 @@ function SchedulingForm({ onSuccess }) {
     });
   };
 
+  const getDaysInView = () => {
+    if (viewMode === 'month') {
+      const start = startOfWeek(startOfMonth(currentDate), { weekStartsOn: 0 });
+      const end = endOfWeek(endOfMonth(currentDate), { weekStartsOn: 0 });
+      return eachDayOfInterval({ start, end });
+    } else if (viewMode === 'week') {
+      const start = startOfWeek(currentDate, { weekStartsOn: 0 });
+      const end = endOfWeek(currentDate, { weekStartsOn: 0 });
+      return eachDayOfInterval({ start, end });
+    } else {
+      return [currentDate];
+    }
+  };
+
+  const handlePrevious = () => {
+    if (viewMode === 'month') setCurrentDate(subMonths(currentDate, 1));
+    else if (viewMode === 'week') setCurrentDate(subWeeks(currentDate, 1));
+    else setCurrentDate(subDays(currentDate, 1));
+  };
+
+  const handleNext = () => {
+    if (viewMode === 'month') setCurrentDate(addMonths(currentDate, 1));
+    else if (viewMode === 'week') setCurrentDate(addWeeks(currentDate, 1));
+    else setCurrentDate(addDays(currentDate, 1));
+  };
+
+  const getSchedulesForDate = (date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
+    return schedules.filter(s => s.scheduled_date === dateStr);
+  };
+
+  const days = getDaysInView();
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Calendar className="w-5 h-5" />
-          Agendar Nuevo Servicio
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-5 h-5" />
+            Selecciona una Fecha
+          </div>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={viewMode === 'month' ? 'default' : 'outline'}
+              onClick={() => setViewMode('month')}
+              className={viewMode === 'month' ? 'bg-blue-600' : ''}
+            >
+              Mes
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={viewMode === 'week' ? 'default' : 'outline'}
+              onClick={() => setViewMode('week')}
+              className={viewMode === 'week' ? 'bg-blue-600' : ''}
+            >
+              Semana
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={viewMode === 'day' ? 'default' : 'outline'}
+              onClick={() => setViewMode('day')}
+              className={viewMode === 'day' ? 'bg-blue-600' : ''}
+            >
+              Día
+            </Button>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Calendar Navigation */}
+        <div className="flex items-center justify-between mb-4 bg-gray-50 p-3 rounded-lg">
+          <Button type="button" variant="outline" size="sm" onClick={handlePrevious}>
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <h3 className="font-bold text-lg text-gray-900">
+            {viewMode === 'month' && format(currentDate, "MMMM yyyy", { locale: es })}
+            {viewMode === 'week' && `${format(startOfWeek(currentDate), "d MMM", { locale: es })} - ${format(endOfWeek(currentDate), "d MMM yyyy", { locale: es })}`}
+            {viewMode === 'day' && format(currentDate, "EEEE, d 'de' MMMM yyyy", { locale: es })}
+          </h3>
+          <Button type="button" variant="outline" size="sm" onClick={handleNext}>
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+        </div>
+
+        {/* Calendar Grid */}
+        <div className="mb-6">
+          {viewMode === 'month' && (
+            <div className="grid grid-cols-7 gap-1">
+              {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(day => (
+                <div key={day} className="text-center text-xs font-semibold text-gray-600 py-2">
+                  {day}
+                </div>
+              ))}
+              {days.map((day, idx) => {
+                const daySchedules = getSchedulesForDate(day);
+                const isSelected = formData.scheduled_date === format(day, 'yyyy-MM-dd');
+                const isToday = isSameDay(day, new Date());
+                const isCurrentMonth = isSameMonth(day, currentDate);
+                const isPast = day < new Date() && !isSameDay(day, new Date());
+                
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    disabled={isPast}
+                    onClick={() => setFormData({ ...formData, scheduled_date: format(day, 'yyyy-MM-dd') })}
+                    className={`
+                      relative p-2 min-h-[60px] text-sm border rounded transition-all
+                      ${!isCurrentMonth ? 'text-gray-300 bg-gray-50' : ''}
+                      ${isPast ? 'opacity-40 cursor-not-allowed' : 'hover:border-blue-500'}
+                      ${isSelected ? 'bg-blue-600 text-white border-blue-600' : 'bg-white'}
+                      ${isToday && !isSelected ? 'border-2 border-blue-400' : ''}
+                    `}
+                  >
+                    <div className="font-semibold">{format(day, 'd')}</div>
+                    {daySchedules.length > 0 && (
+                      <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1">
+                        {daySchedules.slice(0, 3).map((_, i) => (
+                          <div key={i} className={`w-1 h-1 rounded-full ${isSelected ? 'bg-white' : 'bg-blue-600'}`} />
+                        ))}
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {viewMode === 'week' && (
+            <div className="grid grid-cols-7 gap-2">
+              {days.map((day, idx) => {
+                const daySchedules = getSchedulesForDate(day);
+                const isSelected = formData.scheduled_date === format(day, 'yyyy-MM-dd');
+                const isToday = isSameDay(day, new Date());
+                const isPast = day < new Date() && !isSameDay(day, new Date());
+                
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    disabled={isPast}
+                    onClick={() => setFormData({ ...formData, scheduled_date: format(day, 'yyyy-MM-dd') })}
+                    className={`
+                      p-3 border rounded-lg transition-all min-h-[100px]
+                      ${isPast ? 'opacity-40 cursor-not-allowed' : 'hover:border-blue-500'}
+                      ${isSelected ? 'bg-blue-600 text-white border-blue-600' : 'bg-white'}
+                      ${isToday && !isSelected ? 'border-2 border-blue-400' : ''}
+                    `}
+                  >
+                    <div className="text-xs font-medium">{format(day, 'EEE', { locale: es })}</div>
+                    <div className="text-2xl font-bold mt-1">{format(day, 'd')}</div>
+                    {daySchedules.length > 0 && (
+                      <div className={`text-xs mt-2 ${isSelected ? 'text-white' : 'text-blue-600'}`}>
+                        {daySchedules.length} servicio{daySchedules.length > 1 ? 's' : ''}
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {viewMode === 'day' && (
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, scheduled_date: format(currentDate, 'yyyy-MM-dd') })}
+                className={`
+                  w-full p-6 border-2 rounded-lg transition-all
+                  ${formData.scheduled_date === format(currentDate, 'yyyy-MM-dd') 
+                    ? 'bg-blue-600 text-white border-blue-600' 
+                    : 'bg-white hover:border-blue-500'}
+                `}
+              >
+                <div className="text-center">
+                  <div className="text-3xl font-bold">{format(currentDate, 'd')}</div>
+                  <div className="text-lg mt-2">{format(currentDate, 'MMMM yyyy', { locale: es })}</div>
+                </div>
+              </button>
+              {getSchedulesForDate(currentDate).length > 0 && (
+                <div className="bg-blue-50 p-3 rounded-lg">
+                  <p className="text-sm font-semibold text-blue-900">
+                    {getSchedulesForDate(currentDate).length} servicio(s) ya agendado(s) este día
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Form Fields */}
+        {formData.scheduled_date && (
+          <form onSubmit={handleSubmit} className="space-y-4 border-t pt-4"
+          >
+            <div className="bg-blue-50 p-3 rounded-lg mb-4">
+              <p className="text-sm font-semibold text-blue-900">
+                📅 Fecha seleccionada: {format(parseISO(formData.scheduled_date), "EEEE, d 'de' MMMM yyyy", { locale: es })}
+              </p>
+            </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -212,19 +418,6 @@ function SchedulingForm({ onSuccess }) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Fecha del Servicio <span className="text-red-500">*</span>
-            </label>
-            <Input
-              type="date"
-              value={formData.scheduled_date}
-              onChange={(e) => setFormData({ ...formData, scheduled_date: e.target.value })}
-              min={format(new Date(), 'yyyy-MM-dd')}
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
               Descripción del Trabajo <span className="text-red-500">*</span>
             </label>
             <Textarea
@@ -236,14 +429,15 @@ function SchedulingForm({ onSuccess }) {
             />
           </div>
 
-          <Button 
-            type="submit" 
-            className="w-full bg-blue-600 hover:bg-blue-700"
-            disabled={createMutation.isPending}
-          >
-            {createMutation.isPending ? "Agendando..." : "Confirmar Agendamiento"}
-          </Button>
-        </form>
+            <Button 
+              type="submit" 
+              className="w-full bg-blue-600 hover:bg-blue-700"
+              disabled={createMutation.isPending}
+            >
+              {createMutation.isPending ? "Agendando..." : "Confirmar Agendamiento"}
+            </Button>
+          </form>
+        )}
       </CardContent>
     </Card>
   );
