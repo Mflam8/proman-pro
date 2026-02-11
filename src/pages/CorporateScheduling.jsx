@@ -100,6 +100,9 @@ export default function CorporateScheduling() {
 
 function SchedulingForm({ onSuccess }) {
   const [formData, setFormData] = useState({
+    scheduled_by_name: '',
+    scheduled_by_lastname: '',
+    restaurant_name: '',
     location: '',
     location_name: '',
     service_type: '',
@@ -124,6 +127,9 @@ function SchedulingForm({ onSuccess }) {
     onSuccess: () => {
       queryClient.invalidateQueries(['corporate-schedule']);
       setFormData({
+        scheduled_by_name: '',
+        scheduled_by_lastname: '',
+        restaurant_name: '',
         location: '',
         location_name: '',
         service_type: '',
@@ -138,7 +144,7 @@ function SchedulingForm({ onSuccess }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.location || !formData.scheduled_date || !formData.service_type) {
+    if (!formData.scheduled_by_name || !formData.scheduled_by_lastname || !formData.restaurant_name || !formData.location || !formData.scheduled_date || !formData.service_type) {
       alert('⚠️ Por favor completa todos los campos obligatorios');
       return;
     }
@@ -155,6 +161,47 @@ function SchedulingForm({ onSuccess }) {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Nombre <span className="text-red-500">*</span>
+              </label>
+              <Input
+                value={formData.scheduled_by_name}
+                onChange={(e) => setFormData({ ...formData, scheduled_by_name: e.target.value })}
+                placeholder="Tu nombre"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Apellido <span className="text-red-500">*</span>
+              </label>
+              <Input
+                value={formData.scheduled_by_lastname}
+                onChange={(e) => setFormData({ ...formData, scheduled_by_lastname: e.target.value })}
+                placeholder="Tu apellido"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Restaurante <span className="text-red-500">*</span>
+            </label>
+            <Select value={formData.restaurant_name} onValueChange={(v) => setFormData({ ...formData, restaurant_name: v })}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona restaurante" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="McDonald's">McDonald's</SelectItem>
+                <SelectItem value="Panda Express">Panda Express</SelectItem>
+                <SelectItem value="Otro">Otro</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Ubicación (Departamento) <span className="text-red-500">*</span>
@@ -280,10 +327,12 @@ function ScheduleList() {
 
   const handleDownload = () => {
     const csv = [
-      ['Fecha', 'Hora', 'Ubicación', 'Local', 'Servicio', 'Duración (hrs)', 'Estado'].join(','),
+      ['Fecha', 'Hora', 'Agendado Por', 'Restaurante', 'Ubicación', 'Local', 'Servicio', 'Duración (hrs)', 'Estado'].join(','),
       ...schedules.map(s => [
         s.scheduled_date || '',
         s.scheduled_start_time || '',
+        `${s.scheduled_by_name || ''} ${s.scheduled_by_lastname || ''}`.trim(),
+        s.restaurant_name || '',
         s.location || '',
         s.location_name || '',
         s.service_type || '',
