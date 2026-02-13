@@ -43,6 +43,7 @@ export default function ClientManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const [viewMode, setViewMode] = useState("individual"); // "individual" o "grouped"
+  const [clientTypeFilter, setClientTypeFilter] = useState("all"); // "all", "corporativo", "residencial", "comercial"
   const ITEMS_PER_PAGE = 20;
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -167,14 +168,29 @@ export default function ClientManagement() {
     }
     
     const customer = getCustomerForInquiry(inquiry);
+    
+    // Filter by client type
+    let matchesClientType = true;
+    if (clientTypeFilter === "corporativo") {
+      matchesClientType = inquiry.lead_source === "corporativo";
+    } else if (clientTypeFilter === "residencial") {
+      matchesClientType = inquiry.lead_source !== "corporativo" && (!customer || customer.customer_type === "residencial");
+    } else if (clientTypeFilter === "comercial") {
+      matchesClientType = inquiry.lead_source !== "corporativo" && customer?.customer_type === "comercial";
+    }
+    
+    // Search filter
     const matchesSearch = searchTerm === "" || 
       inquiry.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inquiry.phone?.includes(searchTerm) ||
-      customer?.phone?.includes(searchTerm) ||
+      inquiry.phone?.replace(/\D/g, '').includes(searchTerm.replace(/\D/g, '')) ||
+      customer?.phone?.replace(/\D/g, '').includes(searchTerm.replace(/\D/g, '')) ||
       inquiry.service_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inquiry.rubro?.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesTab && matchesSearch;
+      inquiry.rubro?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      inquiry.location_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      inquiry.restaurant_name?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    return matchesTab && matchesSearch && matchesClientType;
   });
 
   // Agrupar por cliente si está en modo agrupado
@@ -431,12 +447,23 @@ export default function ClientManagement() {
                   <div className="flex flex-col sm:flex-row gap-4">
                     <div className="flex-1">
                       <Input
-                        placeholder="Buscar por nombre, teléfono, servicio o rubro..."
+                        placeholder="Buscar por nombre, teléfono, servicio, sucursal..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full"
                       />
                     </div>
+                    <Select value={clientTypeFilter} onValueChange={setClientTypeFilter}>
+                      <SelectTrigger className="w-full sm:w-48">
+                        <SelectValue placeholder="Tipo de cliente" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos los clientes</SelectItem>
+                        <SelectItem value="corporativo">Corporativos</SelectItem>
+                        <SelectItem value="residencial">Residenciales</SelectItem>
+                        <SelectItem value="comercial">Comerciales</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <Select value={viewMode} onValueChange={setViewMode}>
                       <SelectTrigger className="w-full sm:w-48">
                         <SelectValue placeholder="Modo de vista" />
