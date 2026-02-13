@@ -66,12 +66,11 @@ export default function ClientManagement() {
   const isSupervisor = user?.employee_type === 'Supervisor';
   const hasManagementAccess = isAdmin || isSupervisor;
 
-  const { data: inquiries, isLoading: isLoadingInquiries } = useQuery({
-    queryKey: ['clientInquiries', sortOrder, currentPage],
+  const { data: allInquiries, isLoading: isLoadingInquiries } = useQuery({
+    queryKey: ['clientInquiries', sortOrder],
     queryFn: async () => {
       const orderBy = sortOrder === "desc" ? '-created_date' : 'created_date';
-      const skip = (currentPage - 1) * ITEMS_PER_PAGE;
-      const rawData = await base44.entities.ClientInquiry.filter({}, orderBy, ITEMS_PER_PAGE, skip);
+      const rawData = await base44.entities.ClientInquiry.filter({}, orderBy);
       // Normalizar datos al recibirlos
       return rawData.map(item => {
         const normalized = item.data ? { ...item, ...item.data } : item;
@@ -82,16 +81,7 @@ export default function ClientManagement() {
     initialData: [],
   });
 
-  // Get total count for pagination
-  const { data: totalCount } = useQuery({
-    queryKey: ['inquiriesCount'],
-    queryFn: async () => {
-      const all = await base44.entities.ClientInquiry.list();
-      return all.length;
-    },
-    enabled: !!user && hasManagementAccess,
-    onSuccess: (count) => setTotalRecords(count),
-  });
+
 
   const { data: customers } = useQuery({
     queryKey: ['customers'],
@@ -157,7 +147,7 @@ export default function ClientManagement() {
     return null;
   };
   
-  const filteredInquiries = inquiries.filter(inquiry => {
+  const filteredInquiries = allInquiries.filter(inquiry => {
     let matchesTab = false;
     if (activeTab === "all") {
       matchesTab = true;
@@ -195,19 +185,29 @@ export default function ClientManagement() {
 
   // Agrupar por cliente si está en modo agrupado
   const groupedProjects = viewMode === "grouped" 
-    ? groupInquiriesByCustomer(filteredInquiries, customers)
+    ? groupInquiriesByCustomer(paginatedInquiries, customers)
     : [];
 
   const stats = {
-    total: totalRecords || 0,
-    nuevo: inquiries.filter(i => i.status === "nuevo").length,
-    activos: inquiries.filter(i => activeStatuses.includes(i.status)).length,
-    completado: inquiries.filter(i => i.status === "completado").length
+    total: allInquiries.length,
+    nuevo: allInquiries.filter(i => i.status === "nuevo").length,
+    activos: allInquiries.filter(i => activeStatuses.includes(i.status)).length,
+    completado: allInquiries.filter(i => i.status === "completado").length
   };
 
-  const totalPages = Math.ceil(totalRecords / ITEMS_PER_PAGE);
+  // Paginate after filtering
+  const totalFiltered = filteredInquiries.length;
+  const totalPages = Math.ceil(totalFiltered / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const paginatedInquiries = filteredInquiries.slice(startIndex, endIndex);
   const handlePrevPage = () => setCurrentPage(p => Math.max(1, p - 1));
   const handleNextPage = () => setCurrentPage(p => Math.min(totalPages, p + 1));
+  
+  // Reset to page 1 when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, clientTypeFilter, activeTab]);
 
   const getWhatsAppLink = (inquiry) => {
     const customer = getCustomerForInquiry(inquiry);
@@ -413,7 +413,7 @@ export default function ClientManagement() {
 
           <TabsContent value="trabajos">
             {isAdmin && (customers.filter(c => c.source === 'whatsapp_bot').length > 0 || 
-              inquiries.filter(i => i.source === 'whatsapp_bot').length > 0) && (
+              allInquiries.filter(i => i.source === 'whatsapp_bot').length > 0) && (
               <Card className="mb-6 border-2 border-green-500 bg-green-50">
                 <CardContent className="p-4">
                   <div className="flex items-center gap-4">
@@ -425,7 +425,7 @@ export default function ClientManagement() {
                       <p className="text-sm text-green-700">
                         El bot ha capturado automáticamente: 
                         <strong> {customers.filter(c => c.source === 'whatsapp_bot').length} cliente(s)</strong> y 
-                        <strong> {inquiries.filter(i => i.source === 'whatsapp_bot').length} trabajo(s)</strong> desde WhatsApp
+                        <strong> {allInquiries.filter(i => i.source === 'whatsapp_bot').length} trabajo(s)</strong> desde WhatsApp
                       </p>
                     </div>
                     <Badge className="bg-green-600 text-white">Bot Activo</Badge>
@@ -501,7 +501,7 @@ export default function ClientManagement() {
               {totalPages > 1 && (
                 <div className="flex items-center justify-between bg-white p-4 rounded-lg border">
                   <div className="text-sm text-gray-600">
-                    Página {currentPage} de {totalPages} • Mostrando {inquiries.length} de {totalRecords} trabajos
+                    Página {currentPage} de {totalPages} • Mostrando {paginatedInquiries.length} de {totalFiltered} trabajos filtrados
                   </div>
                   <div className="flex gap-2">
                     <Button 
@@ -539,8 +539,8 @@ export default function ClientManagement() {
                     />
                   ))
                 ) : (
-                  // Vista individual (original)
-                  filteredInquiries.map((inquiry) => {
+                 // Vista individual (original)
+                 paginatedInquiries.map((inquiry) => {
                 const StatusIcon = statusConfig[inquiry.status]?.icon || AlertCircle;
                 const customer = getCustomerForInquiry(inquiry);
                 const displayName = customer?.full_name || inquiry.client_name;
@@ -657,7 +657,7 @@ export default function ClientManagement() {
                 </div>
               )}
 
-              {filteredInquiries.length === 0 && !isLoadingInquiries && <p className="text-center text-gray-500 mt-8">No se encontraron solicitudes.</p>}
+              {totalFiltered === 0 && !isLoadingInquiries && <p className="text-center text-gray-500 mt-8">No se encontraron solicitudes con los filtros seleccionados.</p>}
               {isLoadingInquiries && <p className="text-center text-gray-500 mt-8">Cargando solicitudes...</p>}
             </div>
           </TabsContent>
