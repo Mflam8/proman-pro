@@ -375,6 +375,15 @@ export default function ClientManagement() {
                         <span className="text-lg">🏢</span>
                         <span>Agendamientos Corporativos</span>
                       </button>
+                      <button
+                        onClick={() => setMainTab("reportes-corporativo")}
+                        className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors flex items-center gap-3 ${
+                          mainTab === "reportes-corporativo" ? "bg-proman-yellow text-proman-navy" : "hover:bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        <span className="text-lg">📑</span>
+                        <span>Reportes Corporativos</span>
+                      </button>
                     </>
                   )}
                 </nav>
@@ -644,6 +653,7 @@ export default function ClientManagement() {
               <TabsContent value="automatizaciones"><AutomationsControlPanel /></TabsContent>
               <TabsContent value="directorio"><TrustedDirectory /></TabsContent>
               <TabsContent value="corporativo"><CorporateSchedulingManagement /></TabsContent>
+              <TabsContent value="reportes-corporativo"><CorporateReports /></TabsContent>
             </>
           )}
         </Tabs>
