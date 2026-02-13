@@ -29,6 +29,7 @@ import InquiryDetailForm from "../components/admin/InquiryDetailForm";
 import InquiryCreateForm from "../components/admin/InquiryCreateForm";
 import TrustedDirectory from "../components/admin/TrustedDirectory";
 import CorporateSchedulingManagement from "../components/admin/CorporateSchedulingManagement";
+import CorporateReports from "../components/admin/CorporateReports";
 
 export default function ClientManagement() {
   const [user, setUser] = useState(null);
