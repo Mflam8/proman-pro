@@ -182,10 +182,10 @@ export default function InquiryDetailForm({
     
     setFormData(newData);
     
-    const { id, ...updateData } = newData;
+    const { id, created_date, updated_date, created_by, ...updateData } = newData;
     updateData.progress_percentage = Number(newData.progress_percentage) || 0;
     
-    onUpdate({ id: inquiry.id, data: updateData });
+    await onUpdate({ id: inquiry.id, data: updateData });
   };
 
   const handleSubmit = async (e) => {
