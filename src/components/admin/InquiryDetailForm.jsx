@@ -163,28 +163,27 @@ export default function InquiryDetailForm({
   }, [afterImageFile]);
 
   const handleAutoSaveChange = async (field, value) => {
-    let newData = { ...formData, [field]: value };
+    // Preparar solo los campos que necesitamos actualizar
+    let updateData = { [field]: value };
     
     if (field === 'status' && value === 'completado') {
-      newData.progress_percentage = 100;
+      updateData.progress_percentage = 100;
       
       const allPayments = await base44.entities.Payment.filter({ inquiry_id: inquiry.id });
       const totalPaid = allPayments.reduce((sum, p) => sum + (p.amount_paid || 0), 0);
       const finalAmount = formData.final_amount || formData.quote_amount || 0;
       
       if (totalPaid >= finalAmount && finalAmount > 0) {
-        newData.payment_status = 'pagado';
+        updateData.payment_status = 'pagado';
       } else if (totalPaid > 0) {
-        newData.payment_status = 'parcial';
+        updateData.payment_status = 'parcial';
       } else {
-        newData.payment_status = 'pendiente';
+        updateData.payment_status = 'pendiente';
       }
     }
     
-    setFormData(newData);
-    
-    const { id, created_date, updated_date, created_by, ...updateData } = newData;
-    updateData.progress_percentage = Number(newData.progress_percentage) || 0;
+    // Actualizar formData local para la UI
+    setFormData(prev => ({ ...prev, ...updateData }));
     
     try {
       await onUpdate({ id: inquiry.id, data: updateData });
