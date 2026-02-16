@@ -397,7 +397,7 @@ export default function InquiryDetailForm({
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className="block text-sm font-medium text-proman-navy mb-2">Estado</Label>
-                    <Select value={formData.status} onValueChange={(v) => handleAutoSaveChange('status', v)} disabled={isUpdating}>
+                    <Select value={formData.status || 'nuevo'} onValueChange={(v) => handleAutoSaveChange('status', v)} disabled={isUpdating}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         {Object.entries(statusConfig).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
@@ -406,7 +406,7 @@ export default function InquiryDetailForm({
                   </div>
                   <div>
                     <Label className="block text-sm font-medium text-proman-navy mb-2">Prioridad</Label>
-                    <Select value={formData.priority} onValueChange={(v) => handleAutoSaveChange('priority', v)} disabled={isUpdating}>
+                    <Select value={formData.priority || 'media'} onValueChange={(v) => handleAutoSaveChange('priority', v)} disabled={isUpdating}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         {Object.entries(priorityConfig).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
