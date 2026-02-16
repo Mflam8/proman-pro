@@ -93,17 +93,13 @@ export default function ClientManagement() {
   const updateInquiry = useMutation({
     mutationFn: ({ id, data }) => base44.entities.ClientInquiry.update(id, data),
     onSuccess: async (result, variables) => {
-      await queryClient.refetchQueries({ queryKey: ['clientInquiries'] });
+      await queryClient.invalidateQueries({ queryKey: ['clientInquiries'] });
+      await queryClient.invalidateQueries({ queryKey: ['inquiry', variables.id] }); 
       await queryClient.invalidateQueries({ queryKey: ['employeeSchedules'] }); 
       await queryClient.invalidateQueries({ queryKey: ['customers'] });
-      await queryClient.invalidateQueries({ queryKey: ['inquiriesCount'] });
       
-      // Update selected inquiry immediately from cache
-      if (selectedInquiry) {
-        queryClient.setQueryData(['clientInquiries', sortOrder, currentPage], (oldData) => {
-          if (!oldData) return oldData;
-          return oldData.map(i => i.id === selectedInquiry.id ? { ...i, ...variables.data } : i);
-        });
+      // Update selected inquiry immediately
+      if (selectedInquiry && selectedInquiry.id === variables.id) {
         setSelectedInquiry(prev => ({ ...prev, ...variables.data }));
       }
     },

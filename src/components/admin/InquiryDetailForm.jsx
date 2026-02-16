@@ -123,16 +123,17 @@ export default function InquiryDetailForm({
   const remainingAmount = finalAmount - totalPaid;
 
   useEffect(() => {
+    const latestData = currentInquiry || inquiry;
     setFormData({
-      ...inquiry,
-      progress_percentage: inquiry.progress_percentage || 0,
-      scheduled_date: inquiry.scheduled_date || '',
-      scheduled_start_time: inquiry.scheduled_start_time || '',
-      estimated_duration_hours: inquiry.estimated_duration_hours || '',
-      quote_pdf_url: inquiry.quote_pdf_url || '',
-      location_name: inquiry.location_name || '',
+      ...latestData,
+      progress_percentage: latestData.progress_percentage || 0,
+      scheduled_date: latestData.scheduled_date || '',
+      scheduled_start_time: latestData.scheduled_start_time || '',
+      estimated_duration_hours: latestData.estimated_duration_hours || '',
+      quote_pdf_url: latestData.quote_pdf_url || '',
+      location_name: latestData.location_name || '',
     });
-  }, [inquiry]);
+  }, [inquiry, currentInquiry]);
 
   useEffect(() => {
     if (calculatedFinalAmount > 0 && calculatedFinalAmount !== formData.final_amount) {
@@ -185,7 +186,13 @@ export default function InquiryDetailForm({
     const { id, created_date, updated_date, created_by, ...updateData } = newData;
     updateData.progress_percentage = Number(newData.progress_percentage) || 0;
     
-    await onUpdate({ id: inquiry.id, data: updateData });
+    try {
+      await onUpdate({ id: inquiry.id, data: updateData });
+      await queryClient.invalidateQueries({ queryKey: ['inquiry', inquiry.id] });
+    } catch (error) {
+      console.error("Error al actualizar:", error);
+      alert("Error al guardar: " + error.message);
+    }
   };
 
   const handleSubmit = async (e) => {
