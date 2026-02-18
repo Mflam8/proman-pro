@@ -302,6 +302,16 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
                 Orden Corporativa
               </Button>
             )}
+            {canEdit && inquiry && (inquiry.rubro === 'Restaurantes' || inquiry.lead_source === 'corporativo') && (
+              <Button
+                size="sm"
+                onClick={() => setShowCertificateModal(true)}
+                className="bg-green-600 text-white hover:opacity-90"
+              >
+                <Award className="w-4 h-4 mr-1" />
+                Acreditación
+              </Button>
+            )}
             {canEdit && items.length > 0 && (
               <Button
                 size="sm"
