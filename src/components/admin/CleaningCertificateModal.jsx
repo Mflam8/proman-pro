@@ -94,6 +94,53 @@ export default function CleaningCertificateModal({ inquiry, open, onClose }) {
     }
   }, [inquiry]);
 
+  const buildPreviewHtml = () => {
+    const finalTipo = useCustomTipo ? customTipo : tipoCertificado;
+    const empresaNombre = cadena === 'mcdonalds' ? 'SERVAMATIC, S.A DE C.V.' : 'ORIENTAL WOK, S.A DE C.V.';
+    const cadenaDisplay = cadena === 'mcdonalds' ? "RESTAURANTE McDONALD'S SUCURSAL" : 'RESTAURANTE PANDA SUCURSAL';
+    const formatDate = (dateStr) => { const [y, m, d] = dateStr.split('-'); return `${d}-${m}-${y}`; };
+    const TEMPLATE_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ef04efb2facc1f9d963736/a323ac64b_3.png';
+
+    return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>PREVIEW - Certificado</title>
+<style>
+  @page { size: A4 landscape; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 297mm; height: 210mm; overflow: hidden; background: white; }
+  .wrapper { position: relative; width: 297mm; height: 210mm; }
+  .bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: fill; }
+  .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; padding-left: 16%; padding-right: 3%; justify-content: center; text-align: center; }
+  .spacer-top { height: 52%; flex-shrink: 0; }
+  .cert-text { font-size: 10.5pt; color: #1a2050; line-height: 1.65; font-family: Arial, Helvetica, sans-serif; max-width: 195mm; }
+  .cert-names { font-size: 12pt; font-weight: bold; color: #1a2050; line-height: 1.55; margin-top: 4mm; font-family: Arial, Helvetica, sans-serif; letter-spacing: 0.3px; }
+  .spacer-bottom { flex: 1; }
+  .dates-row { width: 100%; display: flex; justify-content: flex-start; padding-left: 5mm; padding-bottom: 9mm; }
+  .dates-box { text-align: left; font-size: 7.5pt; font-weight: bold; color: #1a2050; font-family: Arial, Helvetica, sans-serif; line-height: 1.8; }
+  .preview-badge { position: absolute; top: 4mm; right: 4mm; background: rgba(255,165,0,0.85); color: white; font-size: 8pt; font-weight: bold; padding: 2mm 4mm; border-radius: 3mm; font-family: Arial; }
+  @media print { * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; } .preview-badge { display: none; } }
+</style></head><body>
+<div class="wrapper">
+  <img src="${TEMPLATE_URL}" class="bg" alt="" />
+  <div class="preview-badge">⚠️ VISTA PREVIA — No enviado</div>
+  <div class="overlay">
+    <div class="spacer-top"></div>
+    <div class="cert-text">Tras completar los servicios de saneamiento ambiental<br>correspondiente a ${finalTipo} de</div>
+    <div class="cert-names">${empresaNombre}<br>${cadenaDisplay}<br>${(sucursal || 'SUCURSAL').toUpperCase()}</div>
+    <div class="spacer-bottom"></div>
+    <div class="dates-row">
+      <div class="dates-box">FECHA DE EMISIÓN: ${formatDate(fechaEmision)}<br>FECHA DE VENCIMIENTO: ${formatDate(fechaVencimiento)}</div>
+    </div>
+  </div>
+</div>
+</body></html>`;
+  };
+
+  const handlePreview = () => {
+    const html = buildPreviewHtml();
+    const win = window.open("", "_blank");
+    win.document.write(html);
+    win.document.close();
+  };
+
   const handleGenerate = async () => {
     const finalTipo = useCustomTipo ? customTipo : tipoCertificado;
     if (!sucursal || !emailDestinatario || !finalTipo) {
