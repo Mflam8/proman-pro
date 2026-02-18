@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Award, Send, ExternalLink } from "lucide-react";
+import { Award, Send, ExternalLink, Eye } from "lucide-react";
 
 // Sucursales y emails McDonald's
 const MCDONALDS_SUCURSALES = [
