@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Plus, Edit2, Trash2, DollarSign, Wrench, FileText, FileDown, CheckCircle, Layers, ChevronUp, ChevronDown } from "lucide-react";
+import { Plus, Edit2, Trash2, DollarSign, Wrench, FileText, FileDown, CheckCircle, Layers, ChevronUp, ChevronDown, Award } from "lucide-react";
+import CleaningCertificateModal from "./CleaningCertificateModal";
 
 const tipoItemConfig = {
   servicio: { label: "Servicio/Trabajo", icon: Wrench, color: "bg-blue-100 text-blue-800" },
