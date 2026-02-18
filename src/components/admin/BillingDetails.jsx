@@ -644,6 +644,16 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
         </Dialog>
       )}
 
+      {/* Modal de Acreditación de Limpieza */}
+      {showCertificateModal && inquiry && (
+        <CleaningCertificateModal
+          inquiry={inquiry}
+          customer={null}
+          open={showCertificateModal}
+          onClose={() => setShowCertificateModal(false)}
+        />
+      )}
+
       {/* Modal para Orden de Trabajo Corporativa */}
       {showCorporateWorkOrder && (
         <Dialog open={showCorporateWorkOrder} onOpenChange={() => setShowCorporateWorkOrder(false)}>
