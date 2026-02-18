@@ -1,50 +1,102 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Award, Send, ExternalLink } from "lucide-react";
 
+// Sucursales y emails McDonald's
+const MCDONALDS_SUCURSALES = [
+  { nombre: "SANTA ANA", email: "santaana@mcd.com.sv" },
+  { nombre: "LOS PROCERES", email: "proceres.sv@mcd.com.sv" },
+  { nombre: "ZONA ROSA", email: "zonarosa@mcd.com.sv" },
+  { nombre: "PLAZA MUNDO", email: "plazamundo@mcd.com.sv" },
+  { nombre: "GALERIAS", email: "galerias@mcd.com.sv" },
+  { nombre: "MULTIPLAZA", email: "multiplaza@mcd.com.sv" },
+  { nombre: "SAN MIGUEL", email: "sanmiguel@mcd.com.sv" },
+  { nombre: "SANTA ELENA", email: "santaelena@mcd.com.sv" },
+  { nombre: "METROCENTRO", email: "metrocentro.sv@mcd.com.sv" },
+  { nombre: "SALVADOR DEL MUNDO", email: "salvadordelmundo@mcd.com.sv" },
+  { nombre: "PASEO ESCALON", email: "paseo.escalon@mcd.com.sv" },
+  { nombre: "SANTA ANA FS", email: "santaanafs@mcd.com.sv" },
+  { nombre: "SAN LUIS", email: "sanluis@mcd.com.sv" },
+  { nombre: "BRITANICA", email: "britanica@mcd.com.sv" },
+  { nombre: "SAN MIGUELITO", email: "sanmiguelito@mcd.com.sv" },
+  { nombre: "SANTA ROSA", email: "santarosa@mcd.com.sv" },
+  { nombre: "LOURDES", email: "lourdes@mcd.com.sv" },
+  { nombre: "SONSONATE", email: "sonsonate@mcd.com.sv" },
+  { nombre: "SAN MARCOS", email: "sanmarcos@mcd.com.sv" },
+  { nombre: "AGUILARES", email: "aguilares@mcd.com.sv" },
+];
+
 const TIPOS_CERTIFICADO = [
+  "Limpieza y Mantenimiento de Trampa de Grasa",
+  "Limpieza y desinfección de cisterna de agua potable",
+  "Limpieza y Mantenimiento de Trampa de Grasa y Mantenimiento General de drenajes",
   "Limpieza General de Instalaciones",
   "Limpieza y Desinfección de Cocina Industrial",
-  "Limpieza de Trampas de Grasa",
   "Limpieza de Campanas y Extractores",
-  "Limpieza Profunda de Pisos y Paredes",
-  "Limpieza de Áreas de Almacenamiento",
   "Desinfección y Sanitización General",
 ];
 
-const EMAIL_RESTAURANTES = {
-  "McDonald's": "",
-  "Panda Express": "",
+// Sumar 3 meses a una fecha
+const addMonths = (dateStr, months) => {
+  const d = new Date(dateStr + 'T12:00:00');
+  d.setMonth(d.getMonth() + months);
+  return d.toISOString().split('T')[0];
 };
 
-export default function CleaningCertificateModal({ inquiry, customer, open, onClose }) {
-  const restaurantName = inquiry?.restaurant_name || customer?.full_name || "";
-  
-  // Pre-seleccionar email si es McDonald's o Panda
-  const getDefaultEmail = () => {
-    if (!restaurantName) return "";
-    if (restaurantName.toLowerCase().includes("mcdonald")) return EMAIL_RESTAURANTES["McDonald's"];
-    if (restaurantName.toLowerCase().includes("panda")) return EMAIL_RESTAURANTES["Panda Express"];
-    return "";
-  };
+export default function CleaningCertificateModal({ inquiry, open, onClose }) {
+  const today = new Date().toISOString().split('T')[0];
 
-  const [fechaInicio, setFechaInicio] = useState(inquiry?.scheduled_date || "");
-  const [fechaFin, setFechaFin] = useState("");
+  const [cadena, setCadena] = useState("mcdonalds");
+  const [sucursal, setSucursal] = useState("");
+  const [fechaEmision, setFechaEmision] = useState(today);
+  const [fechaVencimiento, setFechaVencimiento] = useState(addMonths(today, 3));
   const [tipoCertificado, setTipoCertificado] = useState(TIPOS_CERTIFICADO[0]);
-  const [customTipo, setCustomTipo] = useState("");
   const [useCustomTipo, setUseCustomTipo] = useState(false);
-  const [emailDestinatario, setEmailDestinatario] = useState(getDefaultEmail());
+  const [customTipo, setCustomTipo] = useState("");
+  const [emailDestinatario, setEmailDestinatario] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
 
+  // Auto-completar email al seleccionar sucursal de McDonald's
+  useEffect(() => {
+    if (cadena === "mcdonalds" && sucursal) {
+      const found = MCDONALDS_SUCURSALES.find(s => s.nombre === sucursal);
+      if (found) setEmailDestinatario(found.email);
+    }
+  }, [sucursal, cadena]);
+
+  // Recalcular vencimiento cuando cambia emisión
+  useEffect(() => {
+    setFechaVencimiento(addMonths(fechaEmision, 3));
+  }, [fechaEmision]);
+
+  // Pre-detectar sucursal desde el nombre del trabajo si es McDonald's
+  useEffect(() => {
+    if (!inquiry) return;
+    const rName = (inquiry.restaurant_name || "").toUpperCase();
+    if (rName.includes("PANDA") || rName.includes("ORIENTAL WOK")) {
+      setCadena("panda");
+    } else if (rName.includes("MCDONALD") || rName.includes("SERVAMATIC")) {
+      setCadena("mcdonalds");
+    }
+    // Try to detect sucursal from location_name
+    if (inquiry.location_name) {
+      const loc = inquiry.location_name.toUpperCase();
+      const found = MCDONALDS_SUCURSALES.find(s => loc.includes(s.nombre));
+      if (found) setSucursal(found.nombre);
+    }
+  }, [inquiry]);
+
   const handleGenerate = async () => {
-    if (!fechaInicio || !fechaFin || !emailDestinatario) {
+    const finalTipo = useCustomTipo ? customTipo : tipoCertificado;
+    if (!sucursal || !emailDestinatario || !finalTipo) {
       setError("Por favor completa todos los campos requeridos.");
       return;
     }
@@ -54,13 +106,14 @@ export default function CleaningCertificateModal({ inquiry, customer, open, onCl
     setResult(null);
 
     try {
-      const finalTipo = useCustomTipo ? customTipo : tipoCertificado;
       const response = await base44.functions.invoke("generateCleaningCertificate", {
         inquiryId: inquiry.id,
-        fechaInicio,
-        fechaFin,
+        fechaEmision,
+        fechaVencimiento,
         tipoCertificado: finalTipo,
         emailDestinatario,
+        cadena,
+        sucursal,
       });
 
       const data = response?.data || response;
@@ -78,22 +131,20 @@ export default function CleaningCertificateModal({ inquiry, customer, open, onCl
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Award className="w-5 h-5 text-proman-yellow" />
-            Generar Certificado de Limpieza
+            <Award className="w-5 h-5 text-yellow-500" />
+            Generar Acreditación de Limpieza
           </DialogTitle>
         </DialogHeader>
 
         {result ? (
           <div className="space-y-4 pt-2">
             <div className="bg-green-50 border border-green-300 rounded-lg p-4 text-center">
-              <div className="text-green-600 text-3xl mb-2">✅</div>
+              <div className="text-4xl mb-2">✅</div>
               <p className="font-semibold text-green-800">Certificado generado y enviado</p>
-              <p className="text-sm text-green-700 mt-1">
-                Enviado a: <strong>{emailDestinatario}</strong>
-              </p>
+              <p className="text-sm text-green-700 mt-1">Enviado a: <strong>{emailDestinatario}</strong></p>
               <p className="text-xs text-green-600 mt-1">No. {result.cert_number}</p>
             </div>
             <div className="flex gap-3">
@@ -116,68 +167,92 @@ export default function CleaningCertificateModal({ inquiry, customer, open, onCl
           </div>
         ) : (
           <div className="space-y-4 pt-2">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <p className="text-sm text-blue-900 font-medium">
-                Restaurante: <strong>{restaurantName || "Sin especificar"}</strong>
-              </p>
-            </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-sm font-medium">Fecha de Inicio *</Label>
-                <Input
-                  type="date"
-                  value={fechaInicio}
-                  onChange={(e) => setFechaInicio(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label className="text-sm font-medium">Fecha de Finalización *</Label>
-                <Input
-                  type="date"
-                  value={fechaFin}
-                  onChange={(e) => setFechaFin(e.target.value)}
-                  className="mt-1"
-                />
-              </div>
-            </div>
-
+            {/* Cadena */}
             <div>
-              <Label className="text-sm font-medium">Tipo de Certificado *</Label>
+              <Label className="text-sm font-medium">Cadena de Restaurante *</Label>
+              <Select value={cadena} onValueChange={(v) => { setCadena(v); setSucursal(""); setEmailDestinatario(""); }}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="mcdonalds">McDonald's</SelectItem>
+                  <SelectItem value="panda">Panda Express</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Sucursal */}
+            <div>
+              <Label className="text-sm font-medium">Sucursal *</Label>
+              {cadena === "mcdonalds" ? (
+                <Select value={sucursal} onValueChange={setSucursal}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Seleccionar sucursal..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MCDONALDS_SUCURSALES.map(s => (
+                      <SelectItem key={s.nombre} value={s.nombre}>{s.nombre}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  value={sucursal}
+                  onChange={(e) => setSucursal(e.target.value)}
+                  placeholder="Ej: SANTA ELENA, MULTIPLAZA..."
+                  className="mt-1"
+                />
+              )}
+            </div>
+
+            {/* Tipo de Certificado */}
+            <div>
+              <Label className="text-sm font-medium">Tipo de Servicio *</Label>
               <Select
                 value={useCustomTipo ? "_custom" : tipoCertificado}
                 onValueChange={(v) => {
-                  if (v === "_custom") {
-                    setUseCustomTipo(true);
-                  } else {
-                    setUseCustomTipo(false);
-                    setTipoCertificado(v);
-                  }
+                  if (v === "_custom") { setUseCustomTipo(true); }
+                  else { setUseCustomTipo(false); setTipoCertificado(v); }
                 }}
               >
                 <SelectTrigger className="mt-1">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {TIPOS_CERTIFICADO.map((t) => (
+                  {TIPOS_CERTIFICADO.map(t => (
                     <SelectItem key={t} value={t}>{t}</SelectItem>
                   ))}
-                  <SelectItem value="_custom">✏️ Personalizado...</SelectItem>
+                  <SelectItem value="_custom">✏️ Escribir personalizado...</SelectItem>
                 </SelectContent>
               </Select>
               {useCustomTipo && (
-                <Input
+                <Textarea
                   value={customTipo}
                   onChange={(e) => setCustomTipo(e.target.value)}
-                  placeholder="Ej: Limpieza de cisternas y tuberías"
+                  placeholder="Ej: Limpieza y mantenimiento de sistemas de drenaje"
+                  rows={2}
                   className="mt-2"
                 />
               )}
             </div>
 
+            {/* Fechas */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-sm font-medium">Fecha de Emisión *</Label>
+                <Input type="date" value={fechaEmision} onChange={(e) => setFechaEmision(e.target.value)} className="mt-1" />
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Fecha de Vencimiento *</Label>
+                <Input type="date" value={fechaVencimiento} onChange={(e) => setFechaVencimiento(e.target.value)} className="mt-1" />
+                <p className="text-xs text-gray-400 mt-0.5">Auto: 3 meses desde emisión</p>
+              </div>
+            </div>
+
+            {/* Email */}
             <div>
-              <Label className="text-sm font-medium">Email del Restaurante *</Label>
+              <Label className="text-sm font-medium">Email del Destinatario *</Label>
               <Input
                 type="email"
                 value={emailDestinatario}
@@ -185,22 +260,29 @@ export default function CleaningCertificateModal({ inquiry, customer, open, onCl
                 placeholder="contacto@restaurante.com"
                 className="mt-1"
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Se enviará el certificado a este correo automáticamente.
-              </p>
+              {cadena === "mcdonalds" && sucursal && (
+                <p className="text-xs text-green-600 mt-1">✓ Email auto-completado desde directorio McDonald's</p>
+              )}
             </div>
 
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded p-3 text-sm text-red-700">
-                {error}
+            {/* Preview info */}
+            {sucursal && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-900 space-y-1">
+                <p className="font-semibold">Vista previa del certificado:</p>
+                <p>• Empresa: <strong>{cadena === "mcdonalds" ? "SERVAMATIC, S.A DE C.V." : "ORIENTAL WOK, S.A DE C.V."}</strong></p>
+                <p>• Restaurante: <strong>{cadena === "mcdonalds" ? "RESTAURANTE McDONALD'S" : "RESTAURANTE PANDA"} SUCURSAL {sucursal.toUpperCase()}</strong></p>
               </div>
+            )}
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded p-3 text-sm text-red-700">{error}</div>
             )}
 
             <div className="flex justify-end gap-3 pt-2">
               <Button variant="outline" onClick={onClose}>Cancelar</Button>
               <Button
                 onClick={handleGenerate}
-                disabled={isGenerating || !fechaInicio || !fechaFin || !emailDestinatario}
+                disabled={isGenerating || !sucursal || !emailDestinatario}
                 className="bg-proman-navy text-white hover:opacity-90"
               >
                 <Send className="w-4 h-4 mr-2" />

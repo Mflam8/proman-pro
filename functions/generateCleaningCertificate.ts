@@ -6,293 +6,324 @@ Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
         const user = await base44.auth.me();
+        if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-        if (!user) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+        const { inquiryId, fechaEmision, fechaVencimiento, tipoCertificado, emailDestinatario, cadena, sucursal } = await req.json();
 
-        const { inquiryId, fechaInicio, fechaFin, tipoCertificado, emailDestinatario } = await req.json();
-
-        if (!inquiryId || !fechaInicio || !fechaFin || !tipoCertificado || !emailDestinatario) {
+        if (!inquiryId || !fechaEmision || !fechaVencimiento || !tipoCertificado || !emailDestinatario || !cadena || !sucursal) {
             return Response.json({ error: 'Faltan datos requeridos' }, { status: 400 });
         }
 
-        // Obtener el trabajo
-        const inquiries = await base44.asServiceRole.entities.ClientInquiry.filter({ id: inquiryId });
-        if (!inquiries || inquiries.length === 0) {
-            return Response.json({ error: 'Trabajo no encontrado' }, { status: 404 });
-        }
-        const inquiry = inquiries[0];
+        // Empresa legal según cadena
+        const empresaNombre = cadena === 'mcdonalds' ? 'SERVAMATIC, S.A DE C.V.' : 'ORIENTAL WOK, S.A DE C.V.';
+        const cadenaDisplay = cadena === 'mcdonalds' ? "RESTAURANTE McDONALD'S SUCURSAL" : 'RESTAURANTE PANDA SUCURSAL';
 
-        // Obtener cliente para nombre del restaurante
-        let customer = null;
-        if (inquiry.customer_id) {
-            const customers = await base44.asServiceRole.entities.Customer.filter({ id: inquiry.customer_id });
-            if (customers && customers.length > 0) customer = customers[0];
-        }
-
-        const restaurantName = inquiry.restaurant_name || customer?.full_name || 'Restaurante';
-
-        // Formatear fechas
+        // Formatear fechas DD-MM-YYYY
         const formatDate = (dateStr) => {
-            const d = new Date(dateStr + 'T12:00:00');
-            return d.toLocaleDateString('es-SV', { day: 'numeric', month: 'long', year: 'numeric' });
+            const [y, m, d] = dateStr.split('-');
+            return `${d}-${m}-${y}`;
         };
 
-        const fechaInicioFmt = formatDate(fechaInicio);
-        const fechaFinFmt = formatDate(fechaFin);
-        const fechaEmision = new Date().toLocaleDateString('es-SV', { day: 'numeric', month: 'long', year: 'numeric' });
-
-        // Generar número de certificado
         const certNum = `CERT-${Date.now().toString().slice(-6)}`;
 
         const html = `<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Certificado de Limpieza - ${restaurantName}</title>
+<title>Certificado - ${cadenaDisplay} ${sucursal}</title>
 <style>
-  @page { size: A4; margin: 0; }
+  @page { size: A4 landscape; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
   body { 
-    font-family: 'Arial', sans-serif; 
-    color: #252a5c; 
-    width: 210mm; 
-    min-height: 297mm; 
-    margin: 0 auto; 
-    padding: 18mm 20mm; 
-    background: white; 
-    box-sizing: border-box;
-    position: relative;
+    width: 297mm; height: 210mm; 
+    overflow: hidden; 
+    position: relative; 
+    background: white;
+    font-family: 'Georgia', 'Times New Roman', serif;
   }
-  
-  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8mm; }
+  .content {
+    position: absolute;
+    left: 48mm;
+    right: 8mm;
+    top: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 6mm 0;
+    gap: 0;
+  }
   .logo { height: 20mm; width: auto; }
-  .cert-num { font-size: 9pt; color: #666; text-align: right; }
-  
-  .divider-top { border: none; border-top: 3px solid #252a5c; margin: 0 0 6mm 0; }
-  .divider-yellow { border: none; border-top: 4px solid #fdc80c; margin: 0 0 10mm 0; }
-  
-  .badge-container { text-align: center; margin-bottom: 8mm; }
-  .badge { 
-    display: inline-block;
-    background-color: #252a5c; 
-    color: #fdc80c; 
-    font-size: 10pt; 
-    font-weight: bold;
-    letter-spacing: 3px;
-    padding: 6px 24px;
-    text-transform: uppercase;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+  .services-text {
+    font-size: 9pt;
+    letter-spacing: 5px;
+    color: #252a5c;
+    margin-top: 1mm;
+    font-family: Arial, sans-serif;
   }
-  
-  .title-section { text-align: center; margin-bottom: 10mm; }
-  .main-title { 
-    font-size: 22pt; 
-    font-weight: bold; 
-    color: #252a5c; 
-    text-transform: uppercase; 
-    letter-spacing: 2px;
-    margin: 0 0 4px 0;
-  }
-  .sub-title { 
-    font-size: 13pt; 
-    color: #555; 
-    margin: 0;
-    font-style: italic;
-  }
-
-  .cert-body { 
-    background-color: #f9f9fc; 
-    border: 1px solid #dde; 
-    border-radius: 4px;
-    padding: 10mm; 
-    margin-bottom: 10mm; 
-    font-size: 11pt;
-    line-height: 1.8;
-  }
-  
-  .cert-body p { margin: 0 0 6px 0; }
-  .highlight { font-weight: bold; color: #252a5c; }
-  .restaurant { font-size: 14pt; font-weight: bold; color: #252a5c; text-transform: uppercase; }
-  
-  .dates-table { 
-    width: 100%; 
-    border-collapse: collapse; 
-    margin: 8mm 0; 
-  }
-  .dates-table td { 
-    width: 50%; 
-    text-align: center; 
-    padding: 6px; 
-    background: #252a5c; 
-    color: white; 
+  .otorga {
     font-size: 10pt;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+    font-style: italic;
+    color: #252a5c;
+    margin-top: 3mm;
+    font-family: Arial, sans-serif;
   }
-  .dates-table .date-value { 
-    font-size: 12pt; 
-    font-weight: bold; 
-    display: block; 
-    color: #fdc80c;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+  .certificado-title {
+    font-size: 44pt;
+    font-weight: bold;
+    color: #1a2050;
+    letter-spacing: 3px;
+    line-height: 1;
+    margin-top: 1mm;
+    font-family: 'Times New Roman', serif;
+    text-transform: uppercase;
   }
-  .dates-table .date-label { 
-    font-size: 8pt; 
-    text-transform: uppercase; 
-    letter-spacing: 1px; 
-    color: #ccc;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+  .gold-divider {
+    width: 85%;
+    height: 1.5px;
+    background: linear-gradient(to right, transparent 0%, #c9a84c 20%, #f0d060 50%, #c9a84c 80%, transparent 100%);
+    margin: 3mm 0;
   }
-  
-  .tipo-cert { 
-    background: #fdc80c; 
-    color: #252a5c; 
-    text-align: center; 
-    font-weight: bold; 
-    font-size: 12pt; 
-    padding: 8px; 
-    margin: 6mm 0;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+  .cert-text {
+    font-size: 10.5pt;
+    color: #252a5c;
+    line-height: 1.7;
+    max-width: 175mm;
+    font-family: Arial, sans-serif;
   }
-
-  .signature-section { 
-    display: flex; 
-    justify-content: space-between; 
-    margin-top: 14mm; 
-    gap: 20mm;
+  .cert-names {
+    font-size: 11.5pt;
+    font-weight: bold;
+    color: #1a2050;
+    line-height: 1.5;
+    margin-top: 2mm;
+    font-family: Arial, sans-serif;
+    letter-spacing: 0.3px;
   }
-  .signature-block { 
-    flex: 1; 
-    text-align: center; 
+  .bottom-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    width: 90%;
+    margin-top: 3mm;
+    gap: 5mm;
   }
-  .signature-line { 
-    border-top: 1px solid #252a5c; 
-    margin-bottom: 4px; 
-    padding-top: 4px; 
+  .dates-box {
+    text-align: left;
+    font-size: 7.5pt;
+    font-weight: bold;
+    color: #1a2050;
+    font-family: Arial, sans-serif;
+    min-width: 50mm;
   }
-  .signature-name { font-weight: bold; font-size: 9pt; }
-  .signature-role { font-size: 8pt; color: #666; }
-
-  .footer { 
-    position: absolute; 
-    bottom: 10mm; 
-    left: 20mm; 
-    right: 20mm; 
-    text-align: center; 
-    font-size: 8pt; 
-    color: #888; 
-    border-top: 1px solid #ddd; 
-    padding-top: 4px; 
+  .dates-box div { margin-bottom: 1.5mm; }
+  .dates-underline {
+    width: 45mm;
+    height: 1px;
+    background: #c9a84c;
+    margin: 2mm 0;
   }
-
+  .seal-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+  }
+  .signature-box {
+    text-align: center;
+    min-width: 55mm;
+  }
+  .signature-text {
+    font-size: 18pt;
+    font-style: italic;
+    color: #1a2050;
+    font-family: 'Times New Roman', serif;
+    letter-spacing: -1px;
+  }
+  .signature-logo { height: 10mm; width: auto; margin: 1mm 0; }
+  .signature-name {
+    font-size: 7.5pt;
+    font-weight: bold;
+    color: #1a2050;
+    font-family: Arial, sans-serif;
+  }
+  .signature-role {
+    font-size: 7pt;
+    color: #1a2050;
+    font-family: Arial, sans-serif;
+    margin-top: 0.5mm;
+  }
   @media print {
-    body { padding: 18mm 20mm; }
     * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   }
 </style>
 </head>
 <body>
 
-<div class="header">
-  <img src="${LOGO_URL}" alt="PROMAN Logo" class="logo">
-  <div class="cert-num">
-    <div style="font-size: 8pt; color: #999; text-transform: uppercase; letter-spacing: 1px;">No. Certificado</div>
-    <div style="font-size: 11pt; font-weight: bold; color: #252a5c;">${certNum}</div>
-    <div style="font-size: 8pt; color: #999; margin-top: 2px;">Emitido: ${fechaEmision}</div>
-  </div>
-</div>
-
-<hr class="divider-top">
-<hr class="divider-yellow">
-
-<div class="badge-container">
-  <span class="badge">PROMAN Services</span>
-</div>
-
-<div class="title-section">
-  <h1 class="main-title">Certificado de Limpieza</h1>
-  <p class="sub-title">Constancia de Servicios Profesionales de Higiene</p>
-</div>
-
-<div class="cert-body">
-  <p>Por medio del presente documento, <span class="highlight">PROMAN Services S.A. de C.V.</span> hace constar que se han llevado a cabo los servicios de limpieza y mantenimiento descritos a continuación en las instalaciones de:</p>
+<!-- Decorative SVG Background -->
+<svg style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;" 
+     viewBox="0 0 297 210" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+  <defs>
+    <linearGradient id="navyGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#10163a"/>
+      <stop offset="100%" stop-color="#1e2560"/>
+    </linearGradient>
+    <linearGradient id="goldWave1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8a6a20"/>
+      <stop offset="30%" stop-color="#d4a820"/>
+      <stop offset="60%" stop-color="#f5d060"/>
+      <stop offset="100%" stop-color="#b08020"/>
+    </linearGradient>
+    <linearGradient id="goldWave2" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#8a6a20"/>
+      <stop offset="30%" stop-color="#d4a820"/>
+      <stop offset="60%" stop-color="#f5d060"/>
+      <stop offset="100%" stop-color="#b08020"/>
+    </linearGradient>
+  </defs>
   
-  <p style="text-align: center; margin: 6mm 0; font-size: 15pt; font-weight: bold; color: #252a5c; text-transform: uppercase; letter-spacing: 1px;">${restaurantName}</p>
+  <!-- Dark left navy panel -->
+  <rect x="0" y="0" width="40" height="210" fill="url(#navyGrad)"/>
+  
+  <!-- Upper gold wave shape -->
+  <path d="M 0 0 L 40 0 C 85 8, 95 35, 68 68 C 52 88, 22 88, 0 100 Z" 
+        fill="url(#goldWave1)" opacity="0.95"/>
+  
+  <!-- Upper gold wave inner highlight -->
+  <path d="M 0 0 L 32 0 C 70 6, 78 28, 55 55 C 42 70, 18 72, 0 80 Z" 
+        fill="#f0c830" opacity="0.25"/>
 
-  <div class="tipo-cert">${tipoCertificado}</div>
+  <!-- Lower gold wave shape -->
+  <path d="M 0 210 L 40 210 C 85 202, 95 175, 68 142 C 52 122, 22 122, 0 110 Z" 
+        fill="url(#goldWave2)" opacity="0.95"/>
+  
+  <!-- Lower gold wave inner highlight -->
+  <path d="M 0 210 L 32 210 C 70 204, 78 182, 55 155 C 42 140, 18 138, 0 130 Z" 
+        fill="#f0c830" opacity="0.25"/>
 
-  <table class="dates-table">
-    <tr>
-      <td>
-        <span class="date-label">Fecha de Inicio</span>
-        <span class="date-value">${fechaInicioFmt}</span>
-      </td>
-      <td>
-        <span class="date-label">Fecha de Finalización</span>
-        <span class="date-value">${fechaFinFmt}</span>
-      </td>
-    </tr>
-  </table>
+  <!-- Subtle background texture curves on white area -->
+  <path d="M 55 0 Q 160 105 55 210" stroke="#ede8d0" stroke-width="0.6" fill="none"/>
+  <path d="M 70 0 Q 185 105 70 210" stroke="#ede8d0" stroke-width="0.4" fill="none"/>
+  <path d="M 90 0 Q 215 105 90 210" stroke="#ede8d0" stroke-width="0.25" fill="none"/>
+  <path d="M 115 0 Q 250 105 115 210" stroke="#ede8d0" stroke-width="0.15" fill="none"/>
+  
+  <!-- Right side subtle curves -->
+  <path d="M 297 20 Q 255 105 297 190" stroke="#ede8d0" stroke-width="0.5" fill="none"/>
+  <path d="M 297 10 Q 245 105 297 200" stroke="#ede8d0" stroke-width="0.3" fill="none"/>
+  <path d="M 297 5 Q 235 105 297 205" stroke="#ede8d0" stroke-width="0.2" fill="none"/>
+</svg>
 
-  <p style="margin-top: 6mm;">Los servicios fueron ejecutados bajo los estándares de calidad e higiene requeridos, cumpliendo con todos los protocolos establecidos por la empresa cliente.</p>
-  <p>Este certificado valida que los trabajos han sido completados de manera satisfactoria y conforme a los lineamientos acordados.</p>
-</div>
+<!-- Certificate Content -->
+<div class="content">
 
-<div class="signature-section">
-  <div class="signature-block">
-    <div style="height: 15mm;"></div>
-    <div class="signature-line"></div>
-    <div class="signature-name">PROMAN Services S.A. de C.V.</div>
-    <div class="signature-role">Empresa Ejecutora</div>
+  <!-- Logo -->
+  <img src="${LOGO_URL}" class="logo" alt="PROMAN" />
+  <div class="services-text">s &nbsp; e &nbsp; r &nbsp; v &nbsp; i &nbsp; c &nbsp; e &nbsp; s</div>
+  <div class="otorga">otorga el presente</div>
+  <div class="certificado-title">CERTIFICADO</div>
+  
+  <div class="gold-divider"></div>
+  
+  <div class="cert-text">
+    Tras completar los servicios de saneamiento ambiental<br>
+    correspondiente a ${tipoCertificado} de
   </div>
-  <div class="signature-block">
-    <div style="height: 15mm;"></div>
-    <div class="signature-line"></div>
-    <div class="signature-name">${restaurantName}</div>
-    <div class="signature-role">Cliente / Empresa Receptora</div>
+  
+  <div class="cert-names">
+    ${empresaNombre}<br>
+    ${cadenaDisplay}<br>
+    ${sucursal.toUpperCase()}
   </div>
-</div>
-
-<div class="footer">
-  PROMAN Services S.A. de C.V. &nbsp;|&nbsp; San Salvador, El Salvador &nbsp;|&nbsp; Tel: 6053-1213 &nbsp;|&nbsp; Este documento certifica la realización de los servicios indicados.
+  
+  <div class="gold-divider"></div>
+  
+  <!-- Bottom: Dates | Seal | Signature -->
+  <div class="bottom-section">
+    
+    <!-- Left: Dates -->
+    <div class="dates-box">
+      <div>FECHA DE EMISIÓN: ${formatDate(fechaEmision)}</div>
+      <div class="dates-underline"></div>
+      <div>FECHA DE VENCIMIENTO: ${formatDate(fechaVencimiento)}</div>
+    </div>
+    
+    <!-- Center: Gold Seal -->
+    <div class="seal-container">
+      <svg width="45" height="45" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="sealGrad" cx="35%" cy="30%" r="65%">
+            <stop offset="0%" stop-color="#f5e070"/>
+            <stop offset="30%" stop-color="#d4a820"/>
+            <stop offset="60%" stop-color="#a07820"/>
+            <stop offset="100%" stop-color="#7a5810"/>
+          </radialGradient>
+          <radialGradient id="sealInner" cx="40%" cy="35%" r="60%">
+            <stop offset="0%" stop-color="#fdf0a0"/>
+            <stop offset="40%" stop-color="#e0c040"/>
+            <stop offset="100%" stop-color="#c09020"/>
+          </radialGradient>
+        </defs>
+        <!-- Outer star burst -->
+        <polygon points="50,2 56,34 88,12 66,38 98,44 66,56 88,88 56,66 50,98 44,66 12,88 34,56 2,44 34,38 12,12 44,34" 
+                 fill="url(#sealGrad)"/>
+        <!-- Middle circle -->
+        <circle cx="50" cy="50" r="28" fill="url(#sealGrad)" stroke="#f0d060" stroke-width="1"/>
+        <!-- Inner circle -->
+        <circle cx="50" cy="50" r="22" fill="url(#sealInner)"/>
+        <!-- Shine -->
+        <ellipse cx="42" cy="38" rx="7" ry="4" fill="rgba(255,255,255,0.35)" transform="rotate(-30,42,38)"/>
+      </svg>
+    </div>
+    
+    <!-- Right: Signature -->
+    <div class="signature-box">
+      <div class="signature-text">Mario M..</div>
+      <div style="border-top:1px solid #1a2050;padding-top:1.5mm;margin-top:1mm;">
+        <img src="${LOGO_URL}" class="signature-logo" alt="PROMAN" />
+      </div>
+      <div class="signature-name">LICDO. MARIO MORÁN</div>
+      <div class="signature-role">GERENTE DE OPERACIONES</div>
+    </div>
+    
+  </div>
 </div>
 
 <script>window.onload = function() { window.print(); }</script>
 </body>
 </html>`;
 
-        // Subir el HTML como archivo
+        // Subir HTML
         const encoder = new TextEncoder();
-        const file = new File([encoder.encode(html)], `certificado-limpieza-${certNum}.html`, { type: 'text/html; charset=utf-8' });
+        const file = new File([encoder.encode(html)], `certificado-${certNum}.html`, { type: 'text/html; charset=utf-8' });
         const { file_url } = await base44.asServiceRole.integrations.Core.UploadFile({ file });
 
-        // Enviar email al restaurante
+        // Enviar por correo
         await base44.asServiceRole.integrations.Core.SendEmail({
             to: emailDestinatario,
             from_name: 'PROMAN Services',
-            subject: `Certificado de Limpieza - ${restaurantName} (${certNum})`,
+            subject: `Certificado de Limpieza - ${cadenaDisplay} ${sucursal.toUpperCase()} (${certNum})`,
             body: `Estimados,
 
-Adjuntamos el Certificado de Limpieza correspondiente a los servicios realizados en sus instalaciones.
+Adjuntamos el Certificado de Limpieza por los servicios realizados en sus instalaciones.
 
-Detalles:
-- Restaurante: ${restaurantName}
-- Tipo de certificado: ${tipoCertificado}
-- Fecha de inicio: ${fechaInicioFmt}
-- Fecha de finalización: ${fechaFinFmt}
-- No. Certificado: ${certNum}
+Detalles del Certificado:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Empresa: ${empresaNombre}
+• Sucursal: ${cadenaDisplay} ${sucursal.toUpperCase()}
+• Servicio: ${tipoCertificado}
+• Fecha de Emisión: ${formatDate(fechaEmision)}
+• Fecha de Vencimiento: ${formatDate(fechaVencimiento)}
+• No. Certificado: ${certNum}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Puede ver e imprimir el certificado en el siguiente enlace:
+Ver e imprimir el certificado aquí:
 ${file_url}
 
-Quedamos a sus órdenes para cualquier consulta.
-
 Atentamente,
+LICDO. MARIO MORÁN
+Gerente de Operaciones
 PROMAN Services S.A. de C.V.
 Tel: 6053-1213`
         });
@@ -302,11 +333,11 @@ Tel: 6053-1213`
             cert_url: file_url,
             html: html,
             cert_number: certNum,
-            message: `Certificado generado y enviado a ${emailDestinatario}`
+            message: `Certificado ${certNum} generado y enviado a ${emailDestinatario}`
         });
 
     } catch (error) {
-        console.error('Error generating certificate:', error);
+        console.error('Error:', error);
         return Response.json({ error: error.message }, { status: 500 });
     }
 });
