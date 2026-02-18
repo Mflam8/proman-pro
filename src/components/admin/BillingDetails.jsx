@@ -37,6 +37,7 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [descuento, setDescuento] = useState(0);
   const [showCorporateWorkOrder, setShowCorporateWorkOrder] = useState(false);
+  const [showCertificateModal, setShowCertificateModal] = useState(false);
   const [fechaInicio, setFechaInicio] = useState("");
   const [fechaFin, setFechaFin] = useState("");
   const queryClient = useQueryClient();
