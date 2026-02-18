@@ -328,6 +328,15 @@ export default function CleaningCertificateModal({ inquiry, open, onClose }) {
             <div className="flex justify-end gap-3 pt-2">
               <Button variant="outline" onClick={onClose}>Cancelar</Button>
               <Button
+                variant="outline"
+                onClick={handlePreview}
+                disabled={!sucursal}
+                className="border-orange-400 text-orange-600 hover:bg-orange-50"
+              >
+                <Eye className="w-4 h-4 mr-2" />
+                Vista Previa
+              </Button>
+              <Button
                 onClick={handleGenerate}
                 disabled={isGenerating || !sucursal || !emailDestinatario}
                 className="bg-proman-navy text-white hover:opacity-90"
