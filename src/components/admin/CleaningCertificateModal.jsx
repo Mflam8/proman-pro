@@ -176,9 +176,14 @@ export default function CleaningCertificateModal({ inquiry, open, onClose }) {
     }
   };
 
+  const finalTipo = useCustomTipo ? customTipo : tipoCertificado;
+  const empresaNombre = cadena === 'mcdonalds' ? 'SERVAMATIC, S.A DE C.V.' : 'ORIENTAL WOK, S.A DE C.V.';
+  const cadenaDisplay = cadena === 'mcdonalds' ? "RESTAURANTE McDONALD'S" : 'RESTAURANTE PANDA';
+  const formatDate = (dateStr) => { if (!dateStr) return ''; const [y, m, d] = dateStr.split('-'); return `${d}-${m}-${y}`; };
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Award className="w-5 h-5 text-yellow-500" />
@@ -195,15 +200,7 @@ export default function CleaningCertificateModal({ inquiry, open, onClose }) {
               <p className="text-xs text-green-600 mt-1">No. {result.cert_number}</p>
             </div>
             <div className="flex gap-3">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => {
-                  const win = window.open("", "_blank");
-                  win.document.write(result.html);
-                  win.document.close();
-                }}
-              >
+              <Button variant="outline" className="flex-1" onClick={handlePreview}>
                 <ExternalLink className="w-4 h-4 mr-2" />
                 Ver Certificado
               </Button>
@@ -215,47 +212,105 @@ export default function CleaningCertificateModal({ inquiry, open, onClose }) {
         ) : (
           <div className="space-y-4 pt-2">
 
-            {/* Cadena */}
-            <div>
-              <Label className="text-sm font-medium">Cadena de Restaurante *</Label>
-              <Select value={cadena} onValueChange={(v) => { setCadena(v); setSucursal(""); setEmailDestinatario(""); }}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="mcdonalds">McDonald's</SelectItem>
-                  <SelectItem value="panda">Panda Express</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {/* === VISTA PREVIA DEL CONTENIDO === */}
+            <div className="border-2 border-blue-300 rounded-xl bg-blue-50 p-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="font-semibold text-blue-900 flex items-center gap-2">
+                  <Eye className="w-4 h-4" />
+                  Vista previa del texto en el certificado
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handlePreview}
+                  disabled={!sucursal}
+                  className="border-orange-400 text-orange-600 hover:bg-orange-50 text-xs"
+                >
+                  <Eye className="w-3 h-3 mr-1" />
+                  Ver diseño completo
+                </Button>
+              </div>
 
-            {/* Sucursal */}
-            <div>
-              <Label className="text-sm font-medium">Sucursal *</Label>
-              {cadena === "mcdonalds" ? (
-                <Select value={sucursal} onValueChange={setSucursal}>
-                  <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Seleccionar sucursal..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {MCDONALDS_SUCURSALES.map(s => (
-                      <SelectItem key={s.nombre} value={s.nombre}>{s.nombre}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Input
-                  value={sucursal}
-                  onChange={(e) => setSucursal(e.target.value)}
-                  placeholder="Ej: SANTA ELENA, MULTIPLAZA..."
-                  className="mt-1"
-                />
+              {/* Simulación de cómo queda el texto en el certificado */}
+              <div className="bg-white rounded-lg border border-blue-200 p-4 text-center space-y-2">
+                <p className="text-xs text-gray-400 italic">— texto que aparece en el certificado —</p>
+                <p className="text-sm text-gray-700">
+                  Tras completar los servicios de saneamiento ambiental<br />
+                  correspondiente a
+                </p>
+                <p className="font-semibold text-gray-900 text-sm">
+                  {finalTipo || <span className="text-red-400 italic">← selecciona el tipo de servicio</span>}
+                </p>
+                <p className="text-sm text-gray-700">de</p>
+                <p className="font-bold text-gray-900">
+                  {empresaNombre}
+                </p>
+                <p className="font-bold text-gray-900">
+                  {cadenaDisplay} SUCURSAL{' '}
+                  {sucursal
+                    ? sucursal.toUpperCase()
+                    : <span className="text-red-400 italic">← selecciona sucursal</span>
+                  }
+                </p>
+                <div className="pt-2 border-t mt-2 text-xs text-left text-gray-600 space-y-1">
+                  <p>📅 <strong>Emisión:</strong> {formatDate(fechaEmision)}</p>
+                  <p>📅 <strong>Vencimiento:</strong> {formatDate(fechaVencimiento)}</p>
+                  <p>📧 <strong>Destinatario:</strong> {emailDestinatario || <span className="text-red-400 italic">no ingresado</span>}</p>
+                </div>
+              </div>
+
+              {(!sucursal || !finalTipo) && (
+                <p className="text-xs text-orange-600 flex items-center gap-1 mt-2">
+                  <AlertCircle className="w-3 h-3" />
+                  Completa los campos para ver la vista previa completa
+                </p>
               )}
             </div>
 
-            {/* Tipo de Certificado */}
+            {/* === CAMPOS DEL FORMULARIO === */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Cadena */}
+              <div>
+                <Label className="text-sm font-medium">Cadena *</Label>
+                <Select value={cadena} onValueChange={(v) => { setCadena(v); setSucursal(""); setEmailDestinatario(""); }}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="mcdonalds">McDonald's</SelectItem>
+                    <SelectItem value="panda">Panda Express</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Sucursal */}
+              <div>
+                <Label className="text-sm font-medium">Sucursal *</Label>
+                {cadena === "mcdonalds" ? (
+                  <Select value={sucursal} onValueChange={setSucursal}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Seleccionar..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MCDONALDS_SUCURSALES.map(s => (
+                        <SelectItem key={s.nombre} value={s.nombre}>{s.nombre}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input
+                    value={sucursal}
+                    onChange={(e) => setSucursal(e.target.value)}
+                    placeholder="Ej: SANTA ELENA..."
+                    className="mt-1"
+                  />
+                )}
+              </div>
+            </div>
+
+            {/* Tipo de Servicio */}
             <div>
-              <Label className="text-sm font-medium">Tipo de Servicio *</Label>
+              <Label className="text-sm font-medium">Tipo de Servicio (aparece en el certificado) *</Label>
               <Select
                 value={useCustomTipo ? "_custom" : tipoCertificado}
                 onValueChange={(v) => {
@@ -307,25 +362,16 @@ export default function CleaningCertificateModal({ inquiry, open, onClose }) {
                 placeholder="contacto@restaurante.com"
                 className="mt-1"
               />
-              {cadena === "mcdonalds" && sucursal && (
+              {cadena === "mcdonalds" && sucursal && emailDestinatario && (
                 <p className="text-xs text-green-600 mt-1">✓ Email auto-completado desde directorio McDonald's</p>
               )}
             </div>
-
-            {/* Preview info */}
-            {sucursal && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-900 space-y-1">
-                <p className="font-semibold">Vista previa del certificado:</p>
-                <p>• Empresa: <strong>{cadena === "mcdonalds" ? "SERVAMATIC, S.A DE C.V." : "ORIENTAL WOK, S.A DE C.V."}</strong></p>
-                <p>• Restaurante: <strong>{cadena === "mcdonalds" ? "RESTAURANTE McDONALD'S" : "RESTAURANTE PANDA"} SUCURSAL {sucursal.toUpperCase()}</strong></p>
-              </div>
-            )}
 
             {error && (
               <div className="bg-red-50 border border-red-200 rounded p-3 text-sm text-red-700">{error}</div>
             )}
 
-            <div className="flex justify-end gap-3 pt-2">
+            <div className="flex justify-end gap-3 pt-2 border-t">
               <Button variant="outline" onClick={onClose}>Cancelar</Button>
               <Button
                 variant="outline"
@@ -334,7 +380,7 @@ export default function CleaningCertificateModal({ inquiry, open, onClose }) {
                 className="border-orange-400 text-orange-600 hover:bg-orange-50"
               >
                 <Eye className="w-4 h-4 mr-2" />
-                Vista Previa
+                Ver diseño completo
               </Button>
               <Button
                 onClick={handleGenerate}
