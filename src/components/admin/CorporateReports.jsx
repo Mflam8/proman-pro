@@ -9,8 +9,7 @@ import { Calendar, Download, FileText, Search, Building2, MapPin, DollarSign, Pl
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import CleaningCertificateModal from "./CleaningCertificateModal";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import InquiryCreateForm from "./InquiryCreateForm";
+import NewCorporateJobModal from "./NewCorporateJobModal";
 
 export default function CorporateReports() {
   const [selectedRestaurant, setSelectedRestaurant] = useState("all");
