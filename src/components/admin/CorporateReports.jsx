@@ -343,19 +343,10 @@ export default function CorporateReports() {
 
       {/* Modal: Nuevo Trabajo Corporativo */}
       {showNewJobModal && (
-        <Dialog open={showNewJobModal} onOpenChange={() => setShowNewJobModal(false)}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Nuevo Trabajo Corporativo</DialogTitle>
-            </DialogHeader>
-            <InquiryCreateForm
-              customers={customers}
-              onSubmit={handleCreateJob}
-              isSubmitting={isCreating}
-              onCancel={() => setShowNewJobModal(false)}
-            />
-          </DialogContent>
-        </Dialog>
+        <NewCorporateJobModal
+          open={showNewJobModal}
+          onClose={() => setShowNewJobModal(false)}
+        />
       )}
 
       {/* Modal: Acreditación de Limpieza */}
