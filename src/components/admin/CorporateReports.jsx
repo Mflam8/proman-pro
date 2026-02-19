@@ -191,9 +191,9 @@ export default function CorporateReports() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
               <label className="block text-sm font-medium mb-2">Restaurante</label>
-              <Select value={selectedRestaurant} onValueChange={setSelectedRestaurant}>
+              <Select value={selectedRestaurant} onValueChange={(v) => { setSelectedRestaurant(v); setSelectedBranch("all"); }}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Todos" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
