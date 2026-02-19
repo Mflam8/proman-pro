@@ -127,25 +127,6 @@ export default function CorporateReports() {
     a.click();
   };
 
-  const handleCreateJob = async (jobData) => {
-    setIsCreating(true);
-    try {
-      await base44.entities.ClientInquiry.create({
-        ...jobData,
-        lead_source: 'corporativo',
-        rubro: jobData.rubro || 'Restaurantes',
-        status: 'agendado',
-      });
-      await queryClient.invalidateQueries({ queryKey: ['corporate-reports'] });
-      await queryClient.invalidateQueries({ queryKey: ['clientInquiries'] });
-      setShowNewJobModal(false);
-    } catch (err) {
-      alert('Error al crear el trabajo: ' + err.message);
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
   return (
     <div className="space-y-6">
       {/* Header */}
