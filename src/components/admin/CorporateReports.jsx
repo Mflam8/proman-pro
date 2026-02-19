@@ -78,8 +78,17 @@ export default function CorporateReports() {
       jobs = jobs.filter(j => j.scheduled_date <= dateTo);
     }
 
+    // Sort
+    if (sortOrder === "date_desc") {
+      jobs = [...jobs].sort((a, b) => (b.scheduled_date || "").localeCompare(a.scheduled_date || ""));
+    } else if (sortOrder === "date_asc") {
+      jobs = [...jobs].sort((a, b) => (a.scheduled_date || "").localeCompare(b.scheduled_date || ""));
+    } else if (sortOrder === "created_desc") {
+      jobs = [...jobs].sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+    }
+
     return jobs;
-  }, [corporateJobs, selectedRestaurant, selectedBranch, searchTerm, dateFrom, dateTo]);
+  }, [corporateJobs, selectedRestaurant, selectedBranch, searchTerm, dateFrom, dateTo, sortOrder]);
 
   // Calculate stats
   const stats = useMemo(() => {
