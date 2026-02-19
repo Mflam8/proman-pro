@@ -19,6 +19,7 @@ export default function CorporateReports() {
   const [dateTo, setDateTo] = useState("");
   const [certificateJob, setCertificateJob] = useState(null);
   const [showNewJobModal, setShowNewJobModal] = useState(false);
+  const [sortOrder, setSortOrder] = useState("date_desc");
 
   const queryClient = useQueryClient();
 
