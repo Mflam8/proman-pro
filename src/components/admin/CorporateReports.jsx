@@ -255,16 +255,6 @@ export default function CorporateReports() {
             </div>
           </div>
 
-          <div className="mt-4">
-            <label className="block text-sm font-medium mb-2">Buscar en descripción</label>
-            <Input
-              placeholder="Buscar servicio..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-md"
-            />
-          </div>
-
           <div className="flex gap-2 mt-4">
             <Button onClick={handleExportCSV} variant="outline">
               <Download className="w-4 h-4 mr-2" />
