@@ -17,9 +17,8 @@ export default function CorporateReports() {
   const [searchTerm, setSearchTerm] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [certificateJob, setCertificateJob] = useState(null); // job to generate cert for
+  const [certificateJob, setCertificateJob] = useState(null);
   const [showNewJobModal, setShowNewJobModal] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
 
   const queryClient = useQueryClient();
 
