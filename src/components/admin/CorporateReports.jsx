@@ -63,13 +63,6 @@ export default function CorporateReports() {
       jobs = jobs.filter(j => j.location_name === selectedBranch);
     }
 
-    if (searchTerm) {
-      jobs = jobs.filter(j => 
-        j.message?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        j.location_name?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
     if (dateFrom) {
       jobs = jobs.filter(j => j.scheduled_date >= dateFrom);
     }
