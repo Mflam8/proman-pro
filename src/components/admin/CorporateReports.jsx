@@ -208,7 +208,7 @@ export default function CorporateReports() {
               <label className="block text-sm font-medium mb-2">Sucursal</label>
               <Select value={selectedBranch} onValueChange={setSelectedBranch}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Todas" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas</SelectItem>
