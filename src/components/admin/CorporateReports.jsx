@@ -246,6 +246,20 @@ export default function CorporateReports() {
                 onChange={(e) => setDateTo(e.target.value)}
               />
             </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Ordenar por</label>
+              <Select value={sortOrder} onValueChange={setSortOrder}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="date_desc">Fecha ↓ (más reciente)</SelectItem>
+                  <SelectItem value="date_asc">Fecha ↑ (más antiguo)</SelectItem>
+                  <SelectItem value="created_desc">Últimos agregados</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="mt-4">
