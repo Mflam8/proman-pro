@@ -28,7 +28,7 @@ export default function CorporateReports() {
     queryFn: async () => {
       const jobs = await base44.entities.ClientInquiry.filter({
         lead_source: 'corporativo'
-      }, '-scheduled_date');
+      }, '-scheduled_date', 500);
       return jobs.filter(job => job.scheduled_date);
     },
     initialData: [],
