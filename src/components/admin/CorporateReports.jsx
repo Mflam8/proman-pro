@@ -241,7 +241,7 @@ export default function CorporateReports() {
               <label className="block text-sm font-medium mb-2">Ordenar por</label>
               <Select value={sortOrder} onValueChange={setSortOrder}>
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Ordenar por" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="date_desc">Fecha ↓ (más reciente)</SelectItem>
