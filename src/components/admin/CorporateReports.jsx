@@ -81,7 +81,7 @@ export default function CorporateReports() {
     }
 
     return jobs;
-  }, [corporateJobs, selectedRestaurant, selectedBranch, searchTerm, dateFrom, dateTo, sortOrder]);
+  }, [corporateJobs, selectedRestaurant, selectedBranch, dateFrom, dateTo, sortOrder]);
 
   // Calculate stats
   const stats = useMemo(() => {
