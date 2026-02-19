@@ -33,11 +33,7 @@ export default function CorporateReports() {
     initialData: [],
   });
 
-  const { data: customers } = useQuery({
-    queryKey: ['customers'],
-    queryFn: () => base44.entities.Customer.list(),
-    initialData: [],
-  });
+
 
   // Get unique restaurants and branches
   const restaurants = useMemo(() => {
