@@ -14,7 +14,7 @@ import NewCorporateJobModal from "./NewCorporateJobModal";
 export default function CorporateReports() {
   const [selectedRestaurant, setSelectedRestaurant] = useState("all");
   const [selectedBranch, setSelectedBranch] = useState("all");
-  const [searchTerm, setSearchTerm] = useState("");
+
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [certificateJob, setCertificateJob] = useState(null);
