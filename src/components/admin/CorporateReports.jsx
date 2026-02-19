@@ -1,13 +1,16 @@
 import React, { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Download, FileText, Search, Building2, MapPin, DollarSign } from "lucide-react";
+import { Calendar, Download, FileText, Search, Building2, MapPin, DollarSign, Plus } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
+import CleaningCertificateModal from "./CleaningCertificateModal";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import InquiryCreateForm from "./InquiryCreateForm";
 
 export default function CorporateReports() {
   const [selectedRestaurant, setSelectedRestaurant] = useState("all");
@@ -15,6 +18,11 @@ export default function CorporateReports() {
   const [searchTerm, setSearchTerm] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [certificateJob, setCertificateJob] = useState(null); // job to generate cert for
+  const [showNewJobModal, setShowNewJobModal] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+
+  const queryClient = useQueryClient();
 
   const { data: corporateJobs, isLoading } = useQuery({
     queryKey: ['corporate-reports'],
@@ -24,6 +32,12 @@ export default function CorporateReports() {
       }, '-scheduled_date');
       return jobs.filter(job => job.scheduled_date);
     },
+    initialData: [],
+  });
+
+  const { data: customers } = useQuery({
+    queryKey: ['customers'],
+    queryFn: () => base44.entities.Customer.list(),
     initialData: [],
   });
 
@@ -115,17 +129,40 @@ export default function CorporateReports() {
     a.click();
   };
 
-  const handleGenerateCertificate = (branch) => {
-    const branchJobs = jobsByBranch[branch];
-    alert(`Generando certificado para ${branch} con ${branchJobs.length} servicios`);
+  const handleCreateJob = async (jobData) => {
+    setIsCreating(true);
+    try {
+      await base44.entities.ClientInquiry.create({
+        ...jobData,
+        lead_source: 'corporativo',
+        rubro: jobData.rubro || 'Restaurantes',
+        status: 'agendado',
+      });
+      await queryClient.invalidateQueries({ queryKey: ['corporate-reports'] });
+      await queryClient.invalidateQueries({ queryKey: ['clientInquiries'] });
+      setShowNewJobModal(false);
+    } catch (err) {
+      alert('Error al crear el trabajo: ' + err.message);
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">Reportes Corporativos</h2>
-        <p className="text-gray-600">Historial de servicios para clientes corporativos</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Reportes Corporativos</h2>
+          <p className="text-gray-600">Historial de servicios para clientes corporativos</p>
+        </div>
+        <Button
+          onClick={() => setShowNewJobModal(true)}
+          className="bg-proman-yellow text-proman-navy font-semibold"
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Nuevo Trabajo Corporativo
+        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -263,7 +300,7 @@ export default function CorporateReports() {
                 </div>
                 <Button 
                   size="sm"
-                  onClick={() => handleGenerateCertificate(branch)}
+                  onClick={() => setCertificateJob(jobsByBranch[branch][0])}
                   className="bg-blue-600"
                 >
                   <FileText className="w-4 h-4 mr-2" />
@@ -314,8 +351,41 @@ export default function CorporateReports() {
           <CardContent className="py-12 text-center">
             <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <p className="text-gray-600">No se encontraron servicios con los filtros seleccionados</p>
+            <Button
+              className="mt-4 bg-proman-yellow text-proman-navy"
+              onClick={() => setShowNewJobModal(true)}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Agregar Primer Trabajo Corporativo
+            </Button>
           </CardContent>
         </Card>
+      )}
+
+      {/* Modal: Nuevo Trabajo Corporativo */}
+      {showNewJobModal && (
+        <Dialog open={showNewJobModal} onOpenChange={() => setShowNewJobModal(false)}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Nuevo Trabajo Corporativo</DialogTitle>
+            </DialogHeader>
+            <InquiryCreateForm
+              customers={customers}
+              onSubmit={handleCreateJob}
+              isSubmitting={isCreating}
+              onCancel={() => setShowNewJobModal(false)}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Modal: Acreditación de Limpieza */}
+      {certificateJob && (
+        <CleaningCertificateModal
+          inquiry={certificateJob}
+          open={!!certificateJob}
+          onClose={() => setCertificateJob(null)}
+        />
       )}
     </div>
   );
