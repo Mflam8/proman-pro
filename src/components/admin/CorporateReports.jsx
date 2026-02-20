@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar, Download, FileText, Building2, MapPin, DollarSign, Plus } from "lucide-react";
+import { Calendar, Download, FileText, Building2, MapPin, DollarSign, Plus, LayoutList, Layers } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import CleaningCertificateModal from "./CleaningCertificateModal";
