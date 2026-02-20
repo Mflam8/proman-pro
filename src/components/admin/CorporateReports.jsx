@@ -255,11 +255,27 @@ export default function CorporateReports() {
             </div>
           </div>
 
-          <div className="flex gap-2 mt-4">
+          <div className="flex gap-2 mt-4 flex-wrap">
             <Button onClick={handleExportCSV} variant="outline">
               <Download className="w-4 h-4 mr-2" />
               Exportar CSV
             </Button>
+            <div className="flex rounded-md border overflow-hidden">
+              <button
+                onClick={() => setViewMode("by_branch")}
+                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium transition-colors ${viewMode === "by_branch" ? "bg-proman-navy text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+              >
+                <Layers className="w-4 h-4" />
+                Por sucursal
+              </button>
+              <button
+                onClick={() => setViewMode("by_date")}
+                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium transition-colors border-l ${viewMode === "by_date" ? "bg-proman-navy text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+              >
+                <LayoutList className="w-4 h-4" />
+                Por fecha
+              </button>
+            </div>
           </div>
         </CardContent>
       </Card>
