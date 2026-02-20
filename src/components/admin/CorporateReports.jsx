@@ -265,7 +265,7 @@ export default function CorporateReports() {
 
       {/* Results by Branch */}
       <div className="space-y-4">
-        {Object.keys(jobsByBranch).sort().map(branch => (
+        {Object.keys(jobsByBranch).map(branch => (
           <Card key={branch}>
             <CardHeader className="bg-gray-50">
               <div className="flex items-center justify-between">
