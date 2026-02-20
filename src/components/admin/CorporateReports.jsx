@@ -93,7 +93,7 @@ export default function CorporateReports() {
     return { totalAmount, totalJobs, uniqueBranches };
   }, [filteredJobs]);
 
-  // Group by branch
+  // Group by restaurant, preserving date sort order within each group
   const jobsByBranch = useMemo(() => {
     const grouped = {};
     filteredJobs.forEach(job => {
@@ -102,6 +102,7 @@ export default function CorporateReports() {
         grouped[branch] = [];
       }
       grouped[branch].push(job);
+      // Each group keeps the same date order as filteredJobs (already sorted)
     });
     return grouped;
   }, [filteredJobs]);
