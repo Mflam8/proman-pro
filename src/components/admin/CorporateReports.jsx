@@ -280,62 +280,104 @@ export default function CorporateReports() {
         </CardContent>
       </Card>
 
-      {/* Results by Branch */}
-      <div className="space-y-4">
-        {Object.keys(jobsByBranch).map(branch => (
-          <Card key={branch}>
-            <CardHeader className="bg-gray-50">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <MapPin className="w-5 h-5 text-blue-600" />
-                  <div>
-                    <CardTitle className="text-lg">{branch}</CardTitle>
-                    <p className="text-sm text-gray-600">
-                      {jobsByBranch[branch].length} servicio(s) • 
-                      ${jobsByBranch[branch].reduce((sum, j) => sum + (j.final_amount || 0), 0).toFixed(2)}
-                    </p>
+      {/* Results */}
+      {viewMode === "by_branch" ? (
+        <div className="space-y-4">
+          {Object.keys(jobsByBranch).map(branch => (
+            <Card key={branch}>
+              <CardHeader className="bg-gray-50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <MapPin className="w-5 h-5 text-blue-600" />
+                    <div>
+                      <CardTitle className="text-lg">{branch}</CardTitle>
+                      <p className="text-sm text-gray-600">
+                        {jobsByBranch[branch].length} servicio(s) • 
+                        ${jobsByBranch[branch].reduce((sum, j) => sum + (j.final_amount || 0), 0).toFixed(2)}
+                      </p>
+                    </div>
                   </div>
+                  <Button 
+                    size="sm"
+                    onClick={() => setCertificateJob(jobsByBranch[branch][0])}
+                    className="bg-blue-600"
+                  >
+                    <FileText className="w-4 h-4 mr-2" />
+                    Generar Certificado
+                  </Button>
                 </div>
-                <Button 
-                  size="sm"
-                  onClick={() => setCertificateJob(jobsByBranch[branch][0])}
-                  className="bg-blue-600"
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  Generar Certificado
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <div className="space-y-3">
-                {jobsByBranch[branch].map(job => (
-                  <div key={job.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border">
-                    <Calendar className="w-4 h-4 text-gray-500 mt-1" />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-semibold text-gray-900">
-                          {format(parseISO(job.scheduled_date), "d 'de' MMMM yyyy", { locale: es })}
-                        </span>
-                        <span className="text-sm text-gray-500">• {job.restaurant_name}</span>
+              </CardHeader>
+              <CardContent className="pt-4">
+                <div className="space-y-3">
+                  {jobsByBranch[branch].map(job => (
+                    <div key={job.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border">
+                      <Calendar className="w-4 h-4 text-gray-500 mt-1" />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-semibold text-gray-900">
+                            {format(parseISO(job.scheduled_date), "d 'de' MMMM yyyy", { locale: es })}
+                          </span>
+                          <span className="text-sm text-gray-500">• {job.restaurant_name}</span>
+                        </div>
+                        <p className="text-sm text-gray-700">{job.message}</p>
+                        {job.notes && (
+                          <p className="text-xs text-gray-500 mt-1">{job.notes}</p>
+                        )}
                       </div>
-                      <p className="text-sm text-gray-700">{job.message}</p>
-                      {job.notes && (
-                        <p className="text-xs text-gray-500 mt-1">{job.notes}</p>
+                      <div className="text-right">
+                        <p className="font-bold text-green-600">${(job.final_amount || 0).toFixed(2)}</p>
+                        <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded">
+                          {job.status}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <Card>
+          <CardContent className="pt-4">
+            <div className="space-y-2">
+              {filteredJobs.map(job => (
+                <div key={job.id} className="flex items-start gap-4 p-3 rounded-lg border hover:bg-gray-50 transition-colors">
+                  <div className="flex flex-col items-center min-w-[80px] text-center">
+                    <span className="text-xs text-gray-500 uppercase font-medium">
+                      {format(parseISO(job.scheduled_date), "MMM", { locale: es })}
+                    </span>
+                    <span className="text-2xl font-bold text-proman-navy leading-tight">
+                      {format(parseISO(job.scheduled_date), "d")}
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      {format(parseISO(job.scheduled_date), "yyyy")}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <span className="font-semibold text-gray-900 text-sm">{job.restaurant_name}</span>
+                      {job.location_name && (
+                        <span className="flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                          <MapPin className="w-3 h-3" />
+                          {job.location_name}
+                        </span>
                       )}
                     </div>
-                    <div className="text-right">
-                      <p className="font-bold text-green-600">${(job.final_amount || 0).toFixed(2)}</p>
-                      <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded">
-                        {job.status}
-                      </span>
-                    </div>
+                    <p className="text-sm text-gray-600 truncate">{job.message}</p>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                  <div className="text-right shrink-0">
+                    <p className="font-bold text-green-600">${(job.final_amount || 0).toFixed(2)}</p>
+                    <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded">
+                      {job.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {isLoading && (
         <div className="text-center py-12">
