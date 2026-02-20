@@ -20,6 +20,7 @@ export default function CorporateReports() {
   const [certificateJob, setCertificateJob] = useState(null);
   const [showNewJobModal, setShowNewJobModal] = useState(false);
   const [sortOrder, setSortOrder] = useState("date_desc");
+  const [viewMode, setViewMode] = useState("by_branch"); // "by_branch" | "by_date"
 
   const queryClient = useQueryClient();
 
