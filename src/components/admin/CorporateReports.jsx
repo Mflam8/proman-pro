@@ -278,11 +278,11 @@ export default function CorporateReports() {
           {Object.keys(jobsByBranch).map(branch => (
             <Card key={branch}>
               <CardHeader className="bg-gray-50">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <MapPin className="w-5 h-5 text-blue-600" />
+                    <MapPin className="w-5 h-5 text-blue-600 shrink-0" />
                     <div>
-                      <CardTitle className="text-lg">{branch}</CardTitle>
+                      <CardTitle className="text-base sm:text-lg">{branch}</CardTitle>
                       <p className="text-sm text-gray-600">
                         {jobsByBranch[branch].length} servicio(s) • 
                         ${jobsByBranch[branch].reduce((sum, j) => sum + (j.final_amount || 0), 0).toFixed(2)}
@@ -292,7 +292,7 @@ export default function CorporateReports() {
                   <Button 
                     size="sm"
                     onClick={() => setCertificateJob(jobsByBranch[branch][0])}
-                    className="bg-blue-600"
+                    className="bg-blue-600 w-full sm:w-auto"
                   >
                     <FileText className="w-4 h-4 mr-2" />
                     Generar Certificado
@@ -302,11 +302,17 @@ export default function CorporateReports() {
               <CardContent className="pt-4">
                 <div className="space-y-3">
                   {jobsByBranch[branch].map(job => (
-                    <div key={job.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border">
-                      <Calendar className="w-4 h-4 text-gray-500 mt-1" />
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-semibold text-gray-900">
+                    <div key={job.id} className="flex flex-col sm:flex-row sm:items-start gap-2 p-3 bg-gray-50 rounded-lg border">
+                      <div className="flex items-center gap-2 sm:hidden">
+                        <Calendar className="w-4 h-4 text-gray-500 shrink-0" />
+                        <span className="font-semibold text-gray-900 text-sm">
+                          {format(parseISO(job.scheduled_date), "d 'de' MMMM yyyy", { locale: es })}
+                        </span>
+                      </div>
+                      <Calendar className="w-4 h-4 text-gray-500 mt-1 hidden sm:block shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="hidden sm:flex items-center gap-2 mb-1 flex-wrap">
+                          <span className="font-semibold text-gray-900 text-sm">
                             {format(parseISO(job.scheduled_date), "d 'de' MMMM yyyy", { locale: es })}
                           </span>
                           <span className="text-sm text-gray-500">• {job.restaurant_name}</span>
@@ -316,7 +322,7 @@ export default function CorporateReports() {
                           <p className="text-xs text-gray-500 mt-1">{job.notes}</p>
                         )}
                       </div>
-                      <div className="text-right">
+                      <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 sm:gap-1 shrink-0">
                         <p className="font-bold text-green-600">${(job.final_amount || 0).toFixed(2)}</p>
                         <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded">
                           {job.status}
