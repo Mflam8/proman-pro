@@ -191,9 +191,9 @@ export default function CorporateReports() {
           <CardTitle>Filtros</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div>
-              <label className="block text-sm font-medium mb-2">Restaurante</label>
+              <label className="block text-sm font-medium mb-1">Restaurante</label>
               <Select value={selectedRestaurant} onValueChange={(v) => { setSelectedRestaurant(v); setSelectedBranch("all"); }}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todos" />
@@ -208,7 +208,7 @@ export default function CorporateReports() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Sucursal</label>
+              <label className="block text-sm font-medium mb-1">Sucursal</label>
               <Select value={selectedBranch} onValueChange={setSelectedBranch}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todas" />
@@ -223,25 +223,17 @@ export default function CorporateReports() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Desde</label>
-              <Input 
-                type="date" 
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-              />
+              <label className="block text-sm font-medium mb-1">Desde</label>
+              <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Hasta</label>
-              <Input 
-                type="date" 
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-              />
+              <label className="block text-sm font-medium mb-1">Hasta</label>
+              <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-2">Ordenar por</label>
+            <div className="sm:col-span-2 lg:col-span-1">
+              <label className="block text-sm font-medium mb-1">Ordenar por</label>
               <Select value={sortOrder} onValueChange={setSortOrder}>
                 <SelectTrigger>
                   <SelectValue placeholder="Ordenar por" />
@@ -255,22 +247,22 @@ export default function CorporateReports() {
             </div>
           </div>
 
-          <div className="flex gap-2 mt-4 flex-wrap">
-            <Button onClick={handleExportCSV} variant="outline">
+          <div className="flex flex-col sm:flex-row gap-2 mt-4">
+            <Button onClick={handleExportCSV} variant="outline" className="w-full sm:w-auto">
               <Download className="w-4 h-4 mr-2" />
               Exportar CSV
             </Button>
-            <div className="flex rounded-md border overflow-hidden">
+            <div className="flex rounded-md border overflow-hidden w-full sm:w-auto">
               <button
                 onClick={() => setViewMode("by_branch")}
-                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium transition-colors ${viewMode === "by_branch" ? "bg-proman-navy text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium transition-colors ${viewMode === "by_branch" ? "bg-proman-navy text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
               >
                 <Layers className="w-4 h-4" />
                 Por sucursal
               </button>
               <button
                 onClick={() => setViewMode("by_date")}
-                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium transition-colors border-l ${viewMode === "by_date" ? "bg-proman-navy text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium transition-colors border-l ${viewMode === "by_date" ? "bg-proman-navy text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
               >
                 <LayoutList className="w-4 h-4" />
                 Por fecha
