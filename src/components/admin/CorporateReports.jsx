@@ -340,12 +340,12 @@ export default function CorporateReports() {
           <CardContent className="pt-4">
             <div className="space-y-2">
               {filteredJobs.map(job => (
-                <div key={job.id} className="flex items-start gap-4 p-3 rounded-lg border hover:bg-gray-50 transition-colors">
-                  <div className="flex flex-col items-center min-w-[80px] text-center">
-                    <span className="text-xs text-gray-500 uppercase font-medium">
+                <div key={job.id} className="flex items-start gap-3 p-3 rounded-lg border hover:bg-gray-50 transition-colors">
+                  <div className="flex flex-col items-center min-w-[44px] text-center shrink-0">
+                    <span className="text-xs text-gray-500 uppercase font-medium leading-tight">
                       {format(parseISO(job.scheduled_date), "MMM", { locale: es })}
                     </span>
-                    <span className="text-2xl font-bold text-proman-navy leading-tight">
+                    <span className="text-xl font-bold text-proman-navy leading-tight">
                       {format(parseISO(job.scheduled_date), "d")}
                     </span>
                     <span className="text-xs text-gray-400">
@@ -353,7 +353,7 @@ export default function CorporateReports() {
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                    <div className="flex items-start gap-1 flex-wrap mb-1">
                       <span className="font-semibold text-gray-900 text-sm">{job.restaurant_name}</span>
                       {job.location_name && (
                         <span className="flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
@@ -362,11 +362,11 @@ export default function CorporateReports() {
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-600 truncate">{job.message}</p>
+                    <p className="text-sm text-gray-600 line-clamp-2">{job.message}</p>
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className="font-bold text-green-600">${(job.final_amount || 0).toFixed(2)}</p>
-                    <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded">
+                  <div className="flex flex-col items-end shrink-0 gap-1">
+                    <p className="font-bold text-green-600 text-sm">${(job.final_amount || 0).toFixed(2)}</p>
+                    <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded whitespace-nowrap">
                       {job.status}
                     </span>
                   </div>
