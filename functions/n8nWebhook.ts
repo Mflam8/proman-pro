@@ -449,7 +449,17 @@ Deno.serve(async (req) => {
       default:
         return Response.json({
           error: `Unknown event: ${event}`,
-          supported_events: ['new_lead', 'message_received', 'status_update', 'payment_confirmed', 'customer_query', 'service_query'],
+          supported_events: [
+            'identify_sender',
+            'new_lead',
+            'message_received',
+            'group_message',
+            'status_update',
+            'payment_confirmed',
+            'customer_query',
+            'service_query',
+            'flag_for_review',
+          ],
         }, { status: 400 });
     }
 
