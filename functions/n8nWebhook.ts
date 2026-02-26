@@ -14,6 +14,20 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
  * Autenticación: Header X-N8N-Secret debe coincidir con N8N_WEBHOOK_SECRET
  */
 
+// Helper: qué debe hacer N8N según el rol del remitente
+function roleToAction(role) {
+  const actions = {
+    ceo:        'log_only',           // Solo registrar, no responder con bot
+    admin:      'log_only',
+    technician: 'technician_flow',    // Flujo de técnico (avances, fotos)
+    corporate:  'corporate_flow',     // Flujo corporativo (agendamiento)
+    corporate_customer: 'corporate_flow',
+    recurring_customer: 'handle_existing_customer',
+    new_lead:   'handle_new_lead',    // Flujo completo de calificación
+  };
+  return actions[role] || 'handle_new_lead';
+}
+
 Deno.serve(async (req) => {
   // Solo POST
   if (req.method !== 'POST') {
