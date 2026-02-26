@@ -264,7 +264,141 @@ Deno.serve(async (req) => {
       }
 
       // ─────────────────────────────────────────────
-      // 6. CONSULTA DE SERVICIOS Y PRECIOS
+      // 6. IDENTIFICAR REMITENTE (quién escribe)
+      // Llama esto PRIMERO antes de procesar cualquier mensaje
+      // ─────────────────────────────────────────────
+      case 'identify_sender': {
+        const { phone } = data;
+        if (!phone) return Response.json({ error: 'phone is required' }, { status: 400 });
+
+        // 1. Buscar en TrustedDirectory (CEO, técnico, corporativo, admin)
+        const trusted = await base44.asServiceRole.entities.TrustedDirectory.filter({ phone_number: phone, active: true });
+        if (trusted.length > 0) {
+          const u = trusted[0];
+          return Response.json({
+            success: true,
+            identified: true,
+            role: u.role,           // 'ceo' | 'technician' | 'corporate' | 'admin'
+            name: u.name,
+            related_id: u.related_id,
+            action: roleToAction(u.role), // qué debe hacer N8N con este mensaje
+          });
+        }
+
+        // 2. Buscar en clientes existentes
+        const customers = await base44.asServiceRole.entities.Customer.filter({ phone });
+        if (customers.length > 0) {
+          const c = customers[0];
+          const isCorporate = c.customer_type === 'corporativo' || c.customer_type === 'contrato';
+          return Response.json({
+            success: true,
+            identified: true,
+            role: isCorporate ? 'corporate_customer' : 'recurring_customer',
+            name: c.full_name,
+            related_id: c.id,
+            customer_type: c.customer_type,
+            is_vip: c.is_vip,
+            action: 'handle_existing_customer',
+          });
+        }
+
+        // 3. Número desconocido = lead nuevo
+        return Response.json({
+          success: true,
+          identified: false,
+          role: 'new_lead',
+          name: null,
+          related_id: null,
+          action: 'handle_new_lead',
+        });
+      }
+
+      // ─────────────────────────────────────────────
+      // 7. MENSAJE DE GRUPO DE TRABAJO
+      // Guarda mensajes de grupos de WhatsApp de técnicos
+      // ─────────────────────────────────────────────
+      case 'group_message': {
+        const { group_phone, author_phone, message, message_id, media_url, inquiry_id } = data;
+
+        if (!group_phone || !message) return Response.json({ error: 'group_phone and message required' }, { status: 400 });
+
+        // Intentar identificar el autor dentro del grupo
+        const trusted = await base44.asServiceRole.entities.TrustedDirectory.filter({ phone_number: author_phone, active: true });
+        const authorName = trusted.length > 0 ? trusted[0].name : author_phone;
+
+        // Guardar en BitacoraWhatsApp como mensaje de grupo
+        await base44.asServiceRole.entities.BitacoraWhatsApp.create({
+          mensaje_id: message_id || `grp_${group_phone}_${Date.now()}`,
+          trabajo_id: inquiry_id || null,
+          from_phone: group_phone,
+          author_phone: author_phone || null,
+          texto_mensaje: `[${authorName}] ${message}`,
+          media_url: media_url || null,
+          timestamp: new Date().toISOString(),
+          message_type: media_url ? 'image' : 'text',
+          is_group: true,
+          procesado: !!inquiry_id,
+        });
+
+        // Si está vinculado a un trabajo, también en ProgressLog
+        if (inquiry_id) {
+          await base44.asServiceRole.entities.ProgressLog.create({
+            inquiry_id,
+            log_type: 'whatsapp',
+            message_text: message,
+            from_phone: group_phone,
+            author_phone: author_phone || null,
+            timestamp: new Date().toISOString(),
+            ...(media_url && { media_url }),
+            notes: `Grupo: ${group_phone} | Autor: ${authorName}`,
+            created_by: 'n8n_bot',
+          });
+        }
+
+        return Response.json({ success: true, event, author_identified: trusted.length > 0, author_name: authorName });
+      }
+
+      // ─────────────────────────────────────────────
+      // 8. MARCAR CONVERSACIÓN PARA REVISIÓN HUMANA
+      // Cuando el bot no puede resolver o detecta urgencia
+      // ─────────────────────────────────────────────
+      case 'flag_for_review': {
+        const { inquiry_id, phone, reason, priority = 'media' } = data;
+
+        if (!inquiry_id && !phone) return Response.json({ error: 'inquiry_id or phone required' }, { status: 400 });
+
+        let targetInquiryId = inquiry_id;
+
+        // Si no hay inquiry_id pero hay phone, buscar el trabajo activo más reciente
+        if (!targetInquiryId && phone) {
+          const customers = await base44.asServiceRole.entities.Customer.filter({ phone });
+          if (customers.length > 0) {
+            const jobs = await base44.asServiceRole.entities.ClientInquiry.filter({ customer_id: customers[0].id });
+            const active = jobs.find(j => ['nuevo', 'pendiente_agenda', 'agendado'].includes(j.status));
+            targetInquiryId = active?.id || jobs[0]?.id;
+          }
+        }
+
+        if (targetInquiryId) {
+          await base44.asServiceRole.entities.ClientInquiry.update(targetInquiryId, {
+            priority: priority === 'urgente' ? 'urgente' : 'alta',
+            notes: `⚠️ REQUIERE REVISIÓN: ${reason || 'Bot no pudo resolver'} | ${new Date().toLocaleString('es-SV')}`,
+          });
+
+          await base44.asServiceRole.entities.ProgressLog.create({
+            inquiry_id: targetInquiryId,
+            log_type: 'coordinacion',
+            message_text: `⚠️ Conversación marcada para revisión humana. Motivo: ${reason || 'No especificado'}`,
+            timestamp: new Date().toISOString(),
+            created_by: 'n8n_bot',
+          });
+        }
+
+        return Response.json({ success: true, event, inquiry_id: targetInquiryId, flagged: true });
+      }
+
+      // ─────────────────────────────────────────────
+      // 9. CONSULTA DE SERVICIOS Y PRECIOS
       // ─────────────────────────────────────────────
       case 'service_query': {
         const { rubro, service_name } = data;
