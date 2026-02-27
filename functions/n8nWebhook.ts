@@ -115,6 +115,17 @@ Deno.serve(async (req) => {
           created_by: 'n8n_bot',
         });
 
+        // Track new lead creation via WhatsApp
+        await base44.asServiceRole.integrations.Core.track({
+          eventName: 'whatsapp_new_lead_created',
+          properties: {
+            lead_source,
+            rubro,
+            is_new_customer: existing.length === 0,
+            has_message: !!message,
+          },
+        });
+
         return Response.json({
           success: true,
           event,
