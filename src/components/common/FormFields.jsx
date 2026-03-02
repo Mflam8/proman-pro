@@ -11,11 +11,11 @@ export const InputField = ({ id, label, ...props }) => (
   </div>
 );
 
-export const SelectField = ({ label, options, ...props }) => (
+export const SelectField = ({ id, label, options, ...props }) => (
   <div>
-    <Label className="block text-sm font-medium text-proman-navy mb-1">{label}</Label>
+    <Label htmlFor={id} className="block text-sm font-medium text-proman-navy mb-1">{label}</Label>
     <Select {...props}>
-      <SelectTrigger>
+      <SelectTrigger id={id}> {/* Added id to SelectTrigger for accessibility */}
         <SelectValue placeholder={`Seleccionar ${label.toLowerCase()}`} />
       </SelectTrigger>
       <SelectContent>
