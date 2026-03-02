@@ -1,12 +1,13 @@
+
 import React from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-export const InputField = ({ label, ...props }) => (
+export const InputField = ({ id, label, ...props }) => (
   <div>
-    <Label className="block text-sm font-medium text-proman-navy mb-1">{label}</Label>
-    <Input {...props} />
+    <Label htmlFor={id} className="block text-sm font-medium text-proman-navy mb-1">{label}</Label>
+    <Input id={id} {...props} />
   </div>
 );
 
