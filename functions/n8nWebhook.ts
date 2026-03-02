@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
         });
 
         // Track new lead creation via WhatsApp
-        await base44.asServiceRole.integrations.Core.track({
+        await base44.analytics.track({
           eventName: 'whatsapp_new_lead_created',
           properties: {
             lead_source,
