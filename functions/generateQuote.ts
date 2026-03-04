@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
 
 const LOGO_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ef04efb2facc1f9d963736/135f5bee2_21558763_235265087000605_2527538411050239409_n-Editado.png';
 
@@ -64,11 +64,13 @@ Deno.serve(async (req) => {
 
         const opciones = Object.values(itemsByOption).sort((a, b) => a.numero - b.numero);
 
-        // Generar número correlativo
-        const allQuotes = await base44.asServiceRole.entities.ClientInquiry.filter({ 
-            quote_pdf_url: { $exists: true, $ne: '' } 
-        });
-        const quoteNumber = String(allQuotes.length + 1).padStart(4, '0');
+        // Generar número de cotización sin escanear toda la BD (evita timeouts)
+        const now = new Date();
+        const y = String(now.getFullYear()).slice(-2);
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const d = String(now.getDate()).padStart(2, '0');
+        const shortId = inquiry.id.slice(-4).toUpperCase();
+        const quoteNumber = `Q-${y}${m}${d}-${shortId}`;
         
         // Generar HTML
         const clientName = customer?.full_name || inquiry.client_name || 'Cliente';
