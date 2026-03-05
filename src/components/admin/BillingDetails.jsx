@@ -188,13 +188,17 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
 
   const handleGenerateQuote = async () => {
     if (!inquiry) return;
+    if (!quoteAsunto || !quoteAsunto.trim()) {
+      alert('Por favor escribe el Asunto de la cotización');
+      return;
+    }
     setIsGeneratingQuote(true);
     
     try {
       const response = await base44.functions.invoke('generateQuote', {
         inquiryId: inquiry.id,
         quoteDate: selectedDate,
-        asunto: quoteAsunto || inquiry.service_type,
+        asunto: quoteAsunto.trim(),
         descuento: descuento
       });
 
@@ -633,7 +637,7 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
                       handleGenerateInvoice();
                     }
                   }}
-                  disabled={isGeneratingQuote || isGeneratingInvoice}
+                  disabled={isGeneratingQuote || isGeneratingInvoice || (documentType === "cotizacion" && (!quoteAsunto || !quoteAsunto.trim()))}
                   className="bg-proman-yellow text-proman-navy"
                 >
                   {(isGeneratingQuote || isGeneratingInvoice) ? 'Generando...' : `Generar ${documentType === "cotizacion" ? "Cotización" : "Factura"}`}
