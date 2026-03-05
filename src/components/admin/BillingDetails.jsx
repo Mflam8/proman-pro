@@ -188,17 +188,15 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
 
   const handleGenerateQuote = async () => {
     if (!inquiry) return;
-    if (!quoteAsunto || !quoteAsunto.trim()) {
-      alert('Por favor escribe el Asunto de la cotización');
-      return;
-    }
     setIsGeneratingQuote(true);
     
     try {
+      const defaultSubject = (localStorage.getItem('defaultQuoteSubject') || 'Cotización PROMAN').trim();
+      const asuntoToSend = (quoteAsunto && quoteAsunto.trim()) || defaultSubject;
       const response = await base44.functions.invoke('generateQuote', {
         inquiryId: inquiry.id,
         quoteDate: selectedDate,
-        asunto: quoteAsunto.trim(),
+        asunto: asuntoToSend,
         descuento: descuento
       });
 
@@ -605,6 +603,25 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
                   placeholder="Ej: Impermeabilizado y reparaciones en cisterna de agua potable"
                   rows={3}
                 />
+                <div className="flex items-center justify-between mt-1">
+                  <p className="text-xs text-gray-500">Si lo dejas vacío usaremos tu predeterminado (por defecto: "Cotización PROMAN").</p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      const current = (quoteAsunto && quoteAsunto.trim()) || '';
+                      const preset = localStorage.getItem('defaultQuoteSubject') || 'Cotización PROMAN';
+                      const toSave = current || prompt('Asunto predeterminado', preset) || '';
+                      if (toSave.trim()) {
+                        localStorage.setItem('defaultQuoteSubject', toSave.trim());
+                        alert(`Predeterminado guardado: ${toSave.trim()}`);
+                      }
+                    }}
+                  >
+                    Guardar como predeterminado
+                  </Button>
+                </div>
               </div>
 
               {documentType === "cotizacion" && (
@@ -637,7 +654,7 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
                       handleGenerateInvoice();
                     }
                   }}
-                  disabled={isGeneratingQuote || isGeneratingInvoice || (documentType === "cotizacion" && (!quoteAsunto || !quoteAsunto.trim()))}
+                  disabled={isGeneratingQuote || isGeneratingInvoice}
                   className="bg-proman-yellow text-proman-navy"
                 >
                   {(isGeneratingQuote || isGeneratingInvoice) ? 'Generando...' : `Generar ${documentType === "cotizacion" ? "Cotización" : "Factura"}`}

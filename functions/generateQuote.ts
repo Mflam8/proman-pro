@@ -16,9 +16,6 @@ Deno.serve(async (req) => {
         if (!inquiryId) {
             return Response.json({ error: 'inquiryId is required' }, { status: 400 });
         }
-        if (!asunto || !String(asunto).trim()) {
-            return Response.json({ error: 'asunto is required' }, { status: 400 });
-        }
 
         const descuentoMonto = parseFloat(descuento) || 0;
 
@@ -79,7 +76,7 @@ Deno.serve(async (req) => {
         const clientName = customer?.full_name || inquiry.client_name || 'Cliente';
         const fechaCotizacion = quoteDate ? new Date(quoteDate + 'T12:00:00') : new Date();
         const fechaFormato = fechaCotizacion.toLocaleDateString('es-SV', { day: 'numeric', month: 'numeric', year: 'numeric' });
-        const asuntoTexto = String(asunto).trim();
+        const asuntoTexto = (asunto && String(asunto).trim()) || 'Cotización PROMAN';
         
         let totalGeneral = 0;
         let itemsHtml = '';
