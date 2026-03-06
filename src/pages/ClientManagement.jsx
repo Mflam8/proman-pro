@@ -90,6 +90,25 @@ export default function ClientManagement() {
     initialData: [],
   });
   
+  const { data: itemsIndex } = useQuery({
+    queryKey: ['detalleItemsIndex'],
+    queryFn: async () => {
+      const all = await base44.entities.DetalleFacturaTrabajo.filter({});
+      const idx = {};
+      all.forEach((it) => {
+        const data = it.data || it;
+        const key = data.inquiry_id;
+        if (!key) return;
+        const blob = ((data.descripcion || '') + ' ' + (data.descripcion_detallada || '')).toLowerCase();
+        if (!blob.trim()) return;
+        idx[key] = (idx[key] || '') + ' ' + blob;
+      });
+      return idx;
+    },
+    enabled: !!user && hasManagementAccess,
+    initialData: {}
+  });
+
   const updateInquiry = useMutation({
     mutationFn: ({ id, data }) => base44.entities.ClientInquiry.update(id, data),
     onSuccess: async (result, variables) => {
@@ -165,16 +184,18 @@ export default function ClientManagement() {
       matchesClientType = inquiry.lead_source !== "corporativo" && customer?.customer_type === "comercial";
     }
     
-    // Search filter
+    // Search filter (incluye descripciones de ítems de cotización)
+    const searchLower = searchTerm.toLowerCase();
     const matchesSearch = searchTerm === "" || 
-      inquiry.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      inquiry.client_name?.toLowerCase().includes(searchLower) ||
+      customer?.full_name?.toLowerCase().includes(searchLower) ||
       inquiry.phone?.replace(/\D/g, '').includes(searchTerm.replace(/\D/g, '')) ||
       customer?.phone?.replace(/\D/g, '').includes(searchTerm.replace(/\D/g, '')) ||
-      inquiry.service_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inquiry.rubro?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inquiry.location_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inquiry.restaurant_name?.toLowerCase().includes(searchTerm.toLowerCase());
+      inquiry.service_type?.toLowerCase().includes(searchLower) ||
+      inquiry.rubro?.toLowerCase().includes(searchLower) ||
+      inquiry.location_name?.toLowerCase().includes(searchLower) ||
+      inquiry.restaurant_name?.toLowerCase().includes(searchLower) ||
+      (itemsIndex && itemsIndex[inquiry.id] && itemsIndex[inquiry.id].includes(searchLower));
     
     return matchesTab && matchesSearch && matchesClientType;
   });
@@ -443,7 +464,7 @@ export default function ClientManagement() {
                   <div className="flex flex-col sm:flex-row gap-4">
                     <div className="flex-1">
                       <Input
-                        placeholder="Buscar por nombre, teléfono, servicio, sucursal..."
+                        placeholder="Buscar por nombre, teléfono, servicio, rubro o ítems (ej. enchape)..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full"
