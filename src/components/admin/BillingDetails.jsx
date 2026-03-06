@@ -864,7 +864,14 @@ function BillingItemForm({ item, existingOptions, onSubmit, onCancel, isSubmitti
               setFormData({ ...formData, descripcion: '' });
             } else {
               setUseCustomTitle(false);
-              setFormData({ ...formData, descripcion: v });
+              const svc = services.find(s => s.service_name === v);
+              setFormData(prev => ({
+                ...prev,
+                descripcion: v,
+                descripcion_detallada: (prev.descripcion_detallada && prev.descripcion_detallada.trim().length > 0)
+                  ? prev.descripcion_detallada
+                  : (svc?.description || '')
+              }));
             }
           }}
         >
