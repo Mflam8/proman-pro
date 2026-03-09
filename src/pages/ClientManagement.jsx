@@ -741,6 +741,7 @@ export default function ClientManagement() {
           </DialogContent>
         </Dialog>
       )}
+      <AgentChatWidget agentName="gestionBot" />
     </div>
   );
 }
