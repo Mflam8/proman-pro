@@ -82,7 +82,7 @@ export default function AgentChatWidget({ agentName = "gestionBot" }) {
       {/* Floating toggle button */}
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-50 rounded-full bg-proman-navy text-white shadow-lg p-4 hover:opacity-90 focus:outline-none"
+        className="fixed bottom-6 right-24 z-[60] rounded-full bg-proman-navy text-white shadow-lg p-4 hover:opacity-90 focus:outline-none"
         aria-label="Abrir chat de gestión"
       >
         <MessageCircle className="w-6 h-6" />
@@ -90,7 +90,7 @@ export default function AgentChatWidget({ agentName = "gestionBot" }) {
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-24 right-6 z-50 w-80 sm:w-96 bg-white border rounded-xl shadow-2xl flex flex-col overflow-hidden">
+        <div className="fixed bottom-24 right-6 z-[60] w-80 sm:w-96 bg-white border rounded-xl shadow-2xl flex flex-col overflow-hidden">
           <div className="bg-proman-navy text-white px-4 py-3 flex items-center justify-between">
             <div className="font-semibold">Asistente de Gestión</div>
             <button onClick={() => setOpen(false)} className="hover:opacity-80" aria-label="Cerrar">
