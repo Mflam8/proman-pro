@@ -139,45 +139,111 @@ Deno.serve(async (req) => {
       // 2. MENSAJE RECIBIDO (guardar conversación)
       // ─────────────────────────────────────────────
       case 'message_received': {
-        const { phone, message, message_id, media_url, message_type = 'text', inquiry_id, customer_id, is_group = false } = data;
+        // Safe logging (no PII beyond phone + preview)
+        try {
+          const preview = typeof data?.message === 'string' ? data.message.slice(0, 60) : (typeof data?.text === 'string' ? data.text.slice(0, 60) : undefined);
+          console.log('📥 message_received payload (safe):', JSON.stringify({ phone: data?.phone || data?.from || data?.wa_id, preview, hasSource: !!data?.source }).slice(0, 200));
+        } catch {}
 
-        if (!phone || !message) return Response.json({ error: 'phone and message are required' }, { status: 400 });
+        const {
+          phone,
+          message,
+          messageId,
+          from,
+          wa_id,
+          text,
+          timestamp,
+          message_type = 'text',
+          customerHints,
+          source
+        } = data;
 
-        // Guardar en BitacoraWhatsApp (evitar duplicados por mensaje_id)
-        if (message_id) {
-          const existing = await base44.asServiceRole.entities.BitacoraWhatsApp.filter({ mensaje_id: message_id });
-          if (existing.length > 0) {
-            return Response.json({ success: true, duplicate: true, message: 'Message already logged' });
-          }
+        const resolvedPhone = phone || from || wa_id;
+        const resolvedMessage = message || text;
+
+        if (!resolvedPhone || !resolvedMessage) {
+          return Response.json({ error: 'phone and message are required' }, { status: 400 });
         }
 
-        await base44.asServiceRole.entities.BitacoraWhatsApp.create({
-          mensaje_id: message_id || `${phone}_${Date.now()}`,
-          trabajo_id: inquiry_id || null,
-          customer_id: customer_id || null,
-          from_phone: phone,
-          texto_mensaje: message,
-          media_url: media_url || null,
-          timestamp: new Date().toISOString(),
-          message_type,
-          is_group,
-          procesado: !!inquiry_id,
-        });
-
-        // Si hay inquiry_id, también guardar en ProgressLog
-        if (inquiry_id) {
-          await base44.asServiceRole.entities.ProgressLog.create({
-            inquiry_id,
-            log_type: 'whatsapp',
-            message_text: message,
-            from_phone: phone,
-            timestamp: new Date().toISOString(),
-            ...(media_url && { media_url }),
-            created_by: 'n8n_bot',
+        // 1) Upsert Customer by phone or wa_id
+        let customer = null;
+        let found = await base44.asServiceRole.entities.Customer.filter({ phone: resolvedPhone });
+        if (found.length === 0 && wa_id) {
+          const byWa = await base44.asServiceRole.entities.Customer.filter({ wa_id });
+          found = byWa;
+        }
+        if (found.length > 0) {
+          customer = found[0];
+          if ((!customer.full_name || customer.full_name === 'Sin nombre') && customerHints?.name) {
+            await base44.asServiceRole.entities.Customer.update(customer.id, { full_name: customerHints.name });
+            customer.full_name = customerHints.name;
+          }
+        } else {
+          customer = await base44.asServiceRole.entities.Customer.create({
+            full_name: customerHints?.name || 'Sin nombre',
+            phone: resolvedPhone,
+            wa_id: wa_id || resolvedPhone,
+            preferred_contact: 'whatsapp',
+            source: 'whatsapp_bot',
+            channel: 'whatsapp'
           });
         }
 
-        return Response.json({ success: true, event });
+        // 4) Create or reuse open conversation
+        const openConvs = await base44.asServiceRole.entities.WhatsappConversation.filter({ customer_id: customer.id, is_open: true });
+        const nowISO = timestamp ? new Date((String(timestamp).length < 13 ? Number(timestamp) * 1000 : Number(timestamp))).toISOString() : new Date().toISOString();
+        let conversation = openConvs[0];
+        if (!conversation) {
+          conversation = await base44.asServiceRole.entities.WhatsappConversation.create({
+            customer_id: customer.id,
+            is_open: true,
+            channel: 'whatsapp',
+            last_message_at: nowISO
+          });
+        }
+
+        // 2) + 3) Store message in BitacoraWhatsApp with optional ad source and link to conversation
+        const incomingMensajeId = messageId || `${resolvedPhone}_${Date.now()}`;
+        if (messageId) {
+          const dup = await base44.asServiceRole.entities.BitacoraWhatsApp.filter({ mensaje_id: messageId });
+          if (dup.length > 0) {
+            await base44.asServiceRole.entities.WhatsappConversation.update(conversation.id, { last_message_at: nowISO, last_message_id: dup[0].id });
+            return Response.json({ success: true, event, customer_id: customer.id, conversation_id: conversation.id, message_id: dup[0].id, duplicate: true });
+          }
+        }
+
+        const msgRecord = await base44.asServiceRole.entities.BitacoraWhatsApp.create({
+          mensaje_id: incomingMensajeId,
+          customer_id: customer.id,
+          conversation_id: conversation.id,
+          from_phone: resolvedPhone,
+          texto_mensaje: resolvedMessage,
+          media_url: null,
+          timestamp: nowISO,
+          message_type,
+          is_group: false,
+          procesado: false,
+          channel: 'whatsapp',
+          direction: 'inbound',
+          ...(source?.ad_id ? { ad_id: source.ad_id } : {}),
+          ...(source?.ad_name ? { ad_name: source.ad_name } : {}),
+          ...(source?.campaign_id ? { campaign_id: source.campaign_id } : {}),
+          ...(source?.entryPoint ? { entry_point: source.entryPoint } : {}),
+          ...(source?.entry_point ? { entry_point: source.entry_point } : {})
+        });
+
+        await base44.asServiceRole.entities.WhatsappConversation.update(conversation.id, {
+          last_message_at: nowISO,
+          last_message_id: msgRecord.id
+        });
+
+        return Response.json({
+          success: true,
+          event,
+          customer_id: customer.id,
+          conversation_id: conversation.id,
+          message_id: msgRecord.id
+        });
       }
 
       // ─────────────────────────────────────────────
