@@ -202,13 +202,91 @@ Deno.serve(async (req) => {
           });
         }
 
-        // 2) + 3) Store message in BitacoraWhatsApp with optional ad source and link to conversation
+        // Heuristics: classify service, detect priority, compute missing info & next step
+        const txt = (resolvedMessage || '').toLowerCase();
+        const has = (s) => txt.includes(s);
+        const hasAny = (...arr) => arr.some((k) => has(k));
+        const classify = () => {
+          if (hasAny('impermeab', 'filtra', 'gotera', 'humedad', 'techo', 'membrana', 'manto')) return 'impermeabilizacion';
+          if (hasAny('cisterna', 'tanque', 'aljibe')) return 'limpieza_cisterna';
+          if (hasAny('trampa de grasa', 'trampa grasa', 'grasa') || (has('restaurante') && has('grasa'))) return 'trampa_grasa';
+          if (hasAny('remodel', 'azulej', 'cerám', 'ceram', 'constru', 'ampliaci')) return 'remodelacion';
+          if (hasAny('cotiz', 'presupuesto', 'inspecc', 'evaluar', 'visita')) return 'inspeccion / cotizacion';
+          if (hasAny('mantenim', 'fuga', 'tuber', 'plomer', 'electric', 'pintur', 'reparar', 'arreglar')) return 'mantenimiento_general';
+          return 'unknown';
+        };
+        const detectPriority = () => hasAny('urgente', 'emerg', 'inund', 'fuga', 'ya', 'ahora', 'hoy') ? 'urgente' : 'media';
+        const hasPhotos = hasAny('foto', 'imagen', 'video');
+        const hasMeasurements = hasAny('m2', 'metros', 'medida', 'dimension', 'ancho', 'largo', 'alto', 'cm', 'mt', 'metro');
+        const hasLocation = hasAny('ubic', 'direc', 'colonia', 'mapa', 'waze', 'google maps', 'san salvador', 'sss') || /\d{2}\.?\d*,\s?-?\d{2}\.?\d*/.test(txt);
+        const hasSchedule = hasAny('hora', 'cita', 'cuando', 'mañana', 'tarde', 'hoy', 'fecha', 'programar', 'agendar');
+
+        const serviceType = classify();
+        const priority = detectPriority();
+        const missing = [];
+        const needsPhotos = ['impermeabilizacion', 'remodelacion', 'trampa_grasa', 'limpieza_cisterna'].includes(serviceType);
+        const needsMeasurements = ['impermeabilizacion', 'remodelacion', 'limpieza_cisterna'].includes(serviceType);
+        if (needsPhotos && !hasPhotos) missing.push('photos');
+        if (needsMeasurements && !hasMeasurements) missing.push('measurements');
+        if (!hasLocation) missing.push('location');
+        if (!hasSchedule) missing.push('schedule');
+
+        const nextStep = (() => {
+          if (priority === 'urgente') return 'escalate_to_human';
+          if (missing.includes('photos')) return 'ask_for_photos';
+          if (missing.includes('measurements')) return 'ask_for_measurements';
+          if (missing.includes('location')) return 'ask_for_location';
+          if (missing.includes('schedule')) return 'ask_for_schedule';
+          return 'prepare_quote';
+        })();
+
+        // 2) Create or reuse OPEN inquiry and attach message
+        const openStatuses = [
+          'nuevo','pendiente_cotizacion','pendiente_agenda','evaluacion_agendada','evaluacion_pendiente','evaluacion_realizada',
+          'cotizacion_pendiente','cotizacion_realizada','pendiente_aprobacion','trabajo_aprobado','agendado','en_ruta','en_sitio','en_proceso'
+        ];
+        const allInquiries = await base44.asServiceRole.entities.ClientInquiry.filter({ customer_id: customer.id });
+        let inquiry = allInquiries.find(j => openStatuses.includes(j.status));
+        if (!inquiry) {
+          inquiry = await base44.asServiceRole.entities.ClientInquiry.create({
+            customer_id: customer.id,
+            client_name: customer.full_name,
+            phone: customer.phone,
+            lead_source: (source?.platform === 'whatsapp' ? 'whatsapp' : 'whatsapp'),
+            source: 'whatsapp_bot',
+            rubro: 'Hogar',
+            message: resolvedMessage,
+            descripcion_libre: resolvedMessage,
+            status: 'nuevo',
+            priority,
+            service_type: serviceType,
+            next_step: nextStep,
+            missing_info: missing,
+            ...(source?.ad_id ? { ad_id: source.ad_id } : {}),
+            ...(source?.ad_name ? { ad_name: source.ad_name } : {}),
+            ...(source?.campaign_id ? { campaign_id: source.campaign_id } : {}),
+            ...(source?.entryPoint ? { entry_point: source.entryPoint } : {}),
+            ...(source?.entry_point ? { entry_point: source.entry_point } : {})
+          });
+        } else {
+          // Update inquiry with latest context if fields are empty
+          const patch = { last_message_at: nowISO };
+          if (!inquiry.service_type && serviceType !== 'unknown') patch.service_type = serviceType;
+          if (!inquiry.next_step) patch.next_step = nextStep;
+          if (!Array.isArray(inquiry.missing_info) || inquiry.missing_info.length === 0) patch.missing_info = missing;
+          if (priority === 'urgente' && inquiry.priority !== 'urgente') patch.priority = 'urgente';
+          if (Object.keys(patch).length > 0) {
+            await base44.asServiceRole.entities.ClientInquiry.update(inquiry.id, patch);
+          }
+        }
+
+        // 2) + 3) Store message in BitacoraWhatsApp with optional ad source, link to conversation & inquiry
         const incomingMensajeId = messageId || `${resolvedPhone}_${Date.now()}`;
         if (messageId) {
           const dup = await base44.asServiceRole.entities.BitacoraWhatsApp.filter({ mensaje_id: messageId });
           if (dup.length > 0) {
             await base44.asServiceRole.entities.WhatsappConversation.update(conversation.id, { last_message_at: nowISO, last_message_id: dup[0].id });
-            return Response.json({ success: true, event, customer_id: customer.id, conversation_id: conversation.id, message_id: dup[0].id, duplicate: true });
+            return Response.json({ success: true, event, customer_id: customer.id, inquiry_id: inquiry.id, service_type: serviceType, next_step: nextStep, missing_info: missing, conversation_id: conversation.id, message_id: dup[0].id, duplicate: true });
           }
         }
 
@@ -216,6 +294,7 @@ Deno.serve(async (req) => {
           mensaje_id: incomingMensajeId,
           customer_id: customer.id,
           conversation_id: conversation.id,
+          trabajo_id: inquiry.id,
           from_phone: resolvedPhone,
           texto_mensaje: resolvedMessage,
           media_url: null,
@@ -241,6 +320,10 @@ Deno.serve(async (req) => {
           success: true,
           event,
           customer_id: customer.id,
+          inquiry_id: inquiry.id,
+          service_type: serviceType,
+          next_step: nextStep,
+          missing_info: missing,
           conversation_id: conversation.id,
           message_id: msgRecord.id
         });
