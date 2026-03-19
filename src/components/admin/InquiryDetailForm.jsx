@@ -23,6 +23,7 @@ import QuickPaymentForm from "./QuickPaymentForm";
 import BillingDetails from "./BillingDetails";
 import WorkExpenses from "./WorkExpenses";
 import EmployeeSelector from "./EmployeeSelector";
+import WhatsAppConversationPanel from "./WhatsAppConversationPanel";
 
 export default function InquiryDetailForm({ 
   inquiry, 
@@ -464,6 +465,12 @@ export default function InquiryDetailForm({
 
         {/* COLUMNA DERECHA */}
         <div className="space-y-6">
+          <WhatsAppConversationPanel 
+            customerId={customer?.id || inquiry.customer_id}
+            inquiryId={inquiry.id}
+            phone={customer?.phone || inquiry.phone}
+          />
+
           {/* 4. GASTOS DEL TRABAJO */}
           <WorkExpenses inquiryId={inquiry.id} canEdit={canEdit} />
 

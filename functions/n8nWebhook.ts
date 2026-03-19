@@ -290,20 +290,70 @@ Deno.serve(async (req) => {
           }
         }
 
+        // Descarga y guarda medios si aplica
+        let mediaUrl = null;
+        let mimeType = data.mime_type || data.image?.mime_type || data.video?.mime_type || data.audio?.mime_type || data.document?.mime_type || null;
+        const mediaId = data.media_id || data.image?.id || data.video?.id || data.audio?.id || data.document?.id || null;
+        const caption = data.caption || data.image?.caption || data.video?.caption || null;
+        const messageTypeGuessed = message_type || (data.image ? 'image' : data.video ? 'video' : data.audio ? 'audio' : data.document ? 'document' : 'text');
+
+        try {
+          const waToken = Deno.env.get('META_WHATSAPP_TOKEN');
+          if (mediaId && waToken) {
+            // 1) Obtener URL temporal del media
+            const metaRes = await fetch(`https://graph.facebook.com/v20.0/${mediaId}`, {
+              headers: { Authorization: `Bearer ${waToken}` }
+            });
+            if (metaRes.ok) {
+              const metaJson = await metaRes.json();
+              if (metaJson.url) {
+                const binRes = await fetch(metaJson.url, { headers: { Authorization: `Bearer ${waToken}` } });
+                if (binRes.ok) {
+                  const blob = await binRes.blob();
+                  const fileName = `${mediaId}.${(mimeType || '').split('/')[1] || 'bin'}`;
+                  const file = new File([blob], fileName, { type: mimeType || 'application/octet-stream' });
+                  const uploaded = await base44.asServiceRole.integrations.Core.UploadFile({ file });
+                  mediaUrl = uploaded.file_url;
+                }
+              }
+            }
+          } else if (data.media_url) {
+            // Re-subir media remoto para tener URL propia
+            const remoteRes = await fetch(data.media_url);
+            if (remoteRes.ok) {
+              const blob = await remoteRes.blob();
+              const ext = (mimeType || 'application/octet-stream').split('/')[1] || 'bin';
+              const file = new File([blob], `wa_${Date.now()}.${ext}`, { type: mimeType || 'application/octet-stream' });
+              const uploaded = await base44.asServiceRole.integrations.Core.UploadFile({ file });
+              mediaUrl = uploaded.file_url;
+            }
+          }
+        } catch (e) {
+          console.warn('Media handling failed:', e?.message || e);
+        }
+
         const msgRecord = await base44.asServiceRole.entities.BitacoraWhatsApp.create({
           mensaje_id: incomingMensajeId,
+          message_id: messageId || incomingMensajeId,
           customer_id: customer.id,
           conversation_id: conversation.id,
           trabajo_id: inquiry.id,
+          job_id: inquiry.id,
           from_phone: resolvedPhone,
+          phone: resolvedPhone,
           texto_mensaje: resolvedMessage,
-          media_url: null,
+          text: resolvedMessage,
+          caption: caption || null,
+          media_url: mediaUrl,
+          mime_type: mimeType,
           timestamp: nowISO,
-          message_type,
+          message_type: messageTypeGuessed,
           is_group: false,
           procesado: false,
           channel: 'whatsapp',
           direction: 'inbound',
+          sender_type: 'customer',
+          raw_payload: JSON.stringify(data),
           ...(source?.ad_id ? { ad_id: source.ad_id } : {}),
           ...(source?.ad_name ? { ad_name: source.ad_name } : {}),
           ...(source?.campaign_id ? { campaign_id: source.campaign_id } : {}),
@@ -528,6 +578,29 @@ Deno.serve(async (req) => {
             created_by: 'n8n_bot',
           });
         }
+
+        // Registrar metadatos extendidos
+        await base44.asServiceRole.entities.BitacoraWhatsApp.create({
+          mensaje_id: message_id || `grp_${group_phone}_${Date.now()}`,
+          message_id: message_id || `grp_${group_phone}_${Date.now()}`,
+          from_phone: group_phone,
+          phone: group_phone,
+          customer_id: null,
+          trabajo_id: inquiry_id || null,
+          job_id: inquiry_id || null,
+          texto_mensaje: `[${authorName}] ${message}`,
+          text: `[${authorName}] ${message}`,
+          media_url: media_url || null,
+          mime_type: null,
+          timestamp: new Date().toISOString(),
+          message_type: media_url ? 'image' : 'text',
+          channel: 'whatsapp',
+          direction: 'inbound',
+          sender_type: 'agent',
+          is_group: true,
+          procesado: !!inquiry_id,
+          raw_payload: JSON.stringify(data)
+        });
 
         return Response.json({ success: true, event, author_identified: trusted.length > 0, author_name: authorName });
       }
