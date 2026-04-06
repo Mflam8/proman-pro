@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
+import { sendN8nMessage } from "@/functions/sendN8nMessage";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -184,7 +185,7 @@ export default function WhatsAppConversationPanel({ customerId, inquiryId, phone
         else mediaType = 'document';
       }
       // Enviar vía n8n (centralizado)
-      await base44.functions.invoke('sendN8nMessage', {
+      await sendN8nMessage({
         customer_id: customerId,
         inquiry_id: inquiryId || null,
         phone: phone || null,
