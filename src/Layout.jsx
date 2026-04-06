@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Phone, Menu, X, Users, Briefcase, Facebook, Instagram, Youtube, LogIn, MapPin } from "lucide-react";
+import { Phone, Menu, X, Users, Briefcase, Facebook, Instagram, Youtube, LogIn, MapPin, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
 import { LanguageProvider, useLanguage } from "@/components/LanguageContext";
@@ -76,6 +76,11 @@ function LayoutContent({ children }) {
         name: "Gestión", 
         href: createPageUrl("ClientManagement"),
         icon: Users 
+      });
+      navigation.push({
+        name: t({ es: "Mensajes", en: "Messages" }),
+        href: createPageUrl("MessageCenter"),
+        icon: MessageCircle
       });
     } else {
       navigation.push({ 
