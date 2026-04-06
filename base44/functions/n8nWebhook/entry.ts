@@ -54,6 +54,153 @@ Deno.serve(async (req) => {
 
   const { event, data } = body;
 
+  // Soporte enriquecido (compatibilidad con nuevo formato de n8n)
+  try {
+    const phone = data?.phone || data?.contact?.phone || data?.recipient_id || data?.to || data?.from || null;
+    const messageText = data?.message?.text || data?.message || data?.status || '';
+    const customerName = data?.name || data?.customerName || data?.contact?.name || '';
+    const messageId = data?.message_id || data?.messageId || data?.message?.id || null;
+    const messageType = data?.message_type || data?.message?.type || 'unknown';
+    const normalizedText = data?.normalized_text || data?.message?.normalized_text || messageText || '';
+    const tsNum = Number(data?.timestamp || data?.meta?.timestamp || Date.now());
+    const timestampISO = new Date(tsNum < 1e12 ? tsNum * 1000 : tsNum).toISOString();
+    const direction = data?.direction || (event === 'message_echo' ? 'outbound' : 'inbound');
+    const channel = data?.channel || 'whatsapp';
+    const eventType = data?.event_type || null;
+    const conversationKey = data?.conversation_key || (phone ? `${phone}_${data?.phone_number_id || data?.meta?.phone_number_id || ''}` : null);
+    const phoneNumberId = data?.phone_number_id || data?.meta?.phone_number_id || '';
+    const reason = data?.reason || '';
+    const rawPayload = data?.raw_payload || body;
+
+    if (['inbound_message','message_echo','status_update','fallback_unhandled'].includes(eventType)) {
+      // 1) Guardar SIEMPRE el evento crudo
+      const wh = await base44.asServiceRole.entities.WebhookEvent.create({
+        event: event || '',
+        event_type: eventType,
+        phone: phone || '',
+        message_id: messageId || '',
+        direction,
+        conversation_key: conversationKey || '',
+        reason: reason || '',
+        raw_payload: JSON.stringify(rawPayload || {})
+      });
+
+      if (eventType === 'fallback_unhandled') {
+        await base44.asServiceRole.entities.WebhookEvent.update(wh.id, { processed_ok: true });
+        return Response.json({ ok: true, type: 'fallback_unhandled_saved', webhook_event_id: wh.id });
+      }
+
+      // 2) Upsert Customer (Contact)
+      let customer = null;
+      if (phone) {
+        let found = await base44.asServiceRole.entities.Customer.filter({ phone });
+        if (found.length === 0 && data?.wa_id) {
+          found = await base44.asServiceRole.entities.Customer.filter({ wa_id: data.wa_id });
+        }
+        if (found.length > 0) {
+          customer = found[0];
+          if ((!customer.full_name || customer.full_name === 'Sin nombre') && customerName) {
+            await base44.asServiceRole.entities.Customer.update(customer.id, { full_name: customerName });
+          }
+        } else {
+          customer = await base44.asServiceRole.entities.Customer.create({
+            full_name: customerName || 'Sin nombre',
+            phone: phone,
+            wa_id: data?.wa_id || phone,
+            preferred_contact: 'whatsapp',
+            source: 'whatsapp_bot',
+            channel
+          });
+        }
+      }
+
+      // 3) Upsert Conversation → WhatsappConversation
+      let conv = null;
+      if (customer) {
+        const openConvs = await base44.asServiceRole.entities.WhatsappConversation.filter({ customer_id: customer.id, is_open: true });
+        conv = openConvs[0] || await base44.asServiceRole.entities.WhatsappConversation.create({
+          customer_id: customer.id,
+          is_open: true,
+          channel: 'whatsapp',
+          last_message_at: timestampISO,
+          notes: conversationKey ? `ck:${conversationKey}` : undefined,
+          subject: conversationKey || undefined
+        });
+      }
+
+      let savedMsg = null;
+      if (eventType === 'inbound_message' || eventType === 'message_echo') {
+        // Upsert por message_id si existe
+        if (messageId) {
+          const dup = await base44.asServiceRole.entities.BitacoraWhatsApp.filter({ mensaje_id: messageId });
+          if (dup.length > 0) {
+            await base44.asServiceRole.entities.BitacoraWhatsApp.update(dup[0].id, {
+              delivery_status: eventType === 'message_echo' ? 'echo_received' : 'received',
+              timestamp: timestampISO
+            });
+            await base44.asServiceRole.entities.WebhookEvent.update(wh.id, { processed_ok: true });
+            return Response.json({ ok: true, updated: true, webhook_event_id: wh.id });
+          }
+        }
+
+        savedMsg = await base44.asServiceRole.entities.BitacoraWhatsApp.create({
+          mensaje_id: messageId || `${phone || 'unk'}_${Date.now()}`,
+          message_id: messageId || `${phone || 'unk'}_${Date.now()}`,
+          customer_id: customer?.id || null,
+          conversation_id: conv?.id || null,
+          trabajo_id: null,
+          job_id: null,
+          from_phone: phone || '',
+          phone: phone || '',
+          texto_mensaje: messageText || '',
+          text: normalizedText || messageText || '',
+          caption: data?.message?.caption || null,
+          media_url: data?.media_url || null,
+          mime_type: data?.mime_type || null,
+          timestamp: timestampISO,
+          message_type: messageType || 'text',
+          channel: 'whatsapp',
+          direction,
+          sender_type: direction === 'inbound' ? 'customer' : 'bot',
+          raw_payload: JSON.stringify(rawPayload || {})
+        });
+
+        if (conv) {
+          await base44.asServiceRole.entities.WhatsappConversation.update(conv.id, {
+            last_message_at: timestampISO,
+            last_message_id: savedMsg.id
+          });
+        }
+      }
+
+      if (eventType === 'status_update') {
+        // Actualizar estado en Bitacora si existe y crear DeliveryReceipt
+        if (messageId) {
+          const matches = await base44.asServiceRole.entities.BitacoraWhatsApp.filter({ mensaje_id: messageId });
+          if (matches.length > 0) {
+            await base44.asServiceRole.entities.BitacoraWhatsApp.update(matches[0].id, { delivery_status: (messageText || '').toLowerCase() });
+          }
+        }
+        await base44.asServiceRole.entities.DeliveryReceipt.create({
+          provider_message_id: messageId || '',
+          recipient_id: phone || '',
+          status: (messageText || '').toLowerCase() || 'sent',
+          timestamp: timestampISO,
+          raw_payload: JSON.stringify(rawPayload || {})
+        });
+        if (conv) {
+          await base44.asServiceRole.entities.WhatsappConversation.update(conv.id, { last_message_at: timestampISO });
+        }
+      }
+
+      await base44.asServiceRole.entities.WebhookEvent.update(wh.id, { processed_ok: true });
+      return Response.json({ ok: true, event_type: eventType, webhook_event_id: wh.id, customer_id: customer?.id || null, conversation_id: conv?.id || null, message_id: savedMsg?.id || null });
+    }
+  } catch (e) {
+    // Si falla el nuevo formato, continuamos con el switch clásico
+    console.warn('Enriched handler failed, falling back to legacy:', e?.message || e);
+  }
+
   if (!event || !data) {
     return Response.json({ error: 'Missing event or data fields' }, { status: 400 });
   }

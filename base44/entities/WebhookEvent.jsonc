@@ -1,0 +1,38 @@
+{
+  "name": "WebhookEvent",
+  "type": "object",
+  "properties": {
+    "event": {
+      "type": "string"
+    },
+    "event_type": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "message_id": {
+      "type": "string"
+    },
+    "direction": {
+      "type": "string"
+    },
+    "conversation_key": {
+      "type": "string"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "raw_payload": {
+      "type": "string"
+    },
+    "processed_ok": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "event_type",
+    "raw_payload"
+  ]
+}

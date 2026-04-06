@@ -1,0 +1,27 @@
+{
+  "name": "DeliveryReceipt",
+  "type": "object",
+  "properties": {
+    "provider_message_id": {
+      "type": "string"
+    },
+    "recipient_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "description": "sent|delivered|read|failed|echo_received|other"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "raw_payload": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "provider_message_id",
+    "status"
+  ]
+}
