@@ -80,6 +80,7 @@ export default function HeroSection() {
                 height="800"
                 loading="eager"
                 fetchpriority="high"
+                sizes="(min-width: 1024px) 50vw, 100vw"
                 className="rounded-2xl shadow-2xl w-full"
               />
               <div className="absolute -bottom-4 -left-4 bg-proman-yellow text-proman-navy p-4 sm:p-6 rounded-xl shadow-xl">
