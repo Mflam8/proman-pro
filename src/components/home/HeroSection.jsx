@@ -79,6 +79,7 @@ export default function HeroSection() {
                 width="800"
                 height="800"
                 loading="eager"
+                fetchpriority="high"
                 className="rounded-2xl shadow-2xl w-full"
               />
               <div className="absolute -bottom-4 -left-4 bg-proman-yellow text-proman-navy p-4 sm:p-6 rounded-xl shadow-xl">

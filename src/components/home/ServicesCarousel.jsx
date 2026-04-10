@@ -80,7 +80,7 @@ export default function ServicesCarousel() {
 
         <div className="relative">
           {/* Main Carousel */}
-          <div className="relative h-64 sm:h-80 md:h-96 lg:h-[500px] rounded-2xl overflow-hidden shadow-2xl">
+          <div className="relative h-64 sm:h-80 md:h-96 lg:h-[500px] rounded-2xl overflow-hidden shadow-2xl" role="region" aria-label="Carrusel de trabajos profesionales">
             {slides.map((slide, index) =>
             <div
               key={index}
@@ -91,6 +91,10 @@ export default function ServicesCarousel() {
                 <img
                 src={slide.image}
                 alt={slide.title}
+                loading={index === currentIndex ? "eager" : "lazy"}
+                decoding="async"
+                sizes="100vw"
+                fetchpriority={index === currentIndex ? "auto" : "low"}
                 className="w-full h-full object-cover" />
 
                 <div className="absolute inset-0 bg-gradient-to-t from-proman-navy/90 via-proman-navy/50 to-transparent"></div>
@@ -111,6 +115,8 @@ export default function ServicesCarousel() {
             variant="outline"
             size="icon"
             onClick={goToPrevious}
+            aria-label="Anterior"
+            title="Anterior"
             className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white border-2 border-proman-yellow text-proman-navy rounded-full w-10 h-10 sm:w-12 sm:h-12">
 
             <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -119,6 +125,8 @@ export default function ServicesCarousel() {
             variant="outline"
             size="icon"
             onClick={goToNext}
+            aria-label="Siguiente"
+            title="Siguiente"
             className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white border-2 border-proman-yellow text-proman-navy rounded-full w-10 h-10 sm:w-12 sm:h-12">
 
             <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
@@ -126,10 +134,13 @@ export default function ServicesCarousel() {
 
           {/* Dots Indicator */}
           <div className="flex justify-center gap-2 mt-6">
-            {slides.map((_, index) =>
+            {slides.map((slide, index) =>
             <button
               key={index}
+              type="button"
               onClick={() => goToSlide(index)}
+              aria-label={`Ir a la diapositiva ${index + 1}: ${typeof slide.title === 'string' ? slide.title : ''}`}
+              aria-current={index === currentIndex ? "true" : undefined}
               className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full transition-all ${
               index === currentIndex ?
               "bg-proman-yellow w-6 sm:w-8" :
