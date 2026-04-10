@@ -20,13 +20,23 @@
     })(window,document,'script','dataLayer','GTM-MS27DKT9');</script>
     <!-- End Google Tag Manager -->
     
-    <!-- Microsoft Clarity -->
+    <!-- Microsoft Clarity (defer after load or first interaction) -->
     <script type="text/javascript">
-      (function(c,l,a,r,i,t,y){
-          c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-          t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-          y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-      })(window, document, "clarity", "script", "w9ak3yhzol");
+      (function(){
+        var started = false;
+        function startClarity(){
+          if (started) return; started = true;
+          (function(c,l,a,r,i,t,y){
+            c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+            t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+            y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+          })(window, document, "clarity", "script", "w9ak3yhzol");
+        }
+        window.addEventListener('load', function(){ setTimeout(startClarity, 2500); }, { once: true });
+        ['click','scroll','keydown','pointerdown','touchstart'].forEach(function(evt){
+          window.addEventListener(evt, function(){ startClarity(); }, { once: true, passive: true });
+        });
+      })();
     </script>
   </head>
   <body>

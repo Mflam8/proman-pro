@@ -134,20 +134,24 @@ export default function ServicesCarousel() {
 
           {/* Dots Indicator */}
           <div className="flex justify-center gap-2 mt-6">
-            {slides.map((slide, index) =>
-            <button
-              key={index}
-              type="button"
-              onClick={() => goToSlide(index)}
-              aria-label={`Ir a la diapositiva ${index + 1}: ${typeof slide.title === 'string' ? slide.title : ''}`}
-              aria-current={index === currentIndex ? "true" : undefined}
-              className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full transition-all ${
-              index === currentIndex ?
-              "bg-proman-yellow w-6 sm:w-8" :
-              "bg-gray-300 hover:bg-gray-400"}`
-              } />
-
-            )}
+            {slides.map((slide, index) => (
+              <button
+                key={index}
+                type="button"
+                onClick={() => goToSlide(index)}
+                aria-label={`Ir a la diapositiva ${index + 1}: ${typeof slide.title === 'string' ? slide.title : ''}`}
+                aria-current={index === currentIndex ? "true" : undefined}
+                className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center"
+              >
+                <span
+                  className={`block rounded-full transition-all ${
+                    index === currentIndex
+                      ? "bg-proman-yellow w-2 h-2 sm:w-3 sm:h-3"
+                      : "bg-gray-300 hover:bg-gray-400 w-2 h-2 sm:w-3 sm:h-3"
+                  }`}
+                />
+              </button>
+            ))}
           </div>
         </div>
       </div>
