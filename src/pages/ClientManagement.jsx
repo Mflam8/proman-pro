@@ -37,6 +37,7 @@ export default function ClientManagement() {
   const [selectedInquiry, setSelectedInquiry] = useState(null);
   const [activeTab, setActiveTab] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchDraft, setSearchDraft] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [sortOrder, setSortOrder] = useState("desc");
   const [mainTab, setMainTab] = useState("trabajos");
@@ -475,11 +476,13 @@ export default function ClientManagement() {
                     <div className="flex-1">
                       <Input
                         placeholder="Buscar por nombre, teléfono, servicio, rubro o ítems (ej. enchape)..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        value={searchDraft}
+                        onChange={(e) => setSearchDraft(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') { setSearchTerm(searchDraft); } }}
                         className="w-full"
                       />
                     </div>
+                    <Button onClick={() => setSearchTerm(searchDraft)} className="w-full sm:w-auto">Buscar</Button>
                     <Select value={clientTypeFilter} onValueChange={setClientTypeFilter}>
                       <SelectTrigger className="w-full sm:w-48">
                         <SelectValue placeholder="Tipo de cliente" />
