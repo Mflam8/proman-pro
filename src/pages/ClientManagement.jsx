@@ -86,7 +86,10 @@ export default function ClientManagement() {
 
   const { data: customers } = useQuery({
     queryKey: ['customers'],
-    queryFn: () => base44.entities.Customer.list(),
+    queryFn: async () => {
+      const raw = await base44.entities.Customer.list();
+      return raw.map((c) => (c && c.data ? { ...c, ...c.data } : c));
+    },
     enabled: !!user && hasManagementAccess,
     initialData: [],
   });
@@ -100,7 +103,10 @@ export default function ClientManagement() {
         const data = it.data || it;
         const key = data.inquiry_id;
         if (!key) return;
-        const blob = ((data.descripcion || '') + ' ' + (data.descripcion_detallada || '')).toLowerCase();
+        const blob = ((data.descripcion || '') + ' ' + (data.descripcion_detallada || ''))
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '');
         if (!blob.trim()) return;
         idx[key] = (idx[key] || '') + ' ' + blob;
       });
@@ -185,26 +191,25 @@ export default function ClientManagement() {
       matchesClientType = inquiry.lead_source !== "corporativo" && customer?.customer_type === "comercial";
     }
     
-    // Search filter (incluye descripciones de ítems de cotización)
-    const searchLower = searchTerm.toLowerCase();
-    const matchesSearch = searchTerm === "" || 
-      inquiry.client_name?.toLowerCase().includes(searchLower) ||
-      customer?.full_name?.toLowerCase().includes(searchLower) ||
-      inquiry.phone?.replace(/\D/g, '').includes(searchTerm.replace(/\D/g, '')) ||
-      customer?.phone?.replace(/\D/g, '').includes(searchTerm.replace(/\D/g, '')) ||
-      inquiry.service_type?.toLowerCase().includes(searchLower) ||
-      inquiry.rubro?.toLowerCase().includes(searchLower) ||
-      inquiry.location_name?.toLowerCase().includes(searchLower) ||
-      inquiry.restaurant_name?.toLowerCase().includes(searchLower) ||
-      (itemsIndex && itemsIndex[inquiry.id] && itemsIndex[inquiry.id].includes(searchLower));
-    
+    // Búsqueda (tolerante a acentos) e incluye ítems de cotización
+    const norm = (s) => (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const searchText = norm(searchTerm.trim());
+    const searchDigits = searchTerm.replace(/\D/g, "");
+    const matchesSearch =
+      searchText === "" ||
+      norm(inquiry.client_name).includes(searchText) ||
+      norm(customer?.full_name).includes(searchText) ||
+      (searchDigits && ( (inquiry.phone || "").replace(/\D/g, "").includes(searchDigits) ||
+                         (customer?.phone || "").replace(/\D/g, "").includes(searchDigits) )) ||
+      norm(inquiry.service_type).includes(searchText) ||
+      norm(inquiry.rubro).includes(searchText) ||
+      norm(inquiry.location_name).includes(searchText) ||
+      norm(inquiry.restaurant_name).includes(searchText) ||
+      (itemsIndex && itemsIndex[inquiry.id] && itemsIndex[inquiry.id].includes(searchText));
+
     return matchesTab && matchesSearch && matchesClientType;
   });
 
-  // Agrupar por cliente si está en modo agrupado
-  const groupedProjects = viewMode === "grouped" 
-    ? groupInquiriesByCustomer(paginatedInquiries, customers)
-    : [];
 
   const stats = {
     total: allInquiries.length,
@@ -219,6 +224,10 @@ export default function ClientManagement() {
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const endIndex = startIndex + ITEMS_PER_PAGE;
   const paginatedInquiries = filteredInquiries.slice(startIndex, endIndex);
+  // Agrupar por cliente si está en modo agrupado (después de paginar)
+  const groupedProjects = viewMode === "grouped"
+    ? groupInquiriesByCustomer(paginatedInquiries, customers)
+    : [];
   const handlePrevPage = () => setCurrentPage(p => Math.max(1, p - 1));
   const handleNextPage = () => setCurrentPage(p => Math.min(totalPages, p + 1));
   
