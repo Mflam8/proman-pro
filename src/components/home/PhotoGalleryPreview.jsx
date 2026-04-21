@@ -56,7 +56,7 @@ export default function PhotoGalleryPreview() {
           {workPhotos.map((photo, index) => (
             <div
               key={index}
-              className="group relative overflow-hidden rounded-lg shadow-lg hover:shadow-2xl transition-all duration-300 aspect-[4/3]"
+              className="group relative overflow-hidden rounded-2xl border-2 border-white/10 shadow-xl hover:shadow-2xl transition-all duration-300 aspect-[4/3] backdrop-blur-sm"
             >
               <img
                 src={photo.image}

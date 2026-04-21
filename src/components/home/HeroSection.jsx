@@ -12,15 +12,23 @@ export default function HeroSection() {
 
   return (
     <div className="relative gradient-navy-yellow text-white overflow-hidden">
-      {/* Decorative hexagons */}
-      <div className="absolute top-10 right-10 w-32 h-32 hexagon bg-proman-yellow opacity-10"></div>
-      <div className="absolute bottom-20 left-10 w-24 h-24 hexagon bg-proman-yellow opacity-10"></div>
-      <div className="absolute top-1/2 right-1/4 w-16 h-16 hexagon bg-white opacity-5"></div>
+      {/* Decorative angled panels */}
+      <div className="absolute inset-y-0 right-0 w-2/3 pointer-events-none">
+        <div
+          className="absolute -right-12 top-0 h-1/2 w-2/3 bg-white/10 backdrop-blur-sm"
+          style={{ clipPath: 'polygon(20% 0, 100% 0, 100% 100%, 0 100%)' }}
+        />
+        <div
+          className="absolute -right-24 bottom-0 h-2/3 w-3/4 bg-proman-yellow/10"
+          style={{ clipPath: 'polygon(0 0, 100% 20%, 80% 100%, 0 100%)' }}
+        />
+      </div>
+      <div className="absolute -z-10 right-20 top-1/3 w-56 h-56 rounded-full bg-proman-yellow/20 blur-2xl"></div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-32 relative">
         <div className="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
           <div className="space-y-6 order-2 md:order-1">
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold leading-tight">
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-black leading-tight tracking-tight">
               {t({ 
                 es: "Soluciones Profesionales para tu ",
                 en: "Professional Solutions for your "

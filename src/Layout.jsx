@@ -7,6 +7,7 @@ import { base44 } from "@/api/base44Client";
 import { LanguageProvider, useLanguage } from "@/components/LanguageContext";
 import LanguageSelector from "@/components/LanguageSelector";
 import WhatsAppMascot from "@/components/WhatsAppMascot";
+import MobileStickyCTA from "@/components/MobileStickyCTA";
 
 // Helper function to get display name
 const getDisplayName = (user) => user?.employee_name || user?.full_name || 'Usuario';
@@ -126,6 +127,10 @@ function LayoutContent({ children }) {
         .hexagon {
           clip-path: polygon(30% 0%, 70% 0%, 100% 50%, 70% 100%, 30% 100%, 0% 50%);
         }
+        .diagonal-separator {
+          height: 12px;
+          clip-path: polygon(0 0, 100% 0, 100% 100%, 0 60%);
+        }
       `}</style>
 
       {/* Header */}
@@ -150,10 +155,10 @@ function LayoutContent({ children }) {
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`text-sm font-medium transition-colors flex items-center gap-2 ${
+                  className={`text-sm font-semibold transition-colors flex items-center gap-2 px-4 py-2 rounded-full ${
                     isActive(item.href)
-                      ? "text-proman-yellow"
-                      : "text-proman-navy hover:text-proman-yellow"
+                      ? "bg-proman-yellow text-proman-navy shadow"
+                      : "text-proman-navy hover:bg-proman-navy/5"
                   }`}
                 >
                   {item.icon && <item.icon className="w-4 h-4" />}
@@ -233,7 +238,7 @@ function LayoutContent({ children }) {
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`block px-4 py-2 rounded-lg text-base font-medium flex items-center gap-2 ${
+                  className={`block px-4 py-2 rounded-full text-base font-medium flex items-center gap-2 ${
                     isActive(item.href)
                       ? "bg-proman-yellow text-proman-navy"
                       : "text-proman-navy hover:bg-gray-100"
@@ -308,7 +313,9 @@ function LayoutContent({ children }) {
       </header>
 
       {/* Main Content */}
+      <div className="diagonal-separator gradient-navy-yellow"></div>
       <main>{children}</main>
+      <MobileStickyCTA />
 
       {/* Footer */}
       <footer className="gradient-navy-yellow text-white mt-20">
