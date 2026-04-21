@@ -10,6 +10,17 @@ import { useLanguage } from "@/components/LanguageContext";
 export default function ReviewsSection() {
   const { t } = useLanguage();
   const PLACE_QUERY = "PROMAN Services El Salvador";
+
+  const FALLBACK_REVIEWS = [
+    { author_name: "Cecilia De Escalante", rating: 5, text: "Solicité sus servicios y vinieron en buen horario y buen servicio.", relative_time_description: "hace 1 semana", source: "Google" },
+    { author_name: "Fernando Paz", rating: 5, text: "Excelente servicio y comunicación, su trabajo vale la pena. Recomendado.", relative_time_description: "hace 11 semanas", source: "Google" },
+    { author_name: "Rodrigo Avilés", rating: 5, text: "Empresa muy profesional y excelente servicio. Recomendado al 100%.", relative_time_description: "hace 20 semanas", source: "Google" },
+    { author_name: "Roberto Monterrosa", rating: 5, text: "PROMAN SERVICES con personal muy capacitado. Servicio profesional de principio a fin.", relative_time_description: "hace 23 semanas", source: "Google" },
+    { author_name: "Nick The Doodle Guy", rating: 5, text: "Solid service and workmanship! Highly recommended.", relative_time_description: "hace 23 semanas", source: "Google" },
+    { author_name: "Jenn Villa (Facebook)", rating: 5, text: "Excelente servicio. Nos resolvieron un problema de desagüe. Súper recomendado.", relative_time_description: "Facebook", source: "Facebook" },
+    { author_name: "Claudia de Durán (Facebook)", rating: 5, text: "¡Excelente servicio! Muy profesionales y súper recomendado.", relative_time_description: "Facebook", source: "Facebook" }
+  ];
+
   const { data: reviews = [], isLoading } = useQuery({
     queryKey: ['gmb-reviews'],
     queryFn: async () => {
@@ -17,6 +28,9 @@ export default function ReviewsSection() {
       return res.data.reviews || [];
     },
   });
+
+  const displayedReviews = (reviews && reviews.length > 0) ? reviews : FALLBACK_REVIEWS;
+  const avgRating = displayedReviews.length ? (displayedReviews.reduce((sum, r) => sum + (r.rating || 0), 0) / displayedReviews.length) : 0;
 
   return (
     <div className="py-20 bg-gradient-to-b from-white via-gray-50 to-white">
@@ -28,6 +42,19 @@ export default function ReviewsSection() {
           <p className="text-sm text-gray-600">
             {t({ es: "Actualizadas en tiempo real desde Google Business Profile", en: "Live from Google Business Profile" })}
           </p>
+          <div className="mt-3 flex items-center justify-center gap-2">
+            <div className="flex">
+              {[...Array(5)].map((_, i) => (
+                <Star
+                  key={i}
+                  className={`w-4 h-4 ${i < Math.round(avgRating) ? 'text-proman-yellow fill-proman-yellow' : 'text-gray-300'}`}
+                  fill={i < Math.round(avgRating) ? '#fdc80c' : 'none'}
+                />
+              ))}
+            </div>
+            <span className="text-sm font-semibold text-proman-navy">{avgRating.toFixed(1)}/5</span>
+            <span className="text-xs text-gray-600">({displayedReviews.length} {t({ es: "reseñas", en: "reviews" })})</span>
+          </div>
         </div>
 
         {/* Carrusel tipo marquee con pausa al hover */}
@@ -36,12 +63,12 @@ export default function ReviewsSection() {
           .marquee { animation: marquee 28s linear infinite; }
           .marquee:hover { animation-play-state: paused; }
         `}</style>
-        {reviews.length === 0 && !isLoading ? (
+        {displayedReviews.length === 0 && !isLoading ? (
           <p className="text-center text-gray-500">No hay reseñas disponibles por el momento.</p>
         ) : (
           <div className="overflow-hidden">
             <div className="marquee flex gap-6 px-1 will-change-transform">
-              {[...reviews, ...reviews].map((review, idx) => (
+              {[...displayedReviews, ...displayedReviews].map((review, idx) => (
                 <Card key={`${review.author_name}-${review.time}-${idx}`} className="relative min-w-[300px] max-w-[360px] border-2 border-gray-100 hover:border-proman-yellow transition-all bg-white/80 backdrop-blur-sm">
                   <CardContent className="p-6">
                     <Quote className="w-10 h-10 text-proman-yellow opacity-20 absolute top-4 right-4" />
