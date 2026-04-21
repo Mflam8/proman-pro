@@ -27,6 +27,8 @@ export default function ReviewsSection() {
       const res = await fetchGoogleReviews({ query: PLACE_QUERY, minRating: 4 });
       return res.data.reviews || [];
     },
+    enabled: false,
+    staleTime: 1000 * 60 * 10,
   });
 
   const displayedReviews = (reviews && reviews.length > 0) ? reviews : FALLBACK_REVIEWS;
