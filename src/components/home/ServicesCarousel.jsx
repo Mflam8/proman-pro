@@ -52,17 +52,14 @@ export default function ServicesCarousel() {
   }, [isAutoPlaying, slides.length]);
 
   const goToNext = () => {
-    setIsAutoPlaying(false);
     setCurrentIndex((prev) => (prev + 1) % slides.length);
   };
 
   const goToPrevious = () => {
-    setIsAutoPlaying(false);
     setCurrentIndex((prev) => (prev - 1 + slides.length) % slides.length);
   };
 
   const goToSlide = (index) => {
-    setIsAutoPlaying(false);
     setCurrentIndex(index);
   };
 
