@@ -443,7 +443,14 @@ export default function InquiryDetailForm({
             </CardContent>
           </Card>
 
-          {/* 2. PANEL ADMINISTRATIVO */}
+          {/* 2. PANEL ADMINISTRATIVO — movido a columna derecha */}
+
+          {/* 3. COTIZACIÓN / FACTURACIÓN */}
+          <BillingDetails inquiryId={inquiry.id} canEdit={canEdit} inquiry={inquiry} />
+        </div>
+
+        {/* COLUMNA DERECHA */}
+        <div className="space-y-6">
           {canEdit && (
             <Card className="border-2 border-purple-500 bg-purple-50/30">
               <CardHeader className="bg-purple-500 text-white">
@@ -514,13 +521,6 @@ export default function InquiryDetailForm({
               </CardContent>
             </Card>
           )}
-
-          {/* 3. COTIZACIÓN / FACTURACIÓN */}
-          <BillingDetails inquiryId={inquiry.id} canEdit={canEdit} inquiry={inquiry} />
-        </div>
-
-        {/* COLUMNA DERECHA */}
-        <div className="space-y-6">
           <WhatsAppConversationPanel 
             customerId={customer?.id || inquiry.customer_id}
             inquiryId={inquiry.id}
