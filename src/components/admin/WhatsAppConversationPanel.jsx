@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Loader2, Send, Search, Filter, Download, Image as ImageIcon, FileText, PlayCircle, MessageCircle, Bot, User as UserIcon } from "lucide-react";
+import { Loader2, Send, Search, Filter, Download, Image as ImageIcon, FileText, PlayCircle, MessageCircle, Bot, User as UserIcon, ChevronDown, ChevronUp } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -93,6 +93,7 @@ export default function WhatsAppConversationPanel({ customerId, inquiryId, phone
   const [sending, setSending] = useState(false);
   const [messageText, setMessageText] = useState("");
   const [file, setFile] = useState(null);
+  const [isOpen, setIsOpen] = useState(false);
 
   const { data: messages = [], isLoading } = useQuery({
     queryKey: ['waLog', customerId],
@@ -206,13 +207,17 @@ export default function WhatsAppConversationPanel({ customerId, inquiryId, phone
         <CardTitle className="flex items-center justify-between w-full">
           <span>💬 Conversación WhatsApp</span>
           <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => setIsOpen(v => !v)} className="bg-white text-emerald-700 hover:bg-emerald-50">
+              {isOpen ? <ChevronUp className="w-4 h-4 mr-1" /> : <ChevronDown className="w-4 h-4 mr-1" />}
+              {isOpen ? 'Ocultar' : 'Mostrar'}
+            </Button>
             <Button size="sm" variant="secondary" onClick={handleSummarize} disabled={summarizing}>
               {summarizing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <MessageCircle className="w-4 h-4 mr-2" />} Resumen
             </Button>
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-4 space-y-3">
+      <CardContent className={`pt-4 space-y-3 ${isOpen ? '' : 'hidden'}`}>
         {/* Filtros */}
         <div className="grid md:grid-cols-6 gap-2">
           <div className="md:col-span-2">
