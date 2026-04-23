@@ -62,8 +62,8 @@ export default function ReviewsSection() {
         {/* Carrusel tipo marquee con pausa al hover */}
         <style>{`
           @keyframes marquee { 0% { transform: translateX(0) } 100% { transform: translateX(-50%) } }
-          .marquee { animation: marquee 28s linear infinite; }
-          .marquee:hover { animation-play-state: paused; }
+          .marquee { animation: marquee 16s linear infinite; }
+          .marquee:hover, .marquee:active { animation-play-state: paused; }
         `}</style>
         {displayedReviews.length === 0 && !isLoading ? (
           <p className="text-center text-gray-500">No hay reseñas disponibles por el momento.</p>
