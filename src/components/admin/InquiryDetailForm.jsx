@@ -445,8 +445,13 @@ export default function InquiryDetailForm({
 
           {/* 2. PANEL ADMINISTRATIVO — movido a columna derecha */}
 
-          {/* 3. COTIZACIÓN / FACTURACIÓN */}
-          <BillingDetails inquiryId={inquiry.id} canEdit={canEdit} inquiry={inquiry} />
+          {/* Conversación WhatsApp (movida aquí) */}
+          <WhatsAppConversationPanel 
+            customerId={customer?.id || inquiry.customer_id}
+            inquiryId={inquiry.id}
+            phone={customer?.phone || inquiry.phone}
+          />
+
         </div>
 
         {/* COLUMNA DERECHA */}
@@ -520,17 +525,11 @@ export default function InquiryDetailForm({
                 <Textarea name="notes" placeholder="Notas internas..." value={formData.notes || ''} onChange={(e) => setFormData(prev => ({...prev, notes: e.target.value}))} rows={2} disabled={isUpdating} />
               </CardContent>
             </Card>
-          )}
-          <WhatsAppConversationPanel 
-            customerId={customer?.id || inquiry.customer_id}
-            inquiryId={inquiry.id}
-            phone={customer?.phone || inquiry.phone}
-          />
+            )}
 
-          {/* 4. GASTOS DEL TRABAJO */}
-          <WorkExpenses inquiryId={inquiry.id} canEdit={canEdit} />
 
-          {/* 5. ACTUALIZACIÓN DE PROGRESO */}
+
+            {/* 5. ACTUALIZACIÓN DE PROGRESO */}
           <Card className="border-2 border-blue-500 bg-blue-50/30">
             <CardHeader className="bg-blue-500 text-white">
               <CardTitle className="flex items-center gap-2">👷 Actualización de Progreso</CardTitle>
@@ -798,6 +797,12 @@ export default function InquiryDetailForm({
               )}
             </CardContent>
           </Card>
+
+          {/* 3. COTIZACIÓN / FACTURACIÓN */}
+          <BillingDetails inquiryId={inquiry.id} canEdit={canEdit} inquiry={inquiry} />
+
+          {/* 4. GASTOS DEL TRABAJO */}
+          <WorkExpenses inquiryId={inquiry.id} canEdit={canEdit} />
 
           {inquiry.satisfaction_rating && (
             <Card>
