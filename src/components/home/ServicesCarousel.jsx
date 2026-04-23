@@ -31,8 +31,8 @@ export default function ServicesCarousel() {
   },
   {
     image: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ef04efb2facc1f9d963736/9f95904f9_WhatsAppImage2025-10-14at122738PM.jpg",
-    title: t({ es: "Servicio 24/7 Emergencias", en: "24/7 Emergency Service" }),
-    description: t({ es: "Disponibles para emergencias en cualquier momento del día", en: "Available for emergencies at any time of the day" })
+    title: t({ es: "Trabajos nocturnos programados", en: "Scheduled Overnight Work" }),
+    description: t({ es: "Realizamos trabajos programados en horario nocturno (no atendemos emergencias 24/7)", en: "We perform scheduled overnight work (we do not provide 24/7 emergency service)" })
   },
   {
     image: "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ef04efb2facc1f9d963736/8c3760594_WhatsAppImage2025-10-14at122737PM1.jpg",
