@@ -82,6 +82,49 @@ export default function InquiryDetailForm({
     initialData: [],
   });
 
+  // Servicios activos para selección rápida
+  const { data: services = [] } = useQuery({
+    queryKey: ['services'],
+    queryFn: () => base44.entities.Service.filter({ is_active: true }),
+    initialData: [],
+  });
+
+  // Crea línea de cotización automáticamente al elegir un servicio
+  const createBillingItem = useMutation({
+    mutationFn: async ({ service }) => {
+      const price = service.base_price ?? service.price_range_min ?? 0;
+      const item = await base44.entities.DetalleFacturaTrabajo.create({
+        inquiry_id: inquiry.id,
+        tipo_item: 'servicio',
+        descripcion: service.service_name,
+        descripcion_detallada: service.description || '',
+        cantidad: 1,
+        unidad_medida: 'unidad',
+        precio_unitario: price,
+        monto_total_item: price,
+        es_cotizacion: true,
+        incluir_iva: false,
+        opcion_numero: 1
+      });
+      return item;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['billingItems', inquiry.id] });
+    },
+  });
+
+  const handleSelectService = async (serviceId) => {
+    const service = services.find(s => s.id === serviceId);
+    if (!service) return;
+    await handleAutoSaveChange('service_type', service.service_name);
+    const exists = billingItems.some(item =>
+      item.tipo_item === 'servicio' && (item.descripcion || '').toLowerCase() === service.service_name.toLowerCase()
+    );
+    if (!exists) {
+      createBillingItem.mutate({ service });
+    }
+  };
+
   const createPayment = useMutation({
     mutationFn: async (data) => {
       const currentUser = await base44.auth.me();
@@ -374,7 +417,20 @@ export default function InquiryDetailForm({
                     </div>
                     <div>
                       <Label className="text-xs text-gray-600">Servicio</Label>
-                      <Input value={formData.service_type || ''} onChange={(e) => setFormData(p => ({...p, service_type: e.target.value}))} className="h-8 text-sm" disabled={isUpdating} />
+                      <Select
+                        value={services.find(s => s.service_name === (formData.service_type || ''))?.id || ''}
+                        onValueChange={(v) => handleSelectService(v)}
+                        disabled={isUpdating}
+                      >
+                        <SelectTrigger className="h-8 text-sm">
+                          <SelectValue placeholder="Selecciona un servicio" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {services.map((s) => (
+                            <SelectItem key={s.id} value={s.id}>{s.service_name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </>
                 ) : (
