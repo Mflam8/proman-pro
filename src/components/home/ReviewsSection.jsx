@@ -64,14 +64,15 @@ export default function ReviewsSection() {
           @keyframes marquee { 0% { transform: translateX(0) } 100% { transform: translateX(-50%) } }
           .marquee { animation: marquee 16s linear infinite; }
           .marquee:hover, .marquee:active { animation-play-state: paused; }
+          @media (max-width: 640px) { .marquee { animation: none !important; } }
         `}</style>
         {displayedReviews.length === 0 && !isLoading ? (
           <p className="text-center text-gray-500">No hay reseñas disponibles por el momento.</p>
         ) : (
-          <div className="overflow-hidden">
-            <div className="marquee flex gap-6 px-1 will-change-transform">
+          <div className="overflow-x-auto md:overflow-hidden">
+            <div className="marquee flex gap-6 px-1 md:will-change-transform snap-x snap-mandatory">
               {[...displayedReviews, ...displayedReviews].map((review, idx) => (
-                <Card key={`${review.author_name}-${review.time}-${idx}`} className="relative min-w-[300px] max-w-[360px] border-2 border-gray-100 hover:border-proman-yellow transition-all bg-white/80 backdrop-blur-sm">
+                <Card key={`${review.author_name}-${review.time}-${idx}`} className="snap-start relative min-w-[300px] max-w-[360px] border-2 border-gray-100 hover:border-proman-yellow transition-all bg-white/80 backdrop-blur-sm">
                   <CardContent className="p-6">
                     <Quote className="w-10 h-10 text-proman-yellow opacity-20 absolute top-4 right-4" />
 
