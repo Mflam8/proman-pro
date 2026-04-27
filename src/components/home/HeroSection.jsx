@@ -67,15 +67,7 @@ export default function HeroSection() {
                 <div className="text-xs sm:text-sm text-gray-300">{t({ es: "Clientes Satisfechos", en: "Satisfied Clients" })}</div>
               </div>
               <div className="h-12 w-px bg-gray-400"></div>
-              <div className="text-center">
-                <div className="text-2xl sm:text-3xl font-bold text-proman-yellow">
-                  {t({ es: "Nocturno", en: "Overnight" })}
-                </div>
-                <div className="text-xs sm:text-sm text-gray-300">
-                  {t({ es: "Trabajos programados (sin emergencias)", en: "Scheduled work (no emergencies)" })}
-                </div>
-              </div>
-              <div className="h-12 w-px bg-gray-400"></div>
+
               <div className="text-center">
                 <div className="text-2xl sm:text-3xl font-bold text-proman-yellow">10+</div>
                 <div className="text-xs sm:text-sm text-gray-300">{t({ es: "Años Experiencia", en: "Years Experience" })}</div>
