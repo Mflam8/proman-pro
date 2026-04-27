@@ -7,7 +7,7 @@ import { base44 } from "@/api/base44Client";
 import { LanguageProvider, useLanguage } from "@/components/LanguageContext";
 import LanguageSelector from "@/components/LanguageSelector";
 import WhatsAppMascot from "@/components/WhatsAppMascot";
-import MobileStickyCTA from "@/components/MobileStickyCTA";
+
 
 // Helper function to get display name
 const getDisplayName = (user) => user?.employee_name || user?.full_name || 'Usuario';
@@ -315,7 +315,6 @@ function LayoutContent({ children }) {
       {/* Main Content */}
       <div className="diagonal-separator gradient-navy-yellow"></div>
       <main>{children}</main>
-      <MobileStickyCTA />
 
       {/* Footer */}
       <footer className="gradient-navy-yellow text-white mt-20">
