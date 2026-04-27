@@ -1,0 +1,44 @@
+{
+  "name": "JobPosting",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo de la vacante"
+    },
+    "flyer_image_url": {
+      "type": "string",
+      "description": "URL del flyer de la vacante"
+    },
+    "position_type": {
+      "type": "string",
+      "enum": [
+        "tecnico",
+        "administrativo",
+        "supervisor",
+        "otro"
+      ],
+      "default": "tecnico",
+      "description": "Tipo de posici\u00f3n"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Si la vacante est\u00e1 activa"
+    },
+    "order": {
+      "type": "number",
+      "default": 0,
+      "description": "Orden de visualizaci\u00f3n"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Descripci\u00f3n opcional adicional"
+    }
+  },
+  "required": [
+    "title",
+    "flyer_image_url"
+  ]
+}

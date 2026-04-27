@@ -1,0 +1,68 @@
+{
+  "name": "GastoTrabajo",
+  "type": "object",
+  "properties": {
+    "inquiry_id": {
+      "type": "string",
+      "description": "ID de la solicitud de cliente (ClientInquiry) a la que pertenece este gasto"
+    },
+    "tipo_gasto": {
+      "type": "string",
+      "enum": [
+        "combustible",
+        "viaticos",
+        "transporte",
+        "reparacion",
+        "subcontrato",
+        "herramienta",
+        "otro"
+      ],
+      "default": "otro",
+      "description": "Tipo de gasto operativo (NO incluye materiales, esos van aparte)"
+    },
+    "descripcion": {
+      "type": "string",
+      "description": "Descripci\u00f3n del gasto operativo"
+    },
+    "cantidad": {
+      "type": "number",
+      "default": 1,
+      "minimum": 0,
+      "description": "Cantidad del item"
+    },
+    "precio_unitario": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Precio por unidad del item"
+    },
+    "monto_total": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Monto total de este gasto (cantidad * precio_unitario)"
+    },
+    "responsable_gasto": {
+      "type": "string",
+      "description": "Nombre del t\u00e9cnico o persona responsable del gasto"
+    },
+    "proveedor": {
+      "type": "string",
+      "description": "Nombre del proveedor o lugar donde se realiz\u00f3 el gasto"
+    },
+    "fecha_gasto": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha en que se realiz\u00f3 el gasto"
+    },
+    "imagen_factura_url": {
+      "type": "string",
+      "description": "URL de la imagen de la factura o recibo"
+    }
+  },
+  "required": [
+    "inquiry_id",
+    "tipo_gasto",
+    "descripcion",
+    "cantidad",
+    "precio_unitario"
+  ]
+}

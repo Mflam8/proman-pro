@@ -1,0 +1,47 @@
+{
+  "name": "EmployeeSchedule",
+  "type": "object",
+  "properties": {
+    "employee_id": {
+      "type": "string",
+      "description": "ID del empleado"
+    },
+    "day_of_week": {
+      "type": "string",
+      "enum": [
+        "lunes",
+        "martes",
+        "miercoles",
+        "jueves",
+        "viernes",
+        "sabado",
+        "domingo"
+      ],
+      "description": "D\u00eda de la semana"
+    },
+    "start_time": {
+      "type": "string",
+      "description": "Hora de inicio (formato HH:mm)"
+    },
+    "end_time": {
+      "type": "string",
+      "description": "Hora de fin (formato HH:mm)"
+    },
+    "is_available": {
+      "type": "boolean",
+      "default": true,
+      "description": "Si est\u00e1 disponible ese d\u00eda"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Descripci\u00f3n opcional adicional"
+    }
+  },
+  "required": [
+    "employee_id",
+    "day_of_week",
+    "start_time",
+    "end_time"
+  ]
+}

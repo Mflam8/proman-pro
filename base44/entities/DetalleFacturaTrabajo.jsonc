@@ -1,0 +1,167 @@
+{
+  "name": "DetalleFacturaTrabajo",
+  "type": "object",
+  "properties": {
+    "inquiry_id": {
+      "type": "string",
+      "description": "ID de la solicitud de cliente (ClientInquiry) a la que pertenece este detalle"
+    },
+    "opcion_numero": {
+      "type": "number",
+      "default": 1,
+      "description": "N\u00famero de opci\u00f3n para agrupar items (Opci\u00f3n 1, Opci\u00f3n 2, etc.)"
+    },
+    "opcion_titulo": {
+      "type": "string",
+      "description": "T\u00edtulo de la opci\u00f3n (ej: Impermeabilizado completo de cisterna)"
+    },
+    "tipo_item": {
+      "type": "string",
+      "enum": [
+        "servicio",
+        "material",
+        "transporte",
+        "mano_de_obra",
+        "otro"
+      ],
+      "default": "servicio",
+      "description": "Tipo de componente de costo"
+    },
+    "descripcion": {
+      "type": "string",
+      "description": "Descripci\u00f3n corta del item"
+    },
+    "descripcion_detallada": {
+      "type": "string",
+      "description": "Descripci\u00f3n detallada del trabajo a realizar (multi-l\u00ednea)"
+    },
+    "cantidad": {
+      "type": "number",
+      "default": 1,
+      "minimum": 0,
+      "description": "Cantidad del item"
+    },
+    "unidad_medida": {
+      "type": "string",
+      "enum": [
+        "unidad",
+        "m2",
+        "ml",
+        "hora",
+        "dia",
+        "global"
+      ],
+      "default": "unidad",
+      "description": "Unidad de medida para la cantidad"
+    },
+    "precio_unitario": {
+      "type": "number",
+      "description": "Precio por unidad del item (puede ser negativo para descuentos)"
+    },
+    "precio_normal": {
+      "type": "number",
+      "description": "Precio unitario regular/normal (antes de descuento especial)"
+    },
+    "descuento_porcentaje": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Porcentaje de descuento aplicado para clientes especiales"
+    },
+    "motivo_descuento": {
+      "type": "string",
+      "description": "Motivo del descuento especial (ej: Cliente corporativo, volumen de trabajo, etc.)"
+    },
+    "monto_total_item": {
+      "type": "number",
+      "description": "Monto total de este item (cantidad * precio_unitario)"
+    },
+    "incluir_iva": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si se debe incluir IVA del 13%"
+    },
+    "es_cotizacion": {
+      "type": "boolean",
+      "default": true,
+      "description": "Si es parte de la cotizaci\u00f3n (true) o factura final (false)"
+    },
+    "opcion_seleccionada": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si esta opci\u00f3n fue seleccionada/aprobada por el cliente"
+    },
+    "orden": {
+      "type": "number",
+      "default": 0,
+      "description": "Orden de visualizaci\u00f3n del item dentro de su opci\u00f3n"
+    }
+  },
+  "required": [
+    "inquiry_id",
+    "tipo_item",
+    "descripcion",
+    "cantidad",
+    "precio_unitario"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "employee_type": "Supervisor"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "employee_type": "Supervisor"
+          }
+        },
+        {
+          "data.inquiry_id": {
+            "$in": {
+              "query": "ClientInquiry",
+              "field": "id",
+              "filter": {
+                "data.assigned_to": "{{user.email}}"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "employee_type": "Supervisor"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

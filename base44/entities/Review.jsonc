@@ -1,0 +1,43 @@
+{
+  "name": "Review",
+  "type": "object",
+  "properties": {
+    "client_name": {
+      "type": "string",
+      "description": "Nombre del cliente"
+    },
+    "rating": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Calificaci\u00f3n de 1 a 5 estrellas"
+    },
+    "comment": {
+      "type": "string",
+      "description": "Comentario del cliente"
+    },
+    "service_type": {
+      "type": "string",
+      "description": "Tipo de servicio recibido"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha del testimonio"
+    },
+    "location": {
+      "type": "string",
+      "description": "Ubicaci\u00f3n del cliente"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Descripci\u00f3n opcional adicional"
+    }
+  },
+  "required": [
+    "client_name",
+    "rating",
+    "comment"
+  ]
+}

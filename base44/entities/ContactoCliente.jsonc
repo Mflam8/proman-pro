@@ -1,0 +1,45 @@
+{
+  "name": "ContactoCliente",
+  "type": "object",
+  "properties": {
+    "customer_id": {
+      "type": "string",
+      "description": "ID del cliente en la base de datos (Customer)"
+    },
+    "nombre_contacto": {
+      "type": "string",
+      "description": "Nombre completo del contacto"
+    },
+    "telefono_e164": {
+      "type": "string",
+      "description": "Tel\u00e9fono en formato E.164 (ej: +50377498587)"
+    },
+    "rol": {
+      "type": "string",
+      "description": "Rol del contacto (Gerente, Supervisor, Encargado, etc.)"
+    },
+    "verificado": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si el contacto ha sido verificado como autorizado"
+    },
+    "activo": {
+      "type": "boolean",
+      "default": true,
+      "description": "Si el contacto est\u00e1 activo"
+    },
+    "notas": {
+      "type": "string",
+      "description": "Notas sobre este contacto espec\u00edfico"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Descripci\u00f3n opcional adicional"
+    }
+  },
+  "required": [
+    "customer_id",
+    "telefono_e164"
+  ]
+}

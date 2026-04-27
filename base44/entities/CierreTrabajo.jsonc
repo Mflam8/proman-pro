@@ -1,0 +1,104 @@
+{
+  "name": "CierreTrabajo",
+  "type": "object",
+  "properties": {
+    "trabajo_id": {
+      "type": "string",
+      "description": "ID del trabajo (ClientInquiry) que se cierra"
+    },
+    "num_tecnicos": {
+      "type": "number",
+      "minimum": 1,
+      "default": 1,
+      "description": "N\u00famero de t\u00e9cnicos que participaron"
+    },
+    "hora_inicio": {
+      "type": "string",
+      "description": "Hora de inicio del trabajo (HH:mm)"
+    },
+    "hora_fin": {
+      "type": "string",
+      "description": "Hora de finalizaci\u00f3n del trabajo (HH:mm)"
+    },
+    "horas_diurnas": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Horas trabajadas en jornada diurna (6am-7pm)"
+    },
+    "horas_nocturnas": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Horas trabajadas en jornada nocturna (7pm-6am)"
+    },
+    "horas_extra": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Horas extra trabajadas"
+    },
+    "horas_totales": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Total de horas trabajadas (calculado)"
+    },
+    "materiales_costo": {
+      "type": "number",
+      "minimum": 0,
+      "default": 0,
+      "description": "Costo total de materiales utilizados"
+    },
+    "estado_final": {
+      "type": "string",
+      "enum": [
+        "completado_exitoso",
+        "completado_con_pendientes",
+        "incompleto",
+        "cancelado"
+      ],
+      "default": "completado_exitoso",
+      "description": "Estado final del trabajo al cerrar"
+    },
+    "evidencias_url": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "URLs de fotos/videos finales del trabajo"
+    },
+    "observaciones": {
+      "type": "string",
+      "description": "Observaciones finales del t\u00e9cnico"
+    },
+    "trabajo_realizado": {
+      "type": "string",
+      "description": "Descripci\u00f3n detallada de lo realizado"
+    },
+    "pendientes": {
+      "type": "string",
+      "description": "Pendientes o recomendaciones futuras"
+    },
+    "cliente_conformidad": {
+      "type": "boolean",
+      "description": "Si el cliente dio conformidad del trabajo"
+    },
+    "firma_cliente_url": {
+      "type": "string",
+      "description": "URL de imagen con firma del cliente"
+    },
+    "fecha_cierre": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha en que se realiz\u00f3 el cierre"
+    },
+    "cerrado_por": {
+      "type": "string",
+      "description": "Email del usuario que cerr\u00f3 el trabajo"
+    }
+  },
+  "required": [
+    "trabajo_id",
+    "num_tecnicos",
+    "hora_inicio",
+    "hora_fin",
+    "fecha_cierre"
+  ]
+}

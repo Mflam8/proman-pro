@@ -1,0 +1,41 @@
+{
+  "name": "CorporateLog",
+  "type": "object",
+  "properties": {
+    "phone_number": {
+      "type": "string",
+      "description": "N\u00famero de WhatsApp del corporativo"
+    },
+    "message_content": {
+      "type": "string",
+      "description": "Contenido completo del mensaje"
+    },
+    "media_urls": {
+      "type": "string",
+      "description": "URLs de archivos multimedia (JSON string)"
+    },
+    "processed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si el mensaje fue procesado por el equipo"
+    },
+    "customer_id": {
+      "type": "string",
+      "description": "ID del cliente corporativo relacionado"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha y hora del mensaje"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Descripci\u00f3n opcional adicional"
+    }
+  },
+  "required": [
+    "phone_number",
+    "message_content"
+  ]
+}

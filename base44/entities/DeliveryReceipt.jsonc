@@ -18,6 +18,11 @@
     },
     "raw_payload": {
       "type": "string"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Descripci\u00f3n opcional adicional"
     }
   },
   "required": [

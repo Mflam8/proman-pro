@@ -1,0 +1,44 @@
+{
+  "name": "TrustedDirectory",
+  "type": "object",
+  "properties": {
+    "phone_number": {
+      "type": "string",
+      "description": "N\u00famero de WhatsApp en formato E.164 (ej: +50370000000)"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "ceo",
+        "technician",
+        "corporate",
+        "admin"
+      ],
+      "default": "technician",
+      "description": "Rol del usuario en el sistema"
+    },
+    "name": {
+      "type": "string",
+      "description": "Nombre completo del usuario"
+    },
+    "related_id": {
+      "type": "string",
+      "description": "ID del empleado o cliente relacionado en Base44"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Si el n\u00famero est\u00e1 activo para el bot"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 1000,
+      "description": "Descripci\u00f3n opcional adicional"
+    }
+  },
+  "required": [
+    "phone_number",
+    "role",
+    "name"
+  ]
+}
