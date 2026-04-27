@@ -421,7 +421,12 @@ function LayoutContent({ children }) {
       </footer>
 
       {/* Floating WhatsApp Assistant */}
-      <WhatsAppMascot phoneNumber={whatsappNumber} message={whatsappMessage} />
+      <WhatsAppMascot 
+        phoneNumber={whatsappNumber} 
+        message={whatsappMessage}
+        mascotUrl="https://media.base44.com/images/public/68ef04efb2facc1f9d963736/c0e5e5f69_Gemini_Generated_Image_w55grvw55grvw55g.png"
+        bubbleText="¡Hablemos!"
+      />
     </div>
   );
 }
