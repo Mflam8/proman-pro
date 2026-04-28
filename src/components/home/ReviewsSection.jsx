@@ -78,11 +78,9 @@ export default function ReviewsSection() {
 
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
-                        {review.profile_photo_url ? (
-                          <img src={review.profile_photo_url} alt={review.author_name} className="w-10 h-10 rounded-full border" />
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-gray-200" />
-                        )}
+                        <div className="w-10 h-10 rounded-full bg-gray-200 border flex items-center justify-center text-gray-500 font-semibold">
+                          {review.author_name?.charAt(0)?.toUpperCase() || 'U'}
+                        </div>
                         <div>
                           <p className="font-semibold text-proman-navy leading-tight">{review.author_name}</p>
                           <p className="text-xs text-gray-500">{review.relative_time_description}</p>
