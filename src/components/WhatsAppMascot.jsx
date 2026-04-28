@@ -5,6 +5,7 @@ import { useLanguage } from "@/components/LanguageContext";
 export default function WhatsAppMascot({ phoneNumber = "50360531213", message, mascotUrl, bubbleText, hideBubble }) {
   const { t, language } = useLanguage();
   const [isNearFooter, setIsNearFooter] = React.useState(false);
+  const [offsetY, setOffsetY] = React.useState(112);
   const defaultMsg = language === 'es'
     ? "Hola, me gustaría hablar con PROMAN"
     : "Hello, I'd like to chat with PROMAN";
@@ -17,6 +18,11 @@ export default function WhatsAppMascot({ phoneNumber = "50360531213", message, m
     const handleScroll = () => {
       const scrollBottom = window.innerHeight + window.scrollY;
       const pageHeight = document.documentElement.scrollHeight;
+      const progress = Math.min(window.scrollY / 500, 1);
+      const startOffset = 112;
+      const endOffset = window.innerWidth >= 640 ? window.innerHeight * 0.6 : window.innerHeight * 0.58;
+
+      setOffsetY(startOffset + ((endOffset - startOffset) * progress));
       setIsNearFooter(pageHeight - scrollBottom < 260);
     };
 
@@ -31,7 +37,10 @@ export default function WhatsAppMascot({ phoneNumber = "50360531213", message, m
   }, []);
 
   return (
-    <div className={`fixed right-4 z-50 flex items-end gap-3 transition-all duration-300 sm:right-6 ${isNearFooter ? 'bottom-40 sm:bottom-44' : 'top-[58vh] -translate-y-1/2 sm:top-[60vh]'}`}>
+    <div
+      className={`fixed right-4 z-50 flex items-end gap-3 transition-all duration-300 sm:right-6 ${isNearFooter ? 'bottom-40 sm:bottom-44' : ''}`}
+      style={isNearFooter ? undefined : { top: `${offsetY}px` }}
+    >
       {/* Bocadillo solo en >=sm */}
       {showBubble && (
         <div className="hidden sm:block">
