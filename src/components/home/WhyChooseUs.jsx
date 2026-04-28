@@ -17,8 +17,8 @@ export default function WhyChooseUs() {
     },
     {
       icon: Clock,
-      title: t({ es: "Respuesta Rápida 24/7", en: "Fast Response 24/7" }),
-      description: t({ es: "Atendemos emergencias las 24 horas en San Salvador, La Libertad y zona occidental", en: "We handle emergencies 24 hours in San Salvador, La Libertad and western region" })
+      title: t({ es: "Respuesta Rápida", en: "Fast Response" }),
+      description: t({ es: "Atendemos emergencias en San Salvador, La Libertad y Zona Occidental. *Restricciones aplican", en: "We handle emergencies in San Salvador, La Libertad, and the Western Region. *Restrictions apply" })
     },
     {
       icon: ThumbsUp,
