@@ -107,48 +107,49 @@ export default function ServicesCarousel() {
             )}
           </div>
 
-          {/* Navigation Buttons */}
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={goToPrevious}
-            aria-label="Anterior"
-            title="Anterior"
-            className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white border-2 border-proman-yellow text-proman-navy rounded-full w-10 h-10 sm:w-12 sm:h-12">
+          <div className="mt-6 flex items-center justify-center gap-4 sm:gap-6">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={goToPrevious}
+              aria-label="Anterior"
+              title="Anterior"
+              className="bg-white hover:bg-gray-50 border-2 border-proman-yellow text-proman-navy rounded-full w-10 h-10 sm:w-12 sm:h-12"
+            >
+              <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+            </Button>
 
-            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={goToNext}
-            aria-label="Siguiente"
-            title="Siguiente"
-            className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white border-2 border-proman-yellow text-proman-navy rounded-full w-10 h-10 sm:w-12 sm:h-12">
+            <div className="flex justify-center gap-2">
+              {slides.map((slide, index) => (
+                <button
+                  key={index}
+                  type="button"
+                  onClick={() => goToSlide(index)}
+                  aria-label={`Ir a la diapositiva ${index + 1}: ${typeof slide.title === 'string' ? slide.title : ''}`}
+                  aria-current={index === currentIndex ? "true" : undefined}
+                  className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center"
+                >
+                  <span
+                    className={`block rounded-full transition-all ${
+                      index === currentIndex
+                        ? "bg-proman-yellow w-2 h-2 sm:w-3 sm:h-3"
+                        : "bg-gray-300 hover:bg-gray-400 w-2 h-2 sm:w-3 sm:h-3"
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
 
-            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
-          </Button>
-
-          {/* Dots Indicator */}
-          <div className="flex justify-center gap-2 mt-6">
-            {slides.map((slide, index) => (
-              <button
-                key={index}
-                type="button"
-                onClick={() => goToSlide(index)}
-                aria-label={`Ir a la diapositiva ${index + 1}: ${typeof slide.title === 'string' ? slide.title : ''}`}
-                aria-current={index === currentIndex ? "true" : undefined}
-                className="w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center"
-              >
-                <span
-                  className={`block rounded-full transition-all ${
-                    index === currentIndex
-                      ? "bg-proman-yellow w-2 h-2 sm:w-3 sm:h-3"
-                      : "bg-gray-300 hover:bg-gray-400 w-2 h-2 sm:w-3 sm:h-3"
-                  }`}
-                />
-              </button>
-            ))}
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={goToNext}
+              aria-label="Siguiente"
+              title="Siguiente"
+              className="bg-white hover:bg-gray-50 border-2 border-proman-yellow text-proman-navy rounded-full w-10 h-10 sm:w-12 sm:h-12"
+            >
+              <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
+            </Button>
           </div>
         </div>
       </div>
