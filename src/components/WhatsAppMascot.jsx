@@ -1,5 +1,4 @@
 import React from "react";
-import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/components/LanguageContext";
 
@@ -7,7 +6,6 @@ export default function WhatsAppMascot({ phoneNumber = "50360531213", message, m
   const { t, language } = useLanguage();
   const [isNearFooter, setIsNearFooter] = React.useState(false);
   const [offsetY, setOffsetY] = React.useState(112);
-  const [dragPosition, setDragPosition] = React.useState({ x: 0, y: 0 });
   const defaultMsg = language === 'es'
     ? "Hola, me gustaría hablar con PROMAN"
     : "Hello, I'd like to chat with PROMAN";
@@ -39,16 +37,7 @@ export default function WhatsAppMascot({ phoneNumber = "50360531213", message, m
   }, []);
 
   return (
-    <motion.div
-      drag
-      dragMomentum={false}
-      onDragEnd={(_, info) => {
-        setDragPosition((prev) => ({
-          x: prev.x + info.offset.x,
-          y: prev.y + info.offset.y,
-        }));
-      }}
-      animate={{ x: dragPosition.x, y: dragPosition.y }}
+    <div
       className={`fixed right-4 z-50 flex items-end gap-3 transition-all duration-300 sm:right-6 ${isNearFooter ? 'bottom-40 sm:bottom-44' : ''}`}
       style={isNearFooter ? undefined : { top: `${offsetY}px` }}
     >
@@ -82,6 +71,6 @@ export default function WhatsAppMascot({ phoneNumber = "50360531213", message, m
           </Button>
         )}
       </a>
-    </motion.div>
+    </div>
   );
 }
