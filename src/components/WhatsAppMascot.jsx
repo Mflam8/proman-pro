@@ -19,7 +19,7 @@ export default function WhatsAppMascot({ phoneNumber = "50360531213", message, m
       const scrollBottom = window.innerHeight + window.scrollY;
       const pageHeight = document.documentElement.scrollHeight;
       const progress = Math.min(window.scrollY / 500, 1);
-      const startOffset = 112;
+      const startOffset = window.innerWidth >= 640 ? window.innerHeight * 0.42 : window.innerHeight * 0.46;
       const endOffset = window.innerWidth >= 640 ? window.innerHeight * 0.6 : window.innerHeight * 0.58;
 
       setOffsetY(startOffset + ((endOffset - startOffset) * progress));
