@@ -4,6 +4,7 @@ import { useLanguage } from "@/components/LanguageContext";
 
 export default function WhatsAppMascot({ phoneNumber = "50360531213", message, mascotUrl, bubbleText, hideBubble }) {
   const { t, language } = useLanguage();
+  const [isNearFooter, setIsNearFooter] = React.useState(false);
   const defaultMsg = language === 'es'
     ? "Hola, me gustaría hablar con PROMAN"
     : "Hello, I'd like to chat with PROMAN";
@@ -12,8 +13,25 @@ export default function WhatsAppMascot({ phoneNumber = "50360531213", message, m
   const bubble = bubbleText || (language === 'es' ? '¡Hablemos!' : "Let's chat!");
   const showBubble = !hideBubble && !mascotUrl && Boolean(bubble);
 
+  React.useEffect(() => {
+    const handleScroll = () => {
+      const scrollBottom = window.innerHeight + window.scrollY;
+      const pageHeight = document.documentElement.scrollHeight;
+      setIsNearFooter(pageHeight - scrollBottom < 260);
+    };
+
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('resize', handleScroll);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleScroll);
+    };
+  }, []);
+
   return (
-    <div className="fixed right-4 bottom-24 z-50 flex items-end gap-3 sm:right-6 sm:bottom-28">
+    <div className={`fixed right-4 z-50 flex items-end gap-3 transition-all duration-300 sm:right-6 ${isNearFooter ? 'bottom-40 sm:bottom-44' : 'top-[58vh] -translate-y-1/2 sm:top-[60vh]'}`}>
       {/* Bocadillo solo en >=sm */}
       {showBubble && (
         <div className="hidden sm:block">
