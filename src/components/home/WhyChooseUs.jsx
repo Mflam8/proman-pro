@@ -18,7 +18,7 @@ export default function WhyChooseUs() {
     {
       icon: Clock,
       title: t({ es: "Respuesta Rápida", en: "Fast Response" }),
-      description: t({ es: "Atendemos emergencias en San Salvador, La Libertad y Zona Occidental. *Restricciones aplican", en: "We handle emergencies in San Salvador, La Libertad, and the Western Region. *Restrictions apply" })
+      description: t({ es: "Atendemos emergencias en San Salvador, La Libertad y Zona Occidental.\n*Restricciones aplican", en: "We handle emergencies in San Salvador, La Libertad, and the Western Region.\n*Restrictions apply" })
     },
     {
       icon: ThumbsUp,
@@ -49,7 +49,7 @@ export default function WhyChooseUs() {
                 <reason.icon className="w-10 h-10 text-proman-navy" />
               </div>
               <h3 className="text-xl font-bold mb-2 text-proman-yellow">{reason.title}</h3>
-              <p className="text-gray-200">{reason.description}</p>
+              <p className="text-gray-200 whitespace-pre-line">{reason.description}</p>
             </div>
           ))}
         </div>
