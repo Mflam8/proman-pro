@@ -18,7 +18,7 @@ export default function WhyChooseUs() {
     {
       icon: Clock,
       title: t({ es: "Respuesta Rápida", en: "Fast Response" }),
-      description: t({ es: "Atendemos emergencias en San Salvador, La Libertad y Zona Occidental.\n*Restricciones aplican", en: "We handle emergencies in San Salvador, La Libertad, and the Western Region.\n*Restrictions apply" })
+      description: t({ es: "Atendemos Emergencias en San Salvador, La Libertad y Zona Occidental.\n*Restricciones aplican", en: "We handle emergencies in San Salvador, La Libertad, and the Western Region.\n*Restrictions apply" })
     },
     {
       icon: ThumbsUp,
