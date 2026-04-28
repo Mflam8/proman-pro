@@ -13,7 +13,7 @@ export default function WhatsAppMascot({ phoneNumber = "50360531213", message, m
   const showBubble = !hideBubble && !mascotUrl && Boolean(bubble);
 
   return (
-    <div className="fixed right-4 top-[58vh] -translate-y-1/2 z-50 flex items-end gap-3 sm:right-6 sm:top-[62vh]">
+    <div className="fixed right-4 bottom-24 z-50 flex items-end gap-3 sm:right-6 sm:bottom-28">
       {/* Bocadillo solo en >=sm */}
       {showBubble && (
         <div className="hidden sm:block">
