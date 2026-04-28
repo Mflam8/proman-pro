@@ -12,12 +12,26 @@
     <!-- Preload LCP hero image -->
     <link rel="preload" as="image" fetchpriority="high" href="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ef04efb2facc1f9d963736/97fe4ab81_OrangeandBluePlumbingServicesFacebookPost12.png" />
     
-    <!-- Google Tag Manager -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-MS27DKT9');</script>
+    <!-- Google Tag Manager (lazy start) -->
+    <script>
+      (function(){
+        var started = false;
+        function startGTM(){
+          if (started) return; started = true;
+          window.dataLayer = window.dataLayer || [];
+          window.dataLayer.push({'gtm.start': new Date().getTime(), event:'gtm.js'});
+          var f = document.getElementsByTagName('script')[0];
+          var j = document.createElement('script');
+          j.async = true;
+          j.src = 'https://www.googletagmanager.com/gtm.js?id=GTM-MS27DKT9';
+          f.parentNode.insertBefore(j, f);
+        }
+        window.addEventListener('load', function(){ setTimeout(startGTM, 3000); }, { once: true });
+        ['click','scroll','keydown','pointerdown','touchstart'].forEach(function(evt){
+          window.addEventListener(evt, function(){ startGTM(); }, { once: true, passive: true });
+        });
+      })();
+    </script>
     <!-- End Google Tag Manager -->
     
     <!-- Microsoft Clarity (defer after load or first interaction) -->
@@ -40,10 +54,7 @@
     </script>
   </head>
   <body>
-    <!-- Google Tag Manager (noscript) -->
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-MS27DKT9"
-    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-    <!-- End Google Tag Manager (noscript) -->
+
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

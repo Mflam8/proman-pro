@@ -23,6 +23,8 @@ export default function CompanyShowcase() {
                 width="800"
                 height="600"
                 loading="lazy"
+                decoding="async"
+                sizes="(min-width: 768px) 50vw, 100vw"
                 className="w-full h-auto object-contain"
               />
               <div className="absolute -bottom-4 -right-4 w-24 h-24 sm:w-32 sm:h-32 hexagon bg-proman-yellow opacity-20"></div>

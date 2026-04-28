@@ -63,7 +63,8 @@ export default function PhotoGalleryPreview() {
                 alt={`Proyecto de ${photo.category} - ${photo.title} realizado por PROMAN Services`}
                 width="400"
                 height="300"
-                loading="lazy"
+                loading={index < 2 ? "eager" : "lazy"}
+                fetchPriority={index < 2 ? "high" : "low"}
                 decoding="async"
                 sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 50vw"
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"

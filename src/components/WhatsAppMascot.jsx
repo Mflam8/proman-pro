@@ -30,6 +30,10 @@ export default function WhatsAppMascot({ phoneNumber = "50360531213", message, m
           <img
             src={mascotUrl}
             alt="WhatsApp PROMAN"
+            width="128"
+            height="128"
+            loading="lazy"
+            decoding="async"
             className="relative z-10 h-24 sm:h-32 w-auto drop-shadow-2xl hover:scale-105 transition-transform"
           />
         ) : (

@@ -14,10 +14,12 @@ const iconMap = {
 
 export default function ServicesPreview() {
   const { t } = useLanguage();
-  const { data: services, isLoading } = useQuery({
+  const { data: services } = useQuery({
     queryKey: ['services'],
     queryFn: () => base44.entities.Service.list('-created_date', 6),
     initialData: [],
+    staleTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
   });
 
   return (
