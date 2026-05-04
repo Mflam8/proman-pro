@@ -1,0 +1,23 @@
+{
+  "name": "CalendarSyncState",
+  "type": "object",
+  "properties": {
+    "inquiry_id": {
+      "type": "string",
+      "description": "ID del trabajo en ClientInquiry"
+    },
+    "google_event_id": {
+      "type": "string",
+      "description": "ID del evento en Google Calendar"
+    },
+    "last_synced_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "\u00daltima fecha de sincronizaci\u00f3n"
+    }
+  },
+  "required": [
+    "inquiry_id",
+    "google_event_id"
+  ]
+}
