@@ -45,6 +45,12 @@ Deno.serve(async (req) => {
 
   const base44 = createClientFromRequest(req);
 
+  try {
+    await base44.auth.me();
+  } catch {
+    // Webhook externo: seguimos usando service role sin sesión de usuario
+  }
+
   let body;
   try {
     body = await req.json();
@@ -649,10 +655,10 @@ Deno.serve(async (req) => {
           return Response.json({
             success: true,
             identified: true,
-            role: u.role,           // 'ceo' | 'technician' | 'corporate' | 'admin'
+            role: u.role,
             name: u.name,
             related_id: u.related_id,
-            action: roleToAction(u.role), // qué debe hacer N8N con este mensaje
+            action: roleToAction(u.role),
           });
         }
 
@@ -660,7 +666,7 @@ Deno.serve(async (req) => {
         const customers = await base44.asServiceRole.entities.Customer.filter({ phone });
         if (customers.length > 0) {
           const c = customers[0];
-          const isCorporate = c.customer_type === 'corporativo' || c.customer_type === 'contrato';
+          const isCorporate = c.customer_type === 'corporativo' || c.customer_type === 'contrato' || c.customer_type === 'comercial';
           return Response.json({
             success: true,
             identified: true,
@@ -669,7 +675,7 @@ Deno.serve(async (req) => {
             related_id: c.id,
             customer_type: c.customer_type,
             is_vip: c.is_vip,
-            action: 'handle_existing_customer',
+            action: isCorporate ? 'corporate_flow' : 'handle_existing_customer',
           });
         }
 
