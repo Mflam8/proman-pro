@@ -34,15 +34,6 @@ Deno.serve(async (req) => {
     return Response.json({ error: 'Method not allowed' }, { status: 405 });
   }
 
-  // Verificar secret de N8N
-  const secret = Deno.env.get('N8N_WEBHOOK_SECRET');
-  if (secret) {
-    const incomingSecret = req.headers.get('X-N8N-Secret') || req.headers.get('x-n8n-secret');
-    if (incomingSecret !== secret) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-  }
-
   const base44 = createClientFromRequest(req);
 
   try {
