@@ -36,12 +36,6 @@ Deno.serve(async (req) => {
 
   const base44 = createClientFromRequest(req);
 
-  try {
-    await base44.auth.me();
-  } catch {
-    // Webhook externo: seguimos usando service role sin sesión de usuario
-  }
-
   let body;
   try {
     body = await req.json();
