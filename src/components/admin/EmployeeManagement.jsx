@@ -259,19 +259,17 @@ function InviteUserModal({ isOpen, onClose }) {
 
         console.log('🔄 Creando empleado:', formData.employee_name, emailToUse);
 
-        // Crear directamente el usuario SIN invitar
-        const newUser = await base44.entities.User.create({
+        const response = await base44.functions.invoke('createEmployee', {
           email: emailToUse,
-          full_name: formData.employee_name,
           employee_name: formData.employee_name,
           employee_type: formData.employee_type || 'Empleado',
           role: formData.role || 'user',
           hire_date: formData.hire_date || null,
           phone: formData.phone || null,
-          profile_picture_url: uploadedImageUrl || null,
-          onboarding_completed: true
+          profile_picture_url: uploadedImageUrl || null
         });
 
+        const newUser = response.data.user;
         console.log('✅ Empleado creado exitosamente:', newUser.id, formData.employee_name);
 
         // Forzar recarga inmediata
