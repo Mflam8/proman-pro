@@ -16,6 +16,12 @@ import {
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
+const normalizePhone = (value) => {
+  const digits = String(value || '').replace(/\D/g, '');
+  if (!digits) return '';
+  return digits.startsWith('503') ? digits.slice(-8) : digits.slice(-8);
+};
+
 export default function CustomerManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRubro, setFilterRubro] = useState("all");
@@ -61,10 +67,14 @@ export default function CustomerManagement() {
   });
 
   const filteredCustomers = customers.filter(c => {
-    const matchesSearch = searchTerm === "" ||
-      c.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.phone?.includes(searchTerm) ||
-      c.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    const normalizedSearch = searchTerm.toLowerCase().trim();
+    const normalizedSearchPhone = normalizePhone(searchTerm);
+    const matchesSearch = normalizedSearch === "" ||
+      c.full_name?.toLowerCase().includes(normalizedSearch) ||
+      c.email?.toLowerCase().includes(normalizedSearch) ||
+      normalizePhone(c.phone).includes(normalizedSearchPhone) ||
+      normalizePhone(c.secondary_phone).includes(normalizedSearchPhone) ||
+      normalizePhone(c.wa_id).includes(normalizedSearchPhone);
     const matchesRubro = filterRubro === "all" || c.primary_rubro === filterRubro;
     const matchesStatus = filterStatus === "all" || c.status === filterStatus;
     return matchesSearch && matchesRubro && matchesStatus;

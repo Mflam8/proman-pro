@@ -32,6 +32,12 @@ import CorporateSchedulingManagement from "../components/admin/CorporateScheduli
 import CorporateReports from "../components/admin/CorporateReports";
 import AgentChatWidget from "../components/agents/AgentChatWidget";
 
+const normalizePhone = (value) => {
+  const digits = String(value || '').replace(/\D/g, '');
+  if (!digits) return '';
+  return digits.startsWith('503') ? digits.slice(-8) : digits.slice(-8);
+};
+
 export default function ClientManagement() {
   const [user, setUser] = useState(null);
   const [selectedInquiry, setSelectedInquiry] = useState(null);
@@ -195,13 +201,17 @@ export default function ClientManagement() {
     // Búsqueda (tolerante a acentos) e incluye ítems de cotización
     const norm = (s) => (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     const searchText = norm(searchTerm.trim());
-    const searchDigits = searchTerm.replace(/\D/g, "");
+    const searchPhone = normalizePhone(searchTerm);
     const matchesSearch =
       searchText === "" ||
       norm(inquiry.client_name).includes(searchText) ||
       norm(customer?.full_name).includes(searchText) ||
-      (searchDigits && ( (inquiry.phone || "").replace(/\D/g, "").includes(searchDigits) ||
-                         (customer?.phone || "").replace(/\D/g, "").includes(searchDigits) )) ||
+      (searchPhone && (
+        normalizePhone(inquiry.phone).includes(searchPhone) ||
+        normalizePhone(customer?.phone).includes(searchPhone) ||
+        normalizePhone(customer?.secondary_phone).includes(searchPhone) ||
+        normalizePhone(customer?.wa_id).includes(searchPhone)
+      )) ||
       norm(inquiry.service_type).includes(searchText) ||
       norm(inquiry.rubro).includes(searchText) ||
       norm(inquiry.location_name).includes(searchText) ||
