@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Download, FileText, Search, Filter, Eye, Image as ImageIcon, PlayCircle, FileAudio, File } from "lucide-react";
+import { Download, FileText, Search, Filter, Eye, Image as ImageIcon, PlayCircle, FileAudio, File, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -47,6 +47,7 @@ export default function MessageCenter() {
   const [toDate, setToDate] = useState("");
   const [hasMedia, setHasMedia] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [preWorkOnly, setPreWorkOnly] = useState("all");
   const [rawOpen, setRawOpen] = useState(false);
   const [rawTitle, setRawTitle] = useState("");
   const [rawContent, setRawContent] = useState("");
@@ -86,6 +87,7 @@ export default function MessageCenter() {
     if (type !== 'all') arr = arr.filter(m => (m.message_type || 'text') === type);
     if (statusFilter !== 'all') arr = arr.filter(m => (m.delivery_status || '') === statusFilter);
     if (hasMedia !== 'all') arr = arr.filter(m => hasMedia === 'yes' ? !!m.media_url : !m.media_url);
+    if (preWorkOnly !== 'all') arr = arr.filter(m => preWorkOnly === 'yes' ? !(m.trabajo_id || m.job_id) : !!(m.trabajo_id || m.job_id));
     if (fromDate) arr = arr.filter(m => (m.timestamp || m.created_date) >= `${fromDate}T00:00:00`);
     if (toDate) arr = arr.filter(m => (m.timestamp || m.created_date) <= `${toDate}T23:59:59`);
     if (q.trim()) {
@@ -97,7 +99,7 @@ export default function MessageCenter() {
       );
     }
     return arr;
-  }, [messages, q, direction, sender, type, fromDate, toDate, hasMedia, statusFilter]);
+  }, [messages, q, direction, sender, type, fromDate, toDate, hasMedia, statusFilter, preWorkOnly]);
 
   const exportCSV = (rows, headers, filename) => {
     const escape = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
@@ -147,7 +149,12 @@ export default function MessageCenter() {
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-[120rem] mx-auto space-y-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Centro de Mensajes</h1>
+          <div>
+            <h1 className="text-2xl font-bold">Centro de Mensajes</h1>
+            <p className="text-sm text-slate-500 mt-1 flex items-center gap-2">
+              <MessageCircle className="w-4 h-4" />Aquí puedes ver también conversaciones de WhatsApp antes de que exista un trabajo.
+            </p>
+          </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => exportCSV(filteredMessages, msgHeaders, `mensajes_${Date.now()}.csv`)} className="gap-2">
               <Download className="w-4 h-4"/> Exportar CSV
@@ -225,6 +232,14 @@ export default function MessageCenter() {
                       <SelectItem value="read">Leído</SelectItem>
                       <SelectItem value="failed">Fallido</SelectItem>
                       <SelectItem value="echo_received">Echo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={preWorkOnly} onValueChange={setPreWorkOnly}>
+                    <SelectTrigger><SelectValue placeholder="Etapa"/></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas las etapas</SelectItem>
+                      <SelectItem value="yes">Antes de crear trabajo</SelectItem>
+                      <SelectItem value="no">Con trabajo creado</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
