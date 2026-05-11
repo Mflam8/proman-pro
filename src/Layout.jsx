@@ -20,8 +20,9 @@ function LayoutContent({ children }) {
   const [user, setUser] = React.useState(null);
   const [checkingOnboarding, setCheckingOnboarding] = React.useState(true);
   
-  // Check if we're on management page
-  const isManagementPage = location.pathname === createPageUrl("ClientManagement");
+  // Check if we're on management-related pages
+  const managementPaths = [createPageUrl("ClientManagement"), "/MessageCenter"];
+  const isManagementPage = managementPaths.includes(location.pathname);
 
   React.useEffect(() => {
     const checkUser = async () => {
@@ -420,13 +421,15 @@ function LayoutContent({ children }) {
       </footer>
 
       {/* Floating WhatsApp Assistant */}
-      <WhatsAppMascot 
-        phoneNumber={whatsappNumber} 
-        message={whatsappMessage}
-        mascotUrl="https://media.base44.com/images/public/68ef04efb2facc1f9d963736/dd157bfc2_4f6bac2a-ae80-49b0-95c6-631a09fc7a90.png"
-        bubbleText="¡Hablemos!"
-        hideBubble
-      />
+      {!isManagementPage && (
+        <WhatsAppMascot 
+          phoneNumber={whatsappNumber} 
+          message={whatsappMessage}
+          mascotUrl="https://media.base44.com/images/public/68ef04efb2facc1f9d963736/dd157bfc2_4f6bac2a-ae80-49b0-95c6-631a09fc7a90.png"
+          bubbleText="¡Hablemos!"
+          hideBubble
+        />
+      )}
     </div>
   );
 }
