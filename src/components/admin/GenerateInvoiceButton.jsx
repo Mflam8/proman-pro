@@ -38,7 +38,7 @@ export default function GenerateInvoiceButton({ inquiry }) {
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <div>
         <Label className="text-sm font-medium text-proman-navy">Fecha de Factura</Label>
         <Input 

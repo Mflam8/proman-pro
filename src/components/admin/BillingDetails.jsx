@@ -292,7 +292,7 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
             <DollarSign className="w-5 h-5" />
             Cotización / Facturación
           </CardTitle>
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             {canEdit && inquiry?.customer_id && (
               <Button
                 size="sm"
@@ -341,9 +341,9 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-4">
+      <CardContent className="pt-4 overflow-x-hidden">
         {/* Resumen de totales */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div className="bg-gray-100 rounded-lg p-4">
             <span className="text-sm text-gray-600">Total Cotizado:</span>
             <p className="text-2xl font-bold text-proman-navy">${totalGeneral.toFixed(2)}</p>
@@ -689,7 +689,7 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <Label className="block text-sm font-medium mb-2">Fecha Inicio</Label>
                   <Input 

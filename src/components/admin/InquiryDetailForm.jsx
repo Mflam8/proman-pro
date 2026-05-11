@@ -329,7 +329,7 @@ export default function InquiryDetailForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-6">
         {/* COLUMNA IZQUIERDA */}
         <div className="space-y-6">
           {/* 1. INFORMACIÓN DEL CLIENTE */}
@@ -462,7 +462,7 @@ export default function InquiryDetailForm({
                 <CardTitle>⚙️ Panel Administrativo</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4 pt-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label className="block text-sm font-medium text-proman-navy mb-2">Estado</Label>
                     <Select value={formData.status || 'nuevo'} onValueChange={(v) => handleAutoSaveChange('status', v)} disabled={isUpdating}>
@@ -488,7 +488,7 @@ export default function InquiryDetailForm({
                 </div>
                 <div className="border-t pt-4">
                   <h3 className="font-semibold text-proman-navy mb-3">Programación</h3>
-                  <div className="grid grid-cols-3 gap-4 mb-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                     <div><Label className="text-xs">Fecha</Label><Input type="date" value={formData.scheduled_date || ''} onChange={(e) => setFormData(p => ({...p, scheduled_date: e.target.value}))} disabled={isUpdating} /></div>
                     <div><Label className="text-xs">Hora</Label><Input type="time" value={formData.scheduled_start_time || ''} onChange={(e) => setFormData(p => ({...p, scheduled_start_time: e.target.value}))} disabled={isUpdating} /></div>
                     <div><Label className="text-xs">Duración (hrs)</Label><Input type="number" step="0.5" value={formData.estimated_duration_hours || ''} onChange={(e) => setFormData(p => ({...p, estimated_duration_hours: parseFloat(e.target.value)}))} disabled={isUpdating} /></div>
@@ -505,7 +505,7 @@ export default function InquiryDetailForm({
                   <InputField label="Cotización ($)" type="number" value={formData.quote_amount} onChange={(e) => setFormData(p => ({...p, quote_amount: e.target.value}))} disabled={isUpdating} />
                   <InputField label="Monto Final ($)" type="number" value={formData.final_amount} onChange={(e) => setFormData(p => ({...p, final_amount: e.target.value}))} disabled={isUpdating} />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label className="text-xs">Estado de Pago</Label>
                     <Select value={formData.payment_status || 'pendiente'} onValueChange={(v) => setFormData(p => ({...p, payment_status: v}))} disabled={isUpdating}>
@@ -584,7 +584,7 @@ export default function InquiryDetailForm({
               <CardTitle>📸 Fotografías del Trabajo</CardTitle>
               <p className="text-xs text-blue-100 mt-1">Las fotos se guardarán en el historial de esta actualización</p>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-4 pt-4">
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
               <ImageUploader label="Antes" imageUrl={formData.before_image_url} onFileSelect={setBeforeImageFile} isUploading={isUploading} disabled={!canEdit} />
               <ImageUploader label="Después" imageUrl={formData.after_image_url} onFileSelect={setAfterImageFile} isUploading={isUploading} disabled={!canEdit} />
             </CardContent>
@@ -604,7 +604,7 @@ export default function InquiryDetailForm({
               </CardHeader>
               <CardContent className="pt-4">
                 {workStats && (
-                  <div className="bg-white rounded-lg p-4 mb-4 grid grid-cols-2 md:grid-cols-5 gap-4">
+                  <div className="bg-white rounded-lg p-4 mb-4 grid grid-cols-2 lg:grid-cols-5 gap-4">
                     <div className="text-center">
                       <p className="text-2xl font-bold text-green-600">{workStats.currentProgress}%</p>
                       <p className="text-xs text-gray-600">Avance Actual</p>
@@ -845,7 +845,7 @@ export default function InquiryDetailForm({
       </div>
       
       {canEdit && (
-        <div className="flex justify-between pt-4">
+        <div className="flex flex-col-reverse sm:flex-row justify-between gap-3 pt-4 sticky bottom-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 pb-safe">
           {isAdmin && (
             <Button 
               type="button" 
