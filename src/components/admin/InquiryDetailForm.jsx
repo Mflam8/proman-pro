@@ -24,6 +24,7 @@ import BillingDetails from "./BillingDetails";
 import WorkExpenses from "./WorkExpenses";
 import EmployeeSelector from "./EmployeeSelector";
 import WhatsAppConversationPanel from "./WhatsAppConversationPanel";
+import WhatsAppQuoteActions from "./WhatsAppQuoteActions";
 
 export default function InquiryDetailForm({ 
   inquiry, 
@@ -445,7 +446,12 @@ export default function InquiryDetailForm({
 
           {/* 2. PANEL ADMINISTRATIVO — movido a columna derecha */}
 
-          {/* Conversación WhatsApp (movida aquí) */}
+          <WhatsAppQuoteActions
+            inquiryId={inquiry.id}
+            customerId={customer?.id || inquiry.customer_id}
+            phone={customer?.phone || inquiry.phone}
+          />
+
           <WhatsAppConversationPanel 
             customerId={customer?.id || inquiry.customer_id}
             inquiryId={inquiry.id}
