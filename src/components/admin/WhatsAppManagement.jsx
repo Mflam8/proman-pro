@@ -42,10 +42,14 @@ export default function WhatsAppManagement() {
     messages.forEach((msg) => {
       const customerId = msg.customer_id;
       const phone = msg.from_phone || msg.phone;
-      const key = customerId || phone;
+      const normalizedPhone = String(phone || '').replace(/\D/g, '');
+      const key = customerId || normalizedPhone;
       if (!key) return;
 
-      const customer = customers.find((c) => c.id === customerId) || customers.find((c) => c.phone === phone || c.wa_id === phone);
+      const customer = customers.find((c) => c.id === customerId) || customers.find((c) => {
+        const customerPhone = String(c.phone || c.wa_id || '').replace(/\D/g, '');
+        return customerPhone && customerPhone === normalizedPhone;
+      });
       const relatedInquiry = inquiries.find((i) => i.customer_id === customer?.id) || inquiries.find((i) => i.id === (msg.trabajo_id || msg.job_id));
       const current = byCustomer.get(key);
 
@@ -113,7 +117,7 @@ export default function WhatsAppManagement() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="font-semibold text-slate-900">{row.customer?.full_name || row.inquiry?.client_name || "Sin nombre"}</div>
-                    <div className="text-sm text-slate-500">{row.customer?.phone || row.latestMessage?.from_phone || row.latestMessage?.phone || "Sin teléfono"}</div>
+                    <div className="text-sm text-slate-500">{row.customer?.phone || row.latestMessage?.phone || row.latestMessage?.from_phone || "Sin teléfono"}</div>
                   </div>
                   <Badge variant="outline">{row.totalMessages} msgs</Badge>
                 </div>
@@ -143,7 +147,7 @@ export default function WhatsAppManagement() {
             <WhatsAppConversationPanel
               customerId={selectedConversation.customer?.id || selectedConversation.inquiry?.customer_id}
               inquiryId={selectedConversation.inquiry?.id}
-              phone={selectedConversation.customer?.phone || selectedConversation.latestMessage?.from_phone || selectedConversation.latestMessage?.phone}
+              phone={selectedConversation.customer?.phone || selectedConversation.latestMessage?.phone || selectedConversation.latestMessage?.from_phone}
             />
           </DialogContent>
         </Dialog>

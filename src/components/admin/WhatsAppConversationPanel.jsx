@@ -96,17 +96,15 @@ export default function WhatsAppConversationPanel({ customerId, inquiryId, phone
   const [isOpen, setIsOpen] = useState(false);
 
   const { data: messages = [], isLoading } = useQuery({
-    queryKey: ['waLog', customerId],
+    queryKey: ['waLog', customerId, phone],
     queryFn: async () => {
-      if (!customerId) return [];
-      // Traer TODO por cliente (historial completo)
-      const all = await base44.entities.BitacoraWhatsApp.filter({ customer_id: customerId }, 'timestamp');
-      // Fallback adicional por teléfono si no hay customer_id
-      if (all.length === 0 && phone) {
-        const byPhone = await base44.entities.BitacoraWhatsApp.filter({ from_phone: phone }, 'timestamp');
-        return byPhone;
-      }
-      return all;
+      const byCustomer = customerId ? await base44.entities.BitacoraWhatsApp.filter({ customer_id: customerId }, 'timestamp') : [];
+      const byPhone = phone ? await base44.entities.BitacoraWhatsApp.filter({ from_phone: phone }, 'timestamp') : [];
+      const byPhoneAlias = phone ? await base44.entities.BitacoraWhatsApp.filter({ phone }, 'timestamp') : [];
+
+      const merged = [...byCustomer, ...byPhone, ...byPhoneAlias];
+      const unique = Array.from(new Map(merged.map((item) => [item.id, item])).values());
+      return unique;
     },
     enabled: !!customerId || !!phone,
     initialData: [],
