@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -30,6 +30,7 @@ import InquiryCreateForm from "../components/admin/InquiryCreateForm";
 import TrustedDirectory from "../components/admin/TrustedDirectory";
 import CorporateSchedulingManagement from "../components/admin/CorporateSchedulingManagement";
 import CorporateReports from "../components/admin/CorporateReports";
+import ProspectConversationPanel from "../components/admin/ProspectConversationPanel";
 import AgentChatWidget from "../components/agents/AgentChatWidget";
 
 const normalizePhone = (value) => {
@@ -45,6 +46,7 @@ export default function ClientManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchDraft, setSearchDraft] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedProspect, setSelectedProspect] = useState(null);
   const [sortOrder, setSortOrder] = useState("desc");
   const [mainTab, setMainTab] = useState("trabajos");
   const [isLoading, setIsLoading] = useState(true);
@@ -97,6 +99,13 @@ export default function ClientManagement() {
       const raw = await base44.entities.Customer.list();
       return raw.map((c) => (c && c.data ? { ...c, ...c.data } : c));
     },
+    enabled: !!user && hasManagementAccess,
+    initialData: [],
+  });
+
+  const { data: whatsappMessages = [] } = useQuery({
+    queryKey: ['waProspectMessages'],
+    queryFn: async () => base44.entities.BitacoraWhatsApp.filter({}, '-created_date', 500),
     enabled: !!user && hasManagementAccess,
     initialData: [],
   });
@@ -228,6 +237,28 @@ export default function ClientManagement() {
     activos: allInquiries.filter(i => activeStatuses.includes(i.status)).length,
     completado: allInquiries.filter(i => i.status === "completado").length
   };
+
+  const prospectsWithoutWork = React.useMemo(() => {
+    const byCustomer = new Map();
+    const customerIdsWithWork = new Set(allInquiries.map(i => i.customer_id).filter(Boolean));
+
+    whatsappMessages.forEach((msg) => {
+      const customerId = msg.customer_id;
+      if (!customerId || customerIdsWithWork.has(customerId)) return;
+      if (msg.trabajo_id || msg.job_id) return;
+      const customer = customers.find(c => c.id === customerId);
+      const current = byCustomer.get(customerId);
+      if (!current || new Date(msg.timestamp || msg.created_date) > new Date(current.latestMessage.timestamp || current.latestMessage.created_date)) {
+        byCustomer.set(customerId, {
+          customer,
+          latestMessage: msg,
+          inquiry: allInquiries.find(i => i.customer_id === customerId) || null,
+        });
+      }
+    });
+
+    return Array.from(byCustomer.values()).sort((a, b) => new Date(b.latestMessage.timestamp || b.latestMessage.created_date) - new Date(a.latestMessage.timestamp || a.latestMessage.created_date));
+  }, [whatsappMessages, allInquiries, customers]);
 
   // Paginate after filtering
   const totalFiltered = filteredInquiries.length;
@@ -472,12 +503,37 @@ export default function ClientManagement() {
               </Card>
             )}
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
               <Card><CardContent className="p-4"><div className="text-2xl font-bold text-proman-navy">{stats.total}</div><div className="text-sm text-gray-600">Total</div></CardContent></Card>
               <Card><CardContent className="p-4"><div className="text-2xl font-bold text-blue-600">{stats.nuevo}</div><div className="text-sm text-gray-600">Nuevos</div></CardContent></Card>
               <Card><CardContent className="p-4"><div className="text-2xl font-bold text-orange-600">{stats.activos}</div><div className="text-sm text-gray-600">Activos</div></CardContent></Card>
               <Card><CardContent className="p-4"><div className="text-2xl font-bold text-green-600">{stats.completado}</div><div className="text-sm text-gray-600">Completados</div></CardContent></Card>
+              <Card><CardContent className="p-4"><div className="text-2xl font-bold text-amber-600">{prospectsWithoutWork.length}</div><div className="text-sm text-gray-600">Prospectos sin trabajo</div></CardContent></Card>
             </div>
+
+            {prospectsWithoutWork.length > 0 && (
+              <Card className="mb-6 border-2 border-amber-400">
+                <CardContent className="p-4 space-y-3">
+                  <div>
+                    <h3 className="font-bold text-proman-navy">Prospectos con conversación activa sin trabajo</h3>
+                    <p className="text-sm text-gray-600">Aquí puedes abrir la conversación completa y trabajar la cotización sin crear trabajo todavía.</p>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    {prospectsWithoutWork.slice(0, 12).map((prospect) => (
+                      <button
+                        key={prospect.customer?.id || prospect.latestMessage.id}
+                        onClick={() => setSelectedProspect(prospect)}
+                        className="text-left rounded-xl border border-amber-200 bg-amber-50 p-4 hover:border-amber-400 hover:shadow-sm transition"
+                      >
+                        <div className="font-semibold text-slate-900">{prospect.customer?.full_name || prospect.inquiry?.client_name || 'Sin nombre'}</div>
+                        <div className="text-sm text-slate-600">{prospect.customer?.phone || prospect.inquiry?.phone || 'Sin teléfono'}</div>
+                        <div className="mt-2 text-xs text-slate-500 line-clamp-2">{prospect.latestMessage.text || prospect.latestMessage.texto_mensaje || 'Sin texto visible'}</div>
+                      </button>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             <Card className="mb-6">
               <CardContent className="p-4">
@@ -759,6 +815,21 @@ export default function ClientManagement() {
               onSubmit={createInquiry.mutate} 
               isSubmitting={createInquiry.isPending}
               onCancel={() => setShowCreateModal(false)}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {selectedProspect && (
+        <Dialog open={!!selectedProspect} onOpenChange={() => setSelectedProspect(null)}>
+          <DialogContent className="w-screen h-screen max-w-none max-h-none rounded-none p-6 overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-2xl">Conversación de prospecto</DialogTitle>
+            </DialogHeader>
+            <ProspectConversationPanel
+              customer={selectedProspect.customer}
+              latestMessage={selectedProspect.latestMessage}
+              inquiry={selectedProspect.inquiry}
             />
           </DialogContent>
         </Dialog>
