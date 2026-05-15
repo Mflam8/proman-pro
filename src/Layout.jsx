@@ -21,8 +21,15 @@ function LayoutContent({ children }) {
   const [checkingOnboarding, setCheckingOnboarding] = React.useState(true);
   
   // Check if we're on management-related pages
-  const managementPaths = [createPageUrl("ClientManagement"), "/MessageCenter"];
-  const isManagementPage = managementPaths.includes(location.pathname);
+  const managementPrefixes = [
+    createPageUrl("ClientManagement"),
+    "/MessageCenter",
+    createPageUrl("EmployeeDashboard"),
+    createPageUrl("CorporateScheduling"),
+    createPageUrl("AutomationsControl"),
+    createPageUrl("WhatsAppSetup")
+  ];
+  const isManagementPage = managementPrefixes.some((path) => location.pathname.startsWith(path));
 
   React.useEffect(() => {
     const checkUser = async () => {
