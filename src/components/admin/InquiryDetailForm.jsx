@@ -25,6 +25,7 @@ import WorkExpenses from "./WorkExpenses";
 import EmployeeSelector from "./EmployeeSelector";
 import WhatsAppConversationPanel from "./WhatsAppConversationPanel";
 import WhatsAppQuoteActions from "./WhatsAppQuoteActions";
+import CustomerContextAgentCard from "./CustomerContextAgentCard";
 
 export default function InquiryDetailForm({ 
   inquiry, 
@@ -450,6 +451,11 @@ export default function InquiryDetailForm({
             inquiryId={inquiry.id}
             customerId={customer?.id || inquiry.customer_id}
             phone={customer?.phone || inquiry.phone}
+          />
+
+          <CustomerContextAgentCard
+            inquiry={inquiry}
+            customer={customer}
           />
 
           <WhatsAppConversationPanel 
