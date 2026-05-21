@@ -1,0 +1,64 @@
+{
+  "name": "ConversationOperationalState",
+  "type": "object",
+  "properties": {
+    "conversation_id": {
+      "type": "string",
+      "description": "ID de la conversaci\u00f3n"
+    },
+    "customer_id": {
+      "type": "string",
+      "description": "ID del cliente asociado"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Tel\u00e9fono principal de la conversaci\u00f3n"
+    },
+    "rolling_summary": {
+      "type": "string",
+      "description": "Resumen acumulado operacional"
+    },
+    "current_intent": {
+      "type": "string",
+      "description": "Intenci\u00f3n actual detectada"
+    },
+    "current_service": {
+      "type": "string",
+      "description": "Servicio actual detectado"
+    },
+    "current_urgency": {
+      "type": "string",
+      "enum": [
+        "baja",
+        "media",
+        "alta",
+        "urgente"
+      ],
+      "default": "media",
+      "description": "Urgencia actual"
+    },
+    "pending_customer_request": {
+      "type": "string",
+      "description": "Solicitud pendiente principal del cliente"
+    },
+    "unresolved_items": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Pendientes abiertos"
+    },
+    "last_analysis_id": {
+      "type": "string",
+      "description": "ID del \u00faltimo an\u00e1lisis"
+    },
+    "last_analysis_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha del \u00faltimo an\u00e1lisis"
+    }
+  },
+  "required": [
+    "conversation_id"
+  ]
+}

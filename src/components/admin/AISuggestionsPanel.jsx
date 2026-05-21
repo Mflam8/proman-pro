@@ -6,9 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Loader2, Sparkles, AlertTriangle, Link2 } from "lucide-react";
+import { Loader2, Sparkles, AlertTriangle, Link2, Copy } from "lucide-react";
+import ConversationTimeline from "./ConversationTimeline";
 
 export default function AISuggestionsPanel({ inquiry, customer, phone, conversationId, compact = false, onOpenCreateInquiry }) {
+  const [copiedReply, setCopiedReply] = useState(false);
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [linkJobId, setLinkJobId] = useState("");
@@ -36,11 +38,20 @@ export default function AISuggestionsPanel({ inquiry, customer, phone, conversat
         customer_id: customer?.id || null,
         conversation_id: conversationId || null,
         phone: phone || customer?.phone || inquiry?.phone || null,
+        trigger_reason: 'manual_review'
       });
       queryClient.invalidateQueries({ queryKey: ['conversationAnalysis'] });
+      queryClient.invalidateQueries({ queryKey: ['conversationTimeline'] });
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleUseSuggestedReply = async () => {
+    if (!latest?.suggested_next_reply) return;
+    await navigator.clipboard.writeText(latest.suggested_next_reply);
+    setCopiedReply(true);
+    setTimeout(() => setCopiedReply(false), 1500);
   };
 
   const handleIgnore = async () => {
@@ -136,7 +147,17 @@ export default function AISuggestionsPanel({ inquiry, customer, phone, conversat
                 {latest.operational_risk && <Badge className="bg-rose-100 text-rose-800">Riesgo {latest.operational_risk}</Badge>}
                 <Badge variant="outline">Confianza {(Number(latest.ai_confidence_score || 0) * 100).toFixed(0)}%</Badge>
               </div>
-              {latest.suggested_next_reply && <div><span className="font-semibold">Suggested Next Reply:</span> {latest.suggested_next_reply}</div>}
+              {latest.suggested_next_reply && (
+                <div className="space-y-2">
+                  <div><span className="font-semibold">Suggested Next Reply:</span> {latest.suggested_next_reply}</div>
+                  <Button type="button" variant="outline" onClick={handleUseSuggestedReply}>
+                    <Copy className="w-4 h-4 mr-2" />{copiedReply ? 'Respuesta copiada' : 'Usar respuesta sugerida'}
+                  </Button>
+                </div>
+              )}
+              <div className="text-xs text-slate-500">
+                Trigger: {latest.trigger_reason || 'manual'} · Prompt: {latest.ai_prompt_version || 'N/A'} · Modelo: {latest.analysis_model || 'N/A'} · Tokens: {latest.token_usage || 0} · Duración: {latest.analysis_duration_ms || 0}ms
+              </div>
             </div>
 
             <div className="grid gap-2 pt-2 border-t">
@@ -155,6 +176,8 @@ export default function AISuggestionsPanel({ inquiry, customer, phone, conversat
                 </Button>
               </div>
             </div>
+
+            {conversationId && <ConversationTimeline conversationId={conversationId} />}
           </>
         )}
       </CardContent>

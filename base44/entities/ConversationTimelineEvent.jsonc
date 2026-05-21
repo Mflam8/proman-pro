@@ -1,0 +1,39 @@
+{
+  "name": "ConversationTimelineEvent",
+  "type": "object",
+  "properties": {
+    "conversation_id": {
+      "type": "string",
+      "description": "ID de la conversaci\u00f3n"
+    },
+    "event_type": {
+      "type": "string",
+      "description": "Tipo de evento operacional"
+    },
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo corto del evento"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descripci\u00f3n del evento"
+    },
+    "source": {
+      "type": "string",
+      "description": "Origen del evento: ai, webhook, human, system"
+    },
+    "related_entity_id": {
+      "type": "string",
+      "description": "ID relacionado (analysis, inquiry, payment, etc.)"
+    },
+    "metadata_json": {
+      "type": "string",
+      "description": "JSON serializado con metadata adicional"
+    }
+  },
+  "required": [
+    "conversation_id",
+    "event_type",
+    "title"
+  ]
+}

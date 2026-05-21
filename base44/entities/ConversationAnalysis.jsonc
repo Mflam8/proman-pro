@@ -142,6 +142,32 @@
       "type": "number",
       "description": "Cantidad de mensajes analizados"
     },
+    "trigger_reason": {
+      "type": "string",
+      "description": "Motivo que dispar\u00f3 el an\u00e1lisis"
+    },
+    "ai_prompt_version": {
+      "type": "string",
+      "description": "Versi\u00f3n del prompt utilizado"
+    },
+    "analysis_model": {
+      "type": "string",
+      "description": "Modelo usado en el an\u00e1lisis"
+    },
+    "confidence_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Confianza general reportada"
+    },
+    "token_usage": {
+      "type": "number",
+      "description": "Uso estimado de tokens"
+    },
+    "analysis_duration_ms": {
+      "type": "number",
+      "description": "Duraci\u00f3n del an\u00e1lisis en milisegundos"
+    },
     "status": {
       "type": "string",
       "enum": [
