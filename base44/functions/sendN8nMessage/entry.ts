@@ -62,26 +62,65 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'n8n error', details: t }, { status: 502 });
     }
 
-    // Registrar salida local (trazabilidad inmediata)
-    await base44.asServiceRole.entities.BitacoraWhatsApp.create({
-      mensaje_id: `out_${Date.now()}`,
-      message_id: `out_${Date.now()}`,
-      customer_id: customer_id || null,
+    const customer = customer_id
+      ? (await base44.asServiceRole.entities.Customer.filter({ id: customer_id }))[0]
+      : phone
+        ? (await base44.asServiceRole.entities.Customer.filter({ phone }))[0]
+        : null;
+    const channelId = Deno.env.get('META_PHONE_NUMBER_ID') || '';
+    const stableConversationKey = `${phone || customer?.phone || 'unknown'}_${channelId || 'unknown'}`;
+    let conversation = null;
+
+    if (customer) {
+      const existingConvs = await base44.asServiceRole.entities.WhatsappConversation.filter({ customer_id: customer.id, subject: stableConversationKey });
+      conversation = existingConvs[0] || await base44.asServiceRole.entities.WhatsappConversation.create({
+        customer_id: customer.id,
+        is_open: true,
+        channel: 'whatsapp',
+        last_message_at: new Date().toISOString(),
+        subject: stableConversationKey,
+        notes: `ck:${stableConversationKey}`
+      });
+    }
+
+    const localMessageId = `out_${Date.now()}`;
+    const nowIso = new Date().toISOString();
+    const saved = await base44.asServiceRole.entities.BitacoraWhatsApp.create({
+      mensaje_id: localMessageId,
+      message_id: localMessageId,
+      customer_id: customer_id || customer?.id || null,
+      conversation_id: conversation?.id || null,
       trabajo_id: inquiry_id || null,
       job_id: inquiry_id || null,
-      from_phone: phone || '',
-      phone: phone || '',
+      from_phone: channelId,
+      to_phone: phone || customer?.phone || '',
+      contact_phone: phone || customer?.phone || '',
+      author_phone: user.email,
+      phone: phone || customer?.phone || '',
       texto_mensaje: text || '',
       text: text || '',
       media_url: media_url || null,
-      timestamp: new Date().toISOString(),
+      timestamp: nowIso,
+      message_timestamp: nowIso,
+      meta_timestamp: nowIso,
       message_type: message_type || (media_url ? 'document' : 'text'),
       channel: 'whatsapp',
+      channel_id: channelId,
+      tenant_id: 'default',
       direction: 'outbound',
       sender_type: 'agent',
       delivery_status: 'sent',
       raw_payload: JSON.stringify(payload)
     });
+
+    if (conversation) {
+      await base44.asServiceRole.entities.WhatsappConversation.update(conversation.id, {
+        last_message_at: nowIso,
+        last_message_id: saved.id,
+        subject: stableConversationKey,
+        notes: `ck:${stableConversationKey}`
+      });
+    }
 
     return Response.json({ success: true });
   } catch (error) {

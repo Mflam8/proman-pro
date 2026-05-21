@@ -122,7 +122,7 @@ export default function WhatsAppConversationPanel({ customerId, inquiryId, phone
   });
 
   const filtered = useMemo(() => {
-    let arr = messages.slice().sort((a,b) => new Date(a.timestamp || a.created_date) - new Date(b.timestamp || b.created_date));
+    let arr = messages.slice().sort((a,b) => new Date(a.message_timestamp || a.timestamp || a.created_date) - new Date(b.message_timestamp || b.timestamp || b.created_date));
 
     // Filtros
     if (type !== 'all') arr = arr.filter(m => (m.message_type || 'text') === type);
@@ -149,7 +149,7 @@ export default function WhatsAppConversationPanel({ customerId, inquiryId, phone
       caption: m.caption ?? '',
       media_url: m.media_url ?? '',
       mime_type: m.mime_type ?? '',
-      timestamp: m.timestamp || m.created_date,
+      timestamp: m.message_timestamp || m.timestamp || m.created_date,
       job_id: m.trabajo_id || m.job_id || null,
     }));
   }, [messages, type, direction, sender, selectedJobId, fromDate, toDate, search]);

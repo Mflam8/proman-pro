@@ -227,6 +227,8 @@ Deno.serve(async (req) => {
             media_url: parsedEvent.media_url || null,
             mime_type: parsedEvent.mime_type || null,
             timestamp: timestampISO,
+            message_timestamp: timestampISO,
+            meta_timestamp: String(parsedEvent.timestamp || ''),
             message_type: parsedEvent.message_type || 'text',
             channel: 'whatsapp',
             channel_id: channelId,
