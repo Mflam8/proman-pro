@@ -1,0 +1,105 @@
+{
+  "name": "ConversationAnalysis",
+  "type": "object",
+  "properties": {
+    "customer_id": {
+      "type": "string",
+      "description": "ID del cliente asociado"
+    },
+    "inquiry_id": {
+      "type": "string",
+      "description": "ID del trabajo asociado si existe"
+    },
+    "conversation_id": {
+      "type": "string",
+      "description": "ID de la conversaci\u00f3n de WhatsApp"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Tel\u00e9fono del contacto"
+    },
+    "summary": {
+      "type": "string",
+      "description": "Resumen generado por IA"
+    },
+    "intent": {
+      "type": "string",
+      "description": "Intenci\u00f3n principal detectada"
+    },
+    "service": {
+      "type": "string",
+      "description": "Servicio detectado"
+    },
+    "urgency": {
+      "type": "string",
+      "enum": [
+        "baja",
+        "media",
+        "alta",
+        "urgente"
+      ],
+      "default": "media",
+      "description": "Urgencia detectada"
+    },
+    "direction_or_location": {
+      "type": "string",
+      "description": "Direcci\u00f3n o zona detectada"
+    },
+    "names": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Nombres detectados"
+    },
+    "dates": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Fechas u horarios detectados"
+    },
+    "payments": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Pagos o montos detectados"
+    },
+    "suggested_action": {
+      "type": "string",
+      "enum": [
+        "crear_inquiry",
+        "actualizar_job",
+        "ignorar",
+        "marcar_urgente",
+        "dar_seguimiento"
+      ],
+      "description": "Acci\u00f3n sugerida por IA"
+    },
+    "analyzed_messages_count": {
+      "type": "number",
+      "description": "Cantidad de mensajes analizados"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "reviewed",
+        "ignored",
+        "applied"
+      ],
+      "default": "pending",
+      "description": "Estado de revisi\u00f3n administrativa"
+    },
+    "raw_analysis": {
+      "type": "string",
+      "description": "Resultado completo en JSON serializado"
+    }
+  },
+  "required": [
+    "summary",
+    "intent",
+    "suggested_action"
+  ]
+}

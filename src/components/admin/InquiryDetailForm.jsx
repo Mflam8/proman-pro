@@ -26,6 +26,7 @@ import EmployeeSelector from "./EmployeeSelector";
 import WhatsAppConversationPanel from "./WhatsAppConversationPanel";
 import WhatsAppQuoteActions from "./WhatsAppQuoteActions";
 import CustomerContextAgentCard from "./CustomerContextAgentCard";
+import AISuggestionsPanel from "./AISuggestionsPanel";
 
 export default function InquiryDetailForm({ 
   inquiry, 
@@ -37,7 +38,8 @@ export default function InquiryDetailForm({
   isSupervisor, 
   getSurveyLink, 
   getWhatsAppUpdateLink, 
-  onDelete 
+  onDelete,
+  onCreateInquiry
 }) {
   const canEdit = isAdmin || isSupervisor;
   const [showCustomerEdit, setShowCustomerEdit] = useState(false);
@@ -456,6 +458,14 @@ export default function InquiryDetailForm({
           <CustomerContextAgentCard
             inquiry={inquiry}
             customer={customer}
+          />
+
+          <AISuggestionsPanel
+            inquiry={inquiry}
+            customer={customer}
+            phone={customer?.phone || inquiry.phone}
+            onOpenCreateInquiry={() => onCreateInquiry?.(customer?.id || inquiry.customer_id || null)}
+            onMarkUrgent={() => handleAutoSaveChange('priority', 'urgente')}
           />
 
           <WhatsAppConversationPanel 

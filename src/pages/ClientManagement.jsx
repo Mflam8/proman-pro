@@ -759,6 +759,10 @@ export default function ClientManagement() {
               getSurveyLink={getSurveyLink}
               getWhatsAppUpdateLink={getWhatsAppUpdateLink}
               onDelete={deleteInquiry.mutate}
+              onCreateInquiry={(customerId) => {
+                setSelectedInquiry(null);
+                setShowCreateModal(true);
+              }}
             />
           </DialogContent>
         </Dialog>
