@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Loader2, Send, Search, Filter, Download, Image as ImageIcon, FileText, PlayCircle, MessageCircle, Bot, User as UserIcon, ChevronDown, ChevronUp } from "lucide-react";
+import AISuggestionsPanel from "./AISuggestionsPanel";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -266,6 +267,14 @@ export default function WhatsAppConversationPanel({ customerId, inquiryId, phone
           <Input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} />
           <Input type="date" value={toDate} onChange={e => setToDate(e.target.value)} />
         </div>
+
+        <AISuggestionsPanel
+          inquiry={inquiryId ? jobs.find((j) => j.id === inquiryId) : null}
+          customer={customerId ? { id: customerId, phone } : null}
+          phone={phone}
+          conversationId={messages.find((m) => m.conversation_id)?.conversation_id || null}
+          onOpenCreateInquiry={() => window.dispatchEvent(new CustomEvent('open-create-inquiry-from-whatsapp'))}
+        />
 
         {/* Lista */}
         <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">

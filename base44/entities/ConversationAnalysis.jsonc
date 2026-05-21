@@ -70,12 +70,73 @@
       "type": "string",
       "enum": [
         "crear_inquiry",
-        "actualizar_job",
-        "ignorar",
+        "vincular_job",
+        "actualizar_estado",
         "marcar_urgente",
+        "ignorar",
         "dar_seguimiento"
       ],
       "description": "Acci\u00f3n sugerida por IA"
+    },
+    "suggested_next_reply": {
+      "type": "string",
+      "description": "Respuesta sugerida al cliente"
+    },
+    "requires_human_review": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si requiere revisi\u00f3n humana"
+    },
+    "ai_confidence_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Confianza del an\u00e1lisis IA"
+    },
+    "operational_risk": {
+      "type": "string",
+      "enum": [
+        "bajo",
+        "medio",
+        "alto",
+        "critico"
+      ],
+      "description": "Riesgo operativo detectado"
+    },
+    "escalation_needed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si necesita escalamiento"
+    },
+    "unread_customer_message": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si hay mensaje del cliente pendiente de atender"
+    },
+    "pending_customer_response": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si se espera respuesta del cliente"
+    },
+    "risks_detected": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Riesgos detectados"
+    },
+    "pending_from_customer": {
+      "type": "string",
+      "description": "Qu\u00e9 hace falta del cliente"
+    },
+    "sla_warning": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si existe alerta de SLA"
+    },
+    "previous_analysis_summary": {
+      "type": "string",
+      "description": "Resumen previo usado como contexto"
     },
     "analyzed_messages_count": {
       "type": "number",

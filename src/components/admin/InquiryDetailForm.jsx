@@ -464,8 +464,9 @@ export default function InquiryDetailForm({
             inquiry={inquiry}
             customer={customer}
             phone={customer?.phone || inquiry.phone}
+            conversationId={null}
+            compact
             onOpenCreateInquiry={() => onCreateInquiry?.(customer?.id || inquiry.customer_id || null)}
-            onMarkUrgent={() => handleAutoSaveChange('priority', 'urgente')}
           />
 
           <WhatsAppConversationPanel 
