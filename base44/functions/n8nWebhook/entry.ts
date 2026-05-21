@@ -47,145 +47,223 @@ Deno.serve(async (req) => {
 
   // Soporte enriquecido (compatibilidad con nuevo formato de n8n)
   try {
-    const phone = data?.phone || data?.contact?.phone || data?.recipient_id || data?.to || data?.from || null;
-    const messageText = data?.message?.text || data?.message || data?.status || '';
-    const customerName = data?.name || data?.customerName || data?.contact?.name || '';
-    const messageId = data?.message_id || data?.messageId || data?.message?.id || null;
-    const messageType = data?.message_type || data?.message?.type || 'unknown';
-    const normalizedText = data?.normalized_text || data?.message?.normalized_text || messageText || '';
-    const tsNum = Number(data?.timestamp || data?.meta?.timestamp || Date.now());
-    const timestampISO = new Date(tsNum < 1e12 ? tsNum * 1000 : tsNum).toISOString();
-    const direction = data?.direction || (event === 'message_echo' ? 'outbound' : 'inbound');
-    const channel = data?.channel || 'whatsapp';
-    const eventType = data?.event_type || null;
-    const conversationKey = data?.conversation_key || (phone ? `${phone}_${data?.phone_number_id || data?.meta?.phone_number_id || ''}` : null);
-    const phoneNumberId = data?.phone_number_id || data?.meta?.phone_number_id || '';
-    const reason = data?.reason || '';
     const rawPayload = data?.raw_payload || body;
+    const metadata = rawPayload?.metadata || data?.metadata || {};
+    const contacts = rawPayload?.contacts || data?.contacts || [];
+    const messages = rawPayload?.messages || data?.messages || [];
+    const messageEchoes = rawPayload?.message_echoes || data?.message_echoes || [];
+    const statuses = rawPayload?.statuses || data?.statuses || [];
+    const phoneNumberId = data?.phone_number_id || data?.meta?.phone_number_id || metadata?.phone_number_id || '';
+    const channel = data?.channel || 'whatsapp';
+    const channelId = phoneNumberId || metadata?.display_phone_number || '';
+    const tenantId = data?.tenant_id || body?.tenant_id || 'default';
+    const customerName = data?.name || data?.customerName || data?.contact?.name || contacts?.[0]?.profile?.name || '';
+    const contactPhone = contacts?.[0]?.wa_id || messageEchoes?.[0]?.to || messages?.[0]?.from || data?.contact?.phone || data?.phone || data?.to || data?.from || data?.recipient_id || null;
+    const reason = data?.reason || '';
 
-    if (['inbound_message','message_echo','status_update','fallback_unhandled'].includes(eventType)) {
-      // 1) Guardar SIEMPRE el evento crudo
-      const wh = await base44.asServiceRole.entities.WebhookEvent.create({
-        event: event || '',
-        event_type: eventType,
-        phone: phone || '',
-        message_id: messageId || '',
-        direction,
-        conversation_key: conversationKey || '',
-        reason: reason || '',
-        raw_payload: JSON.stringify(rawPayload || {})
-      });
+    const normalizedEvents = [
+      ...messages.map((msg) => ({
+        parsed_type: 'inbound',
+        event_type: 'inbound_message',
+        meta_message_id: msg?.id || data?.message_id || data?.messageId || null,
+        message_id: msg?.id || data?.message_id || data?.messageId || null,
+        direction: 'inbound',
+        sender_type: 'customer',
+        from_phone: msg?.from || contactPhone || '',
+        to_phone: metadata?.display_phone_number || '',
+        contact_phone: contacts?.[0]?.wa_id || msg?.from || contactPhone || '',
+        author_phone: msg?.author_phone || null,
+        message_type: msg?.type || data?.message_type || 'text',
+        text: msg?.text?.body || msg?.body || data?.message?.text || data?.message || '',
+        caption: msg?.image?.caption || msg?.video?.caption || data?.message?.caption || null,
+        media_url: data?.media_url || msg?.image?.url || msg?.video?.url || msg?.audio?.url || msg?.document?.url || null,
+        mime_type: data?.mime_type || msg?.image?.mime_type || msg?.video?.mime_type || msg?.audio?.mime_type || msg?.document?.mime_type || null,
+        timestamp: msg?.timestamp || data?.timestamp || data?.meta?.timestamp || Date.now(),
+        raw_payload: msg,
+      })),
+      ...messageEchoes.map((msg) => ({
+        parsed_type: 'outbound',
+        event_type: 'message_echo',
+        meta_message_id: msg?.id || null,
+        message_id: msg?.id || null,
+        direction: 'outbound',
+        sender_type: data?.sender_type || 'bot',
+        from_phone: msg?.from || metadata?.display_phone_number || '',
+        to_phone: msg?.to || contacts?.[0]?.wa_id || contactPhone || '',
+        contact_phone: contacts?.[0]?.wa_id || msg?.to || contactPhone || '',
+        author_phone: msg?.author_phone || null,
+        message_type: msg?.type || 'text',
+        text: msg?.text?.body || msg?.reaction?.emoji || '',
+        caption: msg?.image?.caption || msg?.video?.caption || null,
+        media_url: msg?.image?.url || msg?.video?.url || msg?.audio?.url || msg?.document?.url || null,
+        mime_type: msg?.image?.mime_type || msg?.video?.mime_type || msg?.audio?.mime_type || msg?.document?.mime_type || null,
+        timestamp: msg?.timestamp || Date.now(),
+        raw_payload: msg,
+      })),
+      ...statuses.map((statusItem) => ({
+        parsed_type: 'status',
+        event_type: 'status_update',
+        meta_message_id: statusItem?.id || null,
+        message_id: statusItem?.id || null,
+        direction: 'outbound',
+        sender_type: 'bot',
+        from_phone: metadata?.display_phone_number || '',
+        to_phone: statusItem?.recipient_id || contactPhone || '',
+        contact_phone: contacts?.[0]?.wa_id || statusItem?.recipient_id || contactPhone || '',
+        author_phone: null,
+        message_type: 'status',
+        text: statusItem?.status || data?.status || '',
+        caption: null,
+        media_url: null,
+        mime_type: null,
+        timestamp: statusItem?.timestamp || data?.timestamp || Date.now(),
+        raw_payload: statusItem,
+      }))
+    ];
 
-      if (eventType === 'fallback_unhandled') {
-        await base44.asServiceRole.entities.WebhookEvent.update(wh.id, { processed_ok: true });
-        return Response.json({ ok: true, type: 'fallback_unhandled_saved', webhook_event_id: wh.id });
-      }
+    if (normalizedEvents.length > 0) {
+      const results = [];
 
-      // 2) Upsert Customer (Contact)
-      let customer = null;
-      if (phone) {
-        let found = await base44.asServiceRole.entities.Customer.filter({ phone });
-        if (found.length === 0 && data?.wa_id) {
-          found = await base44.asServiceRole.entities.Customer.filter({ wa_id: data.wa_id });
-        }
-        if (found.length > 0) {
-          customer = found[0];
-          if ((!customer.full_name || customer.full_name === 'Sin nombre') && customerName) {
-            await base44.asServiceRole.entities.Customer.update(customer.id, { full_name: customerName });
+      for (const parsedEvent of normalizedEvents) {
+        const tsNum = Number(parsedEvent.timestamp || Date.now());
+        const timestampISO = new Date(tsNum < 1e12 ? tsNum * 1000 : tsNum).toISOString();
+        const stableConversationKey = `${parsedEvent.contact_phone || 'unknown'}_${phoneNumberId || 'unknown'}`;
+
+        console.log(`${parsedEvent.parsed_type} parsed`, JSON.stringify({
+          meta_message_id: parsedEvent.meta_message_id,
+          direction: parsedEvent.direction,
+          sender_type: parsedEvent.sender_type,
+          from_phone: parsedEvent.from_phone,
+          to_phone: parsedEvent.to_phone,
+          contact_phone: parsedEvent.contact_phone,
+          conversation_key: stableConversationKey,
+        }));
+
+        const wh = await base44.asServiceRole.entities.WebhookEvent.create({
+          event: event || '',
+          event_type: parsedEvent.event_type,
+          phone: parsedEvent.contact_phone || '',
+          message_id: parsedEvent.message_id || '',
+          direction: parsedEvent.direction,
+          conversation_key: stableConversationKey,
+          reason: reason || '',
+          raw_payload: JSON.stringify(parsedEvent.raw_payload || {})
+        });
+
+        let customer = null;
+        if (parsedEvent.contact_phone) {
+          let found = await base44.asServiceRole.entities.Customer.filter({ phone: parsedEvent.contact_phone });
+          if (found.length === 0) {
+            found = await base44.asServiceRole.entities.Customer.filter({ wa_id: parsedEvent.contact_phone });
           }
-        } else {
-          customer = await base44.asServiceRole.entities.Customer.create({
-            full_name: customerName || 'Sin nombre',
-            phone: phone,
-            wa_id: data?.wa_id || phone,
-            preferred_contact: 'whatsapp',
-            source: 'whatsapp_bot',
-            channel
+          if (found.length > 0) {
+            customer = found[0];
+            if ((!customer.full_name || customer.full_name === 'Sin nombre') && customerName) {
+              await base44.asServiceRole.entities.Customer.update(customer.id, { full_name: customerName });
+            }
+          } else {
+            customer = await base44.asServiceRole.entities.Customer.create({
+              full_name: customerName || 'Sin nombre',
+              phone: parsedEvent.contact_phone,
+              wa_id: parsedEvent.contact_phone,
+              preferred_contact: 'whatsapp',
+              source: 'whatsapp_bot',
+              channel
+            });
+          }
+        }
+
+        let conv = null;
+        if (customer) {
+          const existingConvs = await base44.asServiceRole.entities.WhatsappConversation.filter({ customer_id: customer.id, subject: stableConversationKey });
+          conv = existingConvs[0] || await base44.asServiceRole.entities.WhatsappConversation.create({
+            customer_id: customer.id,
+            is_open: true,
+            channel: 'whatsapp',
+            last_message_at: timestampISO,
+            notes: `ck:${stableConversationKey}`,
+            subject: stableConversationKey
           });
         }
-      }
 
-      // 3) Upsert Conversation → WhatsappConversation
-      let conv = null;
-      if (customer) {
-        const openConvs = await base44.asServiceRole.entities.WhatsappConversation.filter({ customer_id: customer.id, is_open: true });
-        conv = openConvs[0] || await base44.asServiceRole.entities.WhatsappConversation.create({
-          customer_id: customer.id,
-          is_open: true,
-          channel: 'whatsapp',
-          last_message_at: timestampISO,
-          notes: conversationKey ? `ck:${conversationKey}` : undefined,
-          subject: conversationKey || undefined
-        });
-      }
+        const duplicateCandidates = parsedEvent.message_id
+          ? await base44.asServiceRole.entities.BitacoraWhatsApp.filter({ message_id: parsedEvent.message_id })
+          : [];
+        const duplicateByMeta = parsedEvent.meta_message_id
+          ? await base44.asServiceRole.entities.BitacoraWhatsApp.filter({ message_id: parsedEvent.meta_message_id })
+          : [];
+        const duplicate = duplicateCandidates[0] || duplicateByMeta[0] || null;
 
-      let savedMsg = null;
-      if (eventType === 'inbound_message' || eventType === 'message_echo') {
-        // Upsert por message_id si existe
-        if (messageId) {
-          const dup = await base44.asServiceRole.entities.BitacoraWhatsApp.filter({ mensaje_id: messageId });
-          if (dup.length > 0) {
-            await base44.asServiceRole.entities.BitacoraWhatsApp.update(dup[0].id, {
-              delivery_status: eventType === 'message_echo' ? 'echo_received' : 'received',
+        if (duplicate) {
+          console.log('duplicate skipped', JSON.stringify({ message_id: parsedEvent.message_id, meta_message_id: parsedEvent.meta_message_id }));
+          if (parsedEvent.event_type === 'status_update') {
+            await base44.asServiceRole.entities.BitacoraWhatsApp.update(duplicate.id, {
+              delivery_status: (parsedEvent.text || '').toLowerCase(),
               timestamp: timestampISO
             });
-            await base44.asServiceRole.entities.WebhookEvent.update(wh.id, { processed_ok: true });
-            return Response.json({ ok: true, updated: true, webhook_event_id: wh.id });
           }
+          await base44.asServiceRole.entities.WebhookEvent.update(wh.id, { processed_ok: true });
+          results.push({ webhook_event_id: wh.id, duplicate: true, conversation_id: conv?.id || null, message_id: duplicate.id });
+          continue;
         }
 
-        savedMsg = await base44.asServiceRole.entities.BitacoraWhatsApp.create({
-          mensaje_id: messageId || `${phone || 'unk'}_${Date.now()}`,
-          message_id: messageId || `${phone || 'unk'}_${Date.now()}`,
-          customer_id: customer?.id || null,
-          conversation_id: conv?.id || null,
-          trabajo_id: null,
-          job_id: null,
-          from_phone: phone || '',
-          phone: phone || '',
-          texto_mensaje: messageText || '',
-          text: normalizedText || messageText || '',
-          caption: data?.message?.caption || null,
-          media_url: data?.media_url || null,
-          mime_type: data?.mime_type || null,
-          timestamp: timestampISO,
-          message_type: messageType || 'text',
-          channel: 'whatsapp',
-          direction,
-          sender_type: direction === 'inbound' ? 'customer' : 'bot',
-          raw_payload: JSON.stringify(rawPayload || {})
-        });
-
-        if (conv) {
-          await base44.asServiceRole.entities.WhatsappConversation.update(conv.id, {
-            last_message_at: timestampISO,
-            last_message_id: savedMsg.id
+        let savedMsg = null;
+        if (parsedEvent.event_type === 'inbound_message' || parsedEvent.event_type === 'message_echo') {
+          savedMsg = await base44.asServiceRole.entities.BitacoraWhatsApp.create({
+            mensaje_id: parsedEvent.message_id || parsedEvent.meta_message_id || `${parsedEvent.contact_phone || 'unk'}_${Date.now()}`,
+            message_id: parsedEvent.meta_message_id || parsedEvent.message_id || `${parsedEvent.contact_phone || 'unk'}_${Date.now()}`,
+            customer_id: customer?.id || null,
+            conversation_id: conv?.id || null,
+            trabajo_id: null,
+            job_id: null,
+            from_phone: parsedEvent.from_phone || '',
+            to_phone: parsedEvent.to_phone || '',
+            contact_phone: parsedEvent.contact_phone || '',
+            author_phone: parsedEvent.author_phone || null,
+            phone: parsedEvent.contact_phone || '',
+            texto_mensaje: parsedEvent.text || '',
+            text: parsedEvent.text || '',
+            caption: parsedEvent.caption || null,
+            media_url: parsedEvent.media_url || null,
+            mime_type: parsedEvent.mime_type || null,
+            timestamp: timestampISO,
+            message_type: parsedEvent.message_type || 'text',
+            channel: 'whatsapp',
+            channel_id: channelId,
+            tenant_id: tenantId,
+            direction: parsedEvent.direction,
+            sender_type: parsedEvent.sender_type,
+            raw_payload: JSON.stringify(parsedEvent.raw_payload || {})
           });
-        }
-      }
 
-      if (eventType === 'status_update') {
-        // Actualizar estado en Bitacora si existe y crear DeliveryReceipt
-        if (messageId) {
-          const matches = await base44.asServiceRole.entities.BitacoraWhatsApp.filter({ mensaje_id: messageId });
-          if (matches.length > 0) {
-            await base44.asServiceRole.entities.BitacoraWhatsApp.update(matches[0].id, { delivery_status: (messageText || '').toLowerCase() });
+          if (conv) {
+            await base44.asServiceRole.entities.WhatsappConversation.update(conv.id, {
+              last_message_at: timestampISO,
+              last_message_id: savedMsg.id,
+              subject: stableConversationKey,
+              notes: `ck:${stableConversationKey}`
+            });
           }
         }
-        await base44.asServiceRole.entities.DeliveryReceipt.create({
-          provider_message_id: messageId || '',
-          recipient_id: phone || '',
-          status: (messageText || '').toLowerCase() || 'sent',
-          timestamp: timestampISO,
-          raw_payload: JSON.stringify(rawPayload || {})
-        });
-        if (conv) {
-          await base44.asServiceRole.entities.WhatsappConversation.update(conv.id, { last_message_at: timestampISO });
+
+        if (parsedEvent.event_type === 'status_update') {
+          await base44.asServiceRole.entities.DeliveryReceipt.create({
+            provider_message_id: parsedEvent.meta_message_id || parsedEvent.message_id || '',
+            recipient_id: parsedEvent.contact_phone || '',
+            status: (parsedEvent.text || '').toLowerCase() || 'sent',
+            timestamp: timestampISO,
+            raw_payload: JSON.stringify(parsedEvent.raw_payload || {})
+          });
+          if (conv) {
+            await base44.asServiceRole.entities.WhatsappConversation.update(conv.id, { last_message_at: timestampISO });
+          }
         }
+
+        await base44.asServiceRole.entities.WebhookEvent.update(wh.id, { processed_ok: true });
+        results.push({ webhook_event_id: wh.id, duplicate: false, conversation_id: conv?.id || null, message_id: savedMsg?.id || null, event_type: parsedEvent.event_type });
       }
 
-      await base44.asServiceRole.entities.WebhookEvent.update(wh.id, { processed_ok: true });
-      return Response.json({ ok: true, event_type: eventType, webhook_event_id: wh.id, customer_id: customer?.id || null, conversation_id: conv?.id || null, message_id: savedMsg?.id || null });
+      return Response.json({ ok: true, parsed: results });
     }
   } catch (e) {
     // Si falla el nuevo formato, continuamos con el switch clásico
@@ -193,6 +271,7 @@ Deno.serve(async (req) => {
   }
 
   if (!event || !data) {
+    console.log('fallback triggered', JSON.stringify({ reason: 'Missing event or data fields' }));
     return Response.json({ error: 'Missing event or data fields' }, { status: 400 });
   }
 
@@ -818,6 +897,7 @@ Deno.serve(async (req) => {
       // Evento desconocido
       // ─────────────────────────────────────────────
       default:
+        console.log('fallback triggered', JSON.stringify({ reason: 'Unknown event', event }));
         return Response.json({
           error: `Unknown event: ${event}`,
           supported_events: [
