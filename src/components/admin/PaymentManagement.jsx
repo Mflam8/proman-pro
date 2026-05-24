@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -73,7 +73,7 @@ export default function PaymentManagement() {
       const inquiry = inquiries.find(i => i.id === data.inquiry_id);
       if (inquiry) {
         const allPayments = await base44.entities.Payment.filter({ inquiry_id: data.inquiry_id });
-        const totalPaid = allPayments.reduce((sum, p) => sum + (p.amount_paid || 0), 0) + data.amount_paid;
+        const totalPaid = allPayments.reduce((sum, p) => sum + (p.amount_paid || 0), 0);
         const finalAmount = inquiry.final_amount || inquiry.quote_amount || 0;
         
         let newPaymentStatus = 'pendiente';

@@ -45,6 +45,37 @@
       "type": "string",
       "description": "Direcci\u00f3n o zona detectada"
     },
+    "detected_name": {
+      "type": "string",
+      "description": "Nombre principal detectado por IA"
+    },
+    "detected_address": {
+      "type": "string",
+      "description": "Direcci\u00f3n estructurada o principal detectada"
+    },
+    "detected_price": {
+      "type": "number",
+      "description": "Monto detectado por IA"
+    },
+    "detected_schedule": {
+      "type": "string",
+      "description": "Fecha u hora principal detectada"
+    },
+    "missing_fields": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Campos faltantes detectados para operar el caso"
+    },
+    "field_confidence_json": {
+      "type": "string",
+      "description": "JSON serializado con confianza por campo detectado"
+    },
+    "field_evidence_json": {
+      "type": "string",
+      "description": "JSON serializado con evidencia por campo detectado"
+    },
     "names": {
       "type": "array",
       "items": {
@@ -78,6 +109,10 @@
       ],
       "description": "Acci\u00f3n sugerida por IA"
     },
+    "next_best_action": {
+      "type": "string",
+      "description": "Siguiente mejor acci\u00f3n sugerida por IA"
+    },
     "suggested_next_reply": {
       "type": "string",
       "description": "Respuesta sugerida al cliente"
@@ -86,6 +121,21 @@
       "type": "boolean",
       "default": false,
       "description": "Si requiere revisi\u00f3n humana"
+    },
+    "human_review_status": {
+      "type": "string",
+      "enum": [
+        "pending_review",
+        "approved",
+        "rejected",
+        "ignored"
+      ],
+      "default": "pending_review",
+      "description": "Estado de revisi\u00f3n humana"
+    },
+    "approved_operational_snapshot": {
+      "type": "string",
+      "description": "JSON serializado del snapshot aprobado manualmente"
     },
     "ai_confidence_score": {
       "type": "number",

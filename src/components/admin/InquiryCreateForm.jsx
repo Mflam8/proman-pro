@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { UserPlus, MapPin, AlertCircle } from "lucide-react";
 import { InputField, SelectField } from "@/components/common/FormFields";
 import EmployeeSelector from "./EmployeeSelector";
+import { normalizePhone } from "@/components/utils/normalizeData";
 
 export default function InquiryCreateForm({ customers, onSubmit, isSubmitting, onCancel }) {
   const [step, setStep] = useState('selectCustomer');
@@ -81,12 +82,18 @@ export default function InquiryCreateForm({ customers, onSubmit, isSubmitting, o
       return;
     }
     
+    const normalizedPhone = normalizePhone(selectedCustomer?.phone || '');
     const jobData = {
       ...formData,
       customer_id: selectedCustomer?.id,
       client_name: selectedCustomer?.full_name,
-      phone: selectedCustomer?.phone,
-      status: 'nuevo'
+      phone: normalizedPhone || selectedCustomer?.phone,
+      normalized_phone: normalizedPhone,
+      status: 'nuevo',
+      commercial_status: 'nuevo',
+      work_status: 'nuevo',
+      conversation_status: 'abierta',
+      human_review_status: 'not_required'
     };
     
     onSubmit(jobData);
@@ -240,7 +247,11 @@ export default function InquiryCreateForm({ customers, onSubmit, isSubmitting, o
           <Button type="button" variant="outline" onClick={() => setStep('selectCustomer')}>Atrás</Button>
           <Button 
             type="button"
-            onClick={() => createCustomer.mutate(newCustomerData)}
+            onClick={() => createCustomer.mutate({
+              ...newCustomerData,
+              normalized_phone: normalizePhone(newCustomerData.phone),
+              canonical_wa_id: normalizePhone(newCustomerData.phone)
+            })}
             className="flex-1 bg-proman-yellow text-proman-navy"
             disabled={!newCustomerData.full_name || !newCustomerData.phone || createCustomer.isPending}
           >

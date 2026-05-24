@@ -152,18 +152,19 @@ export default function ReportsManagement() {
     // Clientes activos (con al menos un trabajo)
     const clientesActivos = filteredCustomers.filter(c => c.status === 'activo');
     
-    // Trabajos por estado
-    const trabajosCompletados = filteredInquiries.filter(i => i.status === 'completado');
-    const trabajosEnProceso = filteredInquiries.filter(i => i.status === 'en_proceso');
-    const trabajosPendientes = filteredInquiries.filter(i => 
-      i.status !== 'completado' && i.status !== 'en_proceso'
-    );
-    const serviciosNuevos = filteredInquiries.filter(i => i.status === 'nuevo');
-    const pendientesCotizacion = filteredInquiries.filter(i => i.status === 'cotizacion_pendiente');
+    // Trabajos por etapa estructurada
+    const trabajosCompletados = filteredInquiries.filter(i => (i.work_status || i.status) === 'completado');
+    const trabajosEnProceso = filteredInquiries.filter(i => ['en_ruta', 'en_sitio', 'en_proceso'].includes(i.work_status || i.status));
+    const trabajosPendientes = filteredInquiries.filter(i => !['completado', 'en_ruta', 'en_sitio', 'en_proceso'].includes(i.work_status || i.status));
+    const serviciosNuevos = filteredInquiries.filter(i => (i.commercial_status || i.status) === 'nuevo');
+    const pendientesCotizacion = filteredInquiries.filter(i => (i.commercial_status || i.status) === 'cotizacion_pendiente');
+    const trabajosCotizados = filteredInquiries.filter(i => ['cotizado', 'pendiente_aprobacion'].includes(i.commercial_status));
+    const trabajosAprobados = filteredInquiries.filter(i => i.commercial_status === 'aprobado');
+    const trabajosCobrados = filteredInquiries.filter(i => i.payment_status === 'pagado');
 
     // Cuentas por cobrar (completados con pago pendiente)
     const cuentasPorCobrar = inquiries.filter(i => 
-      i.status === 'completado' && i.payment_status !== 'pagado'
+      (i.work_status || i.status) === 'completado' && i.payment_status !== 'pagado'
     );
     const montoPorCobrar = cuentasPorCobrar.reduce((sum, i) => {
       const total = i.final_amount || i.quote_amount || 0;
@@ -277,7 +278,7 @@ export default function ReportsManagement() {
   // Cuentas por cobrar detalladas
   const cuentasPorCobrarDetalle = useMemo(() => {
     return inquiries
-      .filter(i => i.status === 'completado' && i.payment_status !== 'pagado')
+      .filter(i => (i.work_status || i.status) === 'completado' && i.payment_status !== 'pagado')
       .map(i => {
         const customer = customers.find(c => c.id === i.customer_id);
         const total = i.final_amount || i.quote_amount || 0;
@@ -612,7 +613,7 @@ export default function ReportsManagement() {
 
         <TabsContent value="servicios">
           {/* Resumen de Servicios */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4 mb-6">
             <Card className="bg-blue-50 border-blue-200">
               <CardContent className="p-4 flex items-center gap-4">
                 <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
@@ -625,18 +626,6 @@ export default function ReportsManagement() {
               </CardContent>
             </Card>
 
-            <Card className="bg-green-50 border-green-200">
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-green-700 font-medium">Completados</p>
-                  <p className="text-2xl font-bold text-green-900">{stats.trabajosCompletados}</p>
-                </div>
-              </CardContent>
-            </Card>
-
             <Card className="bg-orange-50 border-orange-200">
               <CardContent className="p-4 flex items-center gap-4">
                 <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
@@ -645,6 +634,42 @@ export default function ReportsManagement() {
                 <div>
                   <p className="text-sm text-orange-700 font-medium">Pendiente Cotización</p>
                   <p className="text-2xl font-bold text-orange-900">{stats.pendientesCotizacion}</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-purple-50 border-purple-200">
+              <CardContent className="p-4 flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+                  <BarChart3 className="w-5 h-5 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-purple-700 font-medium">Cotizados</p>
+                  <p className="text-2xl font-bold text-purple-900">{stats.trabajosCotizados}</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-green-50 border-green-200">
+              <CardContent className="p-4 flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-green-700 font-medium">Aprobados</p>
+                  <p className="text-2xl font-bold text-green-900">{stats.trabajosAprobados}</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-teal-50 border-teal-200">
+              <CardContent className="p-4 flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center">
+                  <DollarSign className="w-5 h-5 text-teal-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-teal-700 font-medium">Cobrados</p>
+                  <p className="text-2xl font-bold text-teal-900">{stats.trabajosCobrados}</p>
                 </div>
               </CardContent>
             </Card>

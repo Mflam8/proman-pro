@@ -27,6 +27,7 @@ import WhatsAppConversationPanel from "./WhatsAppConversationPanel";
 import WhatsAppQuoteActions from "./WhatsAppQuoteActions";
 import CustomerContextAgentCard from "./CustomerContextAgentCard";
 import AISuggestionsPanel from "./AISuggestionsPanel";
+import { commercialStatusConfig, workStatusConfig } from "@/components/utils/inquiryConfig";
 
 export default function InquiryDetailForm({ 
   inquiry, 
@@ -487,7 +488,7 @@ export default function InquiryDetailForm({
               <CardContent className="space-y-4 pt-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <Label className="block text-sm font-medium text-proman-navy mb-2">Estado</Label>
+                    <Label className="block text-sm font-medium text-proman-navy mb-2">Estado legado</Label>
                     <Select value={formData.status || 'nuevo'} onValueChange={(v) => handleAutoSaveChange('status', v)} disabled={isUpdating}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -501,6 +502,38 @@ export default function InquiryDetailForm({
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         {Object.entries(priorityConfig).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <Label className="block text-sm font-medium text-proman-navy mb-2">Estado comercial</Label>
+                    <Select value={formData.commercial_status || 'nuevo'} onValueChange={(v) => handleAutoSaveChange('commercial_status', v)} disabled={isUpdating}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(commercialStatusConfig).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="block text-sm font-medium text-proman-navy mb-2">Estado operativo</Label>
+                    <Select value={formData.work_status || 'nuevo'} onValueChange={(v) => handleAutoSaveChange('work_status', v)} disabled={isUpdating}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(workStatusConfig).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="block text-sm font-medium text-proman-navy mb-2">Revisión humana</Label>
+                    <Select value={formData.human_review_status || 'not_required'} onValueChange={(v) => handleAutoSaveChange('human_review_status', v)} disabled={isUpdating}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="not_required">No requerida</SelectItem>
+                        <SelectItem value="pending_review">Pendiente</SelectItem>
+                        <SelectItem value="approved">Aprobada</SelectItem>
+                        <SelectItem value="rejected">Rechazada</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

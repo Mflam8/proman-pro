@@ -1,0 +1,247 @@
+{
+  "name": "Customer",
+  "type": "object",
+  "properties": {
+    "full_name": {
+      "type": "string",
+      "description": "Nombre completo del cliente"
+    },
+    "fiscal_name": {
+      "type": "string",
+      "description": "Raz\u00f3n social o nombre fiscal para facturaci\u00f3n"
+    },
+    "nit": {
+      "type": "string",
+      "description": "NIT o n\u00famero de identificaci\u00f3n fiscal"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Tel\u00e9fono principal"
+    },
+    "secondary_phone": {
+      "type": "string",
+      "description": "Tel\u00e9fono secundario"
+    },
+    "email": {
+      "type": "string",
+      "description": "Correo electr\u00f3nico"
+    },
+    "wa_id": {
+      "type": "string",
+      "description": "WhatsApp ID original recibido del proveedor"
+    },
+    "canonical_wa_id": {
+      "type": "string",
+      "description": "WhatsApp ID can\u00f3nico usado como identificador principal"
+    },
+    "normalized_phone": {
+      "type": "string",
+      "description": "Tel\u00e9fono normalizado en formato E.164"
+    },
+    "channel": {
+      "type": "string",
+      "default": "whatsapp",
+      "description": "Canal principal de contacto"
+    },
+    "addresses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "description": "Casa, Oficina, Negocio, etc."
+          },
+          "address": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string",
+            "enum": [
+              "Ahuachap\u00e1n",
+              "Santa Ana",
+              "Sonsonate",
+              "La Libertad",
+              "San Salvador",
+              "Chalatenango",
+              "Cuscatl\u00e1n",
+              "La Paz",
+              "Caba\u00f1as",
+              "San Vicente",
+              "Usulut\u00e1n",
+              "San Miguel",
+              "Moraz\u00e1n",
+              "La Uni\u00f3n"
+            ]
+          },
+          "reference": {
+            "type": "string",
+            "description": "Referencias de ubicaci\u00f3n"
+          },
+          "map_url": {
+            "type": "string",
+            "description": "Enlace a Google Maps o Waze"
+          },
+          "is_primary": {
+            "type": "boolean",
+            "default": false
+          },
+          "zona_km": {
+            "type": "string",
+            "enum": [
+              "A",
+              "B",
+              "C"
+            ],
+            "description": "Zona kilom\u00e9trica para c\u00e1lculo de costos"
+          }
+        }
+      },
+      "description": "Lista de direcciones del cliente"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "nuevo",
+        "contactado",
+        "activo",
+        "desactivado"
+      ],
+      "default": "nuevo",
+      "description": "Estado del cliente en el proceso de seguimiento"
+    },
+    "primary_rubro": {
+      "type": "string",
+      "enum": [
+        "Hogar",
+        "Comercial",
+        "Restaurantes",
+        "Hospitales"
+      ],
+      "description": "Rubro principal del cliente"
+    },
+    "is_emergency": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si el contacto inicial fue por emergencia"
+    },
+    "customer_type": {
+      "type": "string",
+      "enum": [
+        "residencial",
+        "negocio",
+        "corporativo",
+        "contrato"
+      ],
+      "default": "residencial",
+      "description": "Tipo de cliente"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "whatsapp_bot",
+        "manual",
+        "system"
+      ],
+      "description": "Sistema de origen del registro"
+    },
+    "source_verified": {
+      "type": "boolean",
+      "default": false,
+      "description": "Indica si el origen del cliente ya fue validado"
+    },
+    "consentimiento_contacto": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si existe consentimiento para contacto y seguimiento"
+    },
+    "last_interaction_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha de la \u00faltima interacci\u00f3n registrada"
+    },
+    "commercial_owner": {
+      "type": "string",
+      "description": "Responsable comercial del cliente"
+    },
+    "modo_operacion": {
+      "type": "string",
+      "enum": [
+        "normal",
+        "mcdonalds_mode"
+      ],
+      "default": "normal",
+      "description": "Modo de operaci\u00f3n especial para clientes con reglas particulares"
+    },
+    "preferred_contact": {
+      "type": "string",
+      "enum": [
+        "whatsapp",
+        "llamada",
+        "email"
+      ],
+      "default": "whatsapp",
+      "description": "M\u00e9todo preferido de contacto"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notas sobre el cliente"
+    },
+    "notas_legales": {
+      "type": "string",
+      "description": "Notas legales, contratos, reglas especiales del cliente"
+    },
+    "total_jobs": {
+      "type": "number",
+      "default": 0,
+      "description": "Total de trabajos realizados"
+    },
+    "total_spent": {
+      "type": "number",
+      "default": 0,
+      "description": "Total gastado en USD"
+    },
+    "is_vip": {
+      "type": "boolean",
+      "default": false,
+      "description": "Cliente VIP o recurrente"
+    },
+    "rating": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Calificaci\u00f3n promedio del cliente"
+    },
+    "activo": {
+      "type": "boolean",
+      "default": true,
+      "description": "Si el cliente est\u00e1 activo en el sistema"
+    },
+    "whatsapp_conversation": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant"
+            ]
+          },
+          "content": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Historial de conversaci\u00f3n de WhatsApp"
+    }
+  },
+  "required": [
+    "full_name",
+    "phone"
+  ]
+}

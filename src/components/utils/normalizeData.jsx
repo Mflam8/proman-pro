@@ -99,21 +99,19 @@ export function detectDataSource(data) {
  */
 export function normalizePhone(phone) {
   if (!phone) return '';
-  
-  // Eliminar todo excepto dígitos
-  const digits = phone.replace(/\D/g, '');
-  
-  // Si ya tiene código de país (+503)
-  if (digits.startsWith('503') && digits.length === 11) {
-    return `+${digits}`;
-  }
-  
-  // Si es número local de 8 dígitos
-  if (digits.length === 8) {
-    return `+503${digits}`;
-  }
-  
-  return phone; // Devolver original si no se puede normalizar
+  const digits = String(phone).replace(/\D/g, '');
+  if (digits.startsWith('503') && digits.length === 11) return `+${digits}`;
+  if (digits.length === 8) return `+503${digits}`;
+  return String(phone).trim();
+}
+
+export function normalizeWaId(value) {
+  if (!value) return '';
+  return normalizePhone(String(value));
+}
+
+export function getCanonicalContactId({ phone, wa_id, normalized_phone, canonical_wa_id }) {
+  return canonical_wa_id || normalized_phone || normalizeWaId(wa_id) || normalizePhone(phone) || '';
 }
 
 /**
@@ -122,20 +120,25 @@ export function normalizePhone(phone) {
  * @returns {object} - Datos normalizados
  */
 export function normalizeInquiryData(inquiry) {
+  const normalizedPhone = inquiry.phone ? normalizePhone(inquiry.phone) : '';
   const normalized = {
     ...inquiry,
-    source: detectDataSource(inquiry)
+    source: detectDataSource(inquiry),
+    normalized_phone: normalizedPhone || inquiry.normalized_phone || '',
+    commercial_status: inquiry.commercial_status || 'nuevo',
+    work_status: inquiry.work_status || inquiry.status || 'nuevo',
+    conversation_status: inquiry.conversation_status || 'abierta',
+    human_review_status: inquiry.human_review_status || 'not_required'
   };
   
-  // Solo normalizar si hay valor presente
   if (inquiry.rubro) {
     normalized.rubro = normalizeRubro(inquiry.rubro);
   }
   if (inquiry.service_type) {
     normalized.service_type = normalizeServiceName(inquiry.service_type);
   }
-  if (inquiry.phone) {
-    normalized.phone = normalizePhone(inquiry.phone);
+  if (normalizedPhone) {
+    normalized.phone = normalizedPhone;
   }
   
   return normalized;

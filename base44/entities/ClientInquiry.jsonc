@@ -1,0 +1,474 @@
+{
+  "name": "ClientInquiry",
+  "type": "object",
+  "properties": {
+    "customer_id": {
+      "type": "string",
+      "description": "ID del cliente en la base de datos"
+    },
+    "client_name": {
+      "type": "string",
+      "description": "Nombre del cliente (deprecado, usar customer_id)"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Tel\u00e9fono del cliente (deprecado, usar customer_id)"
+    },
+    "normalized_phone": {
+      "type": "string",
+      "description": "Tel\u00e9fono normalizado usado para cruces e identificaci\u00f3n"
+    },
+    "source_conversation_id": {
+      "type": "string",
+      "description": "ID de la conversaci\u00f3n origen que dio lugar al trabajo"
+    },
+    "scheduled_by_name": {
+      "type": "string",
+      "description": "Nombre de quien agend\u00f3 el servicio (corporativo)"
+    },
+    "scheduled_by_lastname": {
+      "type": "string",
+      "description": "Apellido de quien agend\u00f3 el servicio (corporativo)"
+    },
+    "restaurant_name": {
+      "type": "string",
+      "description": "Nombre del restaurante corporativo"
+    },
+    "lead_source": {
+      "type": "string",
+      "enum": [
+        "ads",
+        "recurrente",
+        "tecnico",
+        "referido",
+        "whatsapp",
+        "messenger",
+        "instagram",
+        "llamada",
+        "corporativo"
+      ],
+      "description": "Fuente/Canal de origen del lead"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "whatsapp_bot",
+        "manual",
+        "system"
+      ],
+      "description": "Sistema de origen del registro"
+    },
+    "ad_id": {
+      "type": "string",
+      "description": "ID del anuncio"
+    },
+    "ad_name": {
+      "type": "string",
+      "description": "Nombre del anuncio"
+    },
+    "campaign_id": {
+      "type": "string",
+      "description": "ID de campa\u00f1a publicitaria"
+    },
+    "entry_point": {
+      "type": "string",
+      "description": "Punto de entrada del lead"
+    },
+    "location": {
+      "type": "string",
+      "enum": [
+        "Ahuachap\u00e1n",
+        "Santa Ana",
+        "Sonsonate",
+        "La Libertad",
+        "San Salvador",
+        "Chalatenango",
+        "Cuscatl\u00e1n",
+        "La Paz",
+        "Caba\u00f1as",
+        "San Vicente",
+        "Usulut\u00e1n",
+        "San Miguel",
+        "Moraz\u00e1n",
+        "La Uni\u00f3n"
+      ],
+      "description": "Departamento donde se realizar\u00e1 el servicio"
+    },
+    "location_name": {
+      "type": "string",
+      "description": "Nombre del lugar espec\u00edfico"
+    },
+    "address": {
+      "type": "string",
+      "description": "Direcci\u00f3n espec\u00edfica del trabajo"
+    },
+    "rubro": {
+      "type": "string",
+      "enum": [
+        "Hogar",
+        "Comercial",
+        "Restaurantes",
+        "Hospitales",
+        "Emergencias"
+      ],
+      "description": "Rubro del servicio solicitado"
+    },
+    "service_type": {
+      "type": "string",
+      "description": "Tipo de servicio espec\u00edfico detectado/solicitado"
+    },
+    "descripcion_libre": {
+      "type": "string",
+      "description": "Texto original del cliente sin editar"
+    },
+    "preferred_time": {
+      "type": "string",
+      "description": "Horario preferido por el cliente"
+    },
+    "scheduled_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha programada para realizar el trabajo"
+    },
+    "scheduled_start_time": {
+      "type": "string",
+      "description": "Hora de inicio programada (HH:mm)"
+    },
+    "estimated_duration_hours": {
+      "type": "number",
+      "description": "Duraci\u00f3n estimada en horas"
+    },
+    "message": {
+      "type": "string",
+      "description": "Descripci\u00f3n del problema o necesidad"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "nuevo",
+        "pendiente_cotizacion",
+        "pendiente_agenda",
+        "evaluacion_agendada",
+        "evaluacion_pendiente",
+        "evaluacion_realizada",
+        "cotizacion_pendiente",
+        "cotizacion_realizada",
+        "pendiente_aprobacion",
+        "trabajo_aprobado",
+        "agendado",
+        "en_ruta",
+        "en_sitio",
+        "en_proceso",
+        "terminado",
+        "completado",
+        "pendiente_facturacion",
+        "facturado",
+        "pagado",
+        "cerrado",
+        "incidencia",
+        "perdido",
+        "cancelado"
+      ],
+      "default": "nuevo",
+      "description": "Estado operativo legado del trabajo"
+    },
+    "commercial_status": {
+      "type": "string",
+      "enum": [
+        "nuevo",
+        "calificando",
+        "cotizacion_pendiente",
+        "cotizado",
+        "pendiente_aprobacion",
+        "aprobado",
+        "perdido",
+        "cancelado",
+        "dormido"
+      ],
+      "default": "nuevo",
+      "description": "Estado comercial separado del flujo operativo"
+    },
+    "work_status": {
+      "type": "string",
+      "enum": [
+        "nuevo",
+        "agendado",
+        "en_ruta",
+        "en_sitio",
+        "en_proceso",
+        "completado",
+        "cerrado",
+        "incidencia",
+        "cancelado"
+      ],
+      "default": "nuevo",
+      "description": "Estado operativo del trabajo"
+    },
+    "conversation_status": {
+      "type": "string",
+      "enum": [
+        "abierta",
+        "pendiente_cliente",
+        "pendiente_equipo",
+        "cerrada"
+      ],
+      "default": "abierta",
+      "description": "Estado de seguimiento conversacional"
+    },
+    "human_review_status": {
+      "type": "string",
+      "enum": [
+        "not_required",
+        "pending_review",
+        "approved",
+        "rejected"
+      ],
+      "default": "not_required",
+      "description": "Estado de revisi\u00f3n humana de datos propuestos por IA"
+    },
+    "next_best_action": {
+      "type": "string",
+      "description": "Siguiente mejor acci\u00f3n recomendada para el caso"
+    },
+    "missing_fields": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Lista de campos faltantes para operar el caso"
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Confianza global del dato estructurado inicial"
+    },
+    "approved_operational_snapshot": {
+      "type": "string",
+      "description": "JSON serializado con el snapshot operativo aprobado"
+    },
+    "quoted_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha en que qued\u00f3 cotizado"
+    },
+    "approved_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha de aprobaci\u00f3n comercial"
+    },
+    "scheduled_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha/hora de agenda confirmada"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha/hora de finalizaci\u00f3n operativa"
+    },
+    "closed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha/hora de cierre final"
+    },
+    "paid_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha/hora en que qued\u00f3 totalmente pagado"
+    },
+    "lost_reason": {
+      "type": "string",
+      "description": "Motivo de p\u00e9rdida comercial"
+    },
+    "cancel_reason": {
+      "type": "string",
+      "description": "Motivo de cancelaci\u00f3n"
+    },
+    "next_step": {
+      "type": "string",
+      "enum": [
+        "ask_for_measurements",
+        "ask_for_photos",
+        "ask_for_location",
+        "ask_for_schedule",
+        "prepare_quote",
+        "escalate_to_human",
+        "follow_up_later"
+      ],
+      "description": "Pr\u00f3xima acci\u00f3n sugerida"
+    },
+    "missing_info": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "photos",
+          "measurements",
+          "location",
+          "schedule",
+          "budget",
+          "contact"
+        ]
+      },
+      "description": "Checklist de informaci\u00f3n faltante"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "baja",
+        "media",
+        "alta",
+        "urgente"
+      ],
+      "default": "media",
+      "description": "Prioridad del caso"
+    },
+    "assigned_to_employee_id": {
+      "type": "string",
+      "description": "ID del empleado asignado"
+    },
+    "assigned_to": {
+      "type": "string",
+      "description": "Email del usuario asignado (deprecado, usar assigned_to_employee_id)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notas internas de seguimiento"
+    },
+    "quote_amount": {
+      "type": "number",
+      "description": "Monto de la cotizaci\u00f3n inicial"
+    },
+    "quote_pdf_url": {
+      "type": "string",
+      "description": "URL del PDF de la cotizaci\u00f3n enviada al cliente"
+    },
+    "final_amount": {
+      "type": "number",
+      "description": "Monto final cobrado"
+    },
+    "subtotal_amount": {
+      "type": "number",
+      "description": "Subtotal antes de IVA"
+    },
+    "tax_amount": {
+      "type": "number",
+      "description": "Monto total de IVA"
+    },
+    "balance_due": {
+      "type": "number",
+      "description": "Saldo pendiente por cobrar"
+    },
+    "precio_sin_iva": {
+      "type": "number",
+      "description": "Precio antes de IVA"
+    },
+    "iva_aplica": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si aplica IVA del 13% a este trabajo"
+    },
+    "payment_status": {
+      "type": "string",
+      "enum": [
+        "pendiente",
+        "parcial",
+        "pagado"
+      ],
+      "default": "pendiente",
+      "description": "Estado del pago del servicio"
+    },
+    "estado_facturacion": {
+      "type": "string",
+      "enum": [
+        "no_aplica",
+        "pendiente",
+        "facturado"
+      ],
+      "default": "no_aplica",
+      "description": "Estado de facturaci\u00f3n legal"
+    },
+    "fecha_limite_soportes": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha l\u00edmite para entregar soportes"
+    },
+    "visit_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha de visita t\u00e9cnica programada"
+    },
+    "whatsapp_sent": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si ya fue enviado a WhatsApp"
+    },
+    "progress_percentage": {
+      "type": "number",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Porcentaje de avance del trabajo"
+    },
+    "work_notes_done": {
+      "type": "string",
+      "description": "Qu\u00e9 se realiz\u00f3 en el trabajo"
+    },
+    "work_notes_pending": {
+      "type": "string",
+      "description": "Qu\u00e9 falta por hacer"
+    },
+    "next_follow_up_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha del pr\u00f3ximo seguimiento"
+    },
+    "before_image_url": {
+      "type": "string",
+      "description": "URL de la foto del antes"
+    },
+    "after_image_url": {
+      "type": "string",
+      "description": "URL de la foto del despu\u00e9s"
+    },
+    "satisfaction_rating": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Calificaci\u00f3n de satisfacci\u00f3n del cliente"
+    },
+    "satisfaction_comment": {
+      "type": "string",
+      "description": "Comentario de satisfacci\u00f3n del cliente"
+    },
+    "client_notified": {
+      "type": "boolean",
+      "default": false,
+      "description": "Indica si el cliente fue notificado del \u00faltimo avance"
+    },
+    "en_ruta_timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha y hora en que el t\u00e9cnico marc\u00f3 en ruta"
+    },
+    "en_sitio_timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha y hora en que el t\u00e9cnico lleg\u00f3 al sitio"
+    },
+    "cerrado": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si el trabajo tiene cierre operativo completo"
+    },
+    "requiere_cierre": {
+      "type": "boolean",
+      "default": true,
+      "description": "Si el trabajo requiere cierre t\u00e9cnico formal"
+    }
+  },
+  "required": [
+    "rubro"
+  ]
+}
