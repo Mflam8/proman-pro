@@ -5,6 +5,7 @@ const ANALYSIS_MODEL = 'automatic';
 const MIN_ANALYSIS_INTERVAL_MS = 3 * 60 * 1000;
 const LONG_SILENCE_MS = 6 * 60 * 60 * 1000;
 const SHORT_NOISE = ['ok', 'gracias', '👍', '👍🏻', '👍🏼', '👍🏽', '👍🏾', '👍🏿'];
+const SHORT_SILENCE_OR_NOISE = new Set(SHORT_NOISE);
 
 function normalizeText(value) {
   return String(value || '').trim().toLowerCase();
@@ -32,7 +33,8 @@ function detectSignalFlags(messages) {
 function shouldAnalyze({ latestMessage, lastAnalysis, lastState, recentMessages, trigger_reason }) {
   if (!latestMessage) return { run: false, reason: 'no_message' };
   if (latestMessage.direction !== 'inbound' || latestMessage.sender_type !== 'customer') return { run: false, reason: 'not_customer_inbound' };
-  if (latestMessage.message_type === 'status') return { run: false, reason: 'status_message' };
+  if (latestMessage.message_type === 'status' || latestMessage.event_type === 'status') return { run: false, reason: 'status_message' };
+  if (latestMessage.message_type === 'reaction' || latestMessage.event_type === 'reaction') return { run: false, reason: 'reaction_message' };
   if (isSkippableNoiseMessage(latestMessage)) return { run: false, reason: 'noise_message' };
 
   const now = new Date(latestMessage.timestamp || latestMessage.created_date).getTime();
@@ -107,7 +109,11 @@ Deno.serve(async (req) => {
     const transcript = recentMessages
       .map((msg) => {
         const role = msg.direction === 'outbound' ? (msg.sender_type === 'agent' ? 'AGENTE' : 'BOT') : 'CLIENTE';
-        const text = msg.text || msg.texto_mensaje || msg.caption || '[sin texto]';
+        const text = msg.event_type === 'reaction'
+          ? `[reacción ${msg.reaction_emoji || ''}]`
+          : msg.event_type === 'status'
+            ? `[estado ${msg.delivery_status || msg.text || ''}]`
+            : (msg.text || msg.texto_mensaje || msg.caption || '[sin texto]');
         return `${role}: ${text}`;
       })
       .join('\n');

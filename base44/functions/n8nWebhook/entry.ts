@@ -294,6 +294,48 @@ Deno.serve(async (req) => {
           }
         }
 
+        if (conv?.id && ['message', 'media', 'message_echo', 'reaction', 'status'].includes(parsedEvent.event_type)) {
+          const timelineTitle = parsedEvent.event_type === 'reaction'
+            ? 'Reacción recibida'
+            : parsedEvent.event_type === 'status'
+              ? 'Estado de entrega actualizado'
+              : parsedEvent.event_type === 'media'
+                ? 'Archivo recibido'
+                : parsedEvent.event_type === 'message_echo'
+                  ? 'Mensaje enviado por equipo'
+                  : 'Mensaje recibido';
+          const timelineDescription = parsedEvent.event_type === 'reaction'
+            ? `${parsedEvent.reaction_emoji || ''} sobre ${parsedEvent.target_message_id || 'mensaje'}`
+            : parsedEvent.event_type === 'status'
+              ? (parsedEvent.text || 'actualización de entrega')
+              : (parsedEvent.text || parsedEvent.caption || parsedEvent.message_type || 'evento WhatsApp');
+          await base44.asServiceRole.entities.ConversationTimelineEvent.create({
+            conversation_id: conv.id,
+            event_type: parsedEvent.event_type,
+            title: timelineTitle,
+            description: timelineDescription,
+            source: 'webhook',
+            related_entity_id: savedMsg?.id || null,
+            metadata_json: JSON.stringify({
+              direction: parsedEvent.direction,
+              sender_type: parsedEvent.sender_type,
+              message_type: parsedEvent.message_type,
+              target_message_id: parsedEvent.target_message_id || null,
+              delivery_status: parsedEvent.event_type === 'status' ? (parsedEvent.text || '').toLowerCase() : null
+            })
+          });
+        }
+
+        if (conv?.id && ['message', 'media'].includes(parsedEvent.event_type) && parsedEvent.direction === 'inbound' && parsedEvent.sender_type === 'customer') {
+          await base44.asServiceRole.functions.invoke('analyzeConversation', {
+            conversation_id: conv.id,
+            customer_id: customer?.id || null,
+            inquiry_id: null,
+            phone: parsedEvent.contact_phone || null,
+            trigger_reason: parsedEvent.event_type === 'media' ? 'new_customer_media' : 'new_customer_message'
+          });
+        }
+
         await base44.asServiceRole.entities.WebhookEvent.update(wh.id, { processed_ok: true });
         results.push({ webhook_event_id: wh.id, duplicate: false, conversation_id: conv?.id || null, message_id: savedMsg?.id || null, event_type: parsedEvent.event_type });
       }
