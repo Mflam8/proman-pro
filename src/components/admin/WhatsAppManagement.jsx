@@ -40,8 +40,9 @@ export default function WhatsAppManagement() {
     const byCustomer = new Map();
 
     messages.forEach((msg) => {
+      if (msg.event_type === 'status') return;
       const customerId = msg.customer_id;
-      const phone = msg.from_phone || msg.phone;
+      const phone = msg.wa_id || msg.contact_phone || msg.from_phone || msg.phone;
       const normalizedPhone = String(phone || '').replace(/\D/g, '');
       const key = customerId || normalizedPhone;
       if (!key) return;

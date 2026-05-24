@@ -1,0 +1,216 @@
+{
+  "name": "BitacoraWhatsApp",
+  "type": "object",
+  "properties": {
+    "mensaje_id": {
+      "type": "string",
+      "description": "ID \u00fanico del mensaje de WhatsApp (legacy)"
+    },
+    "message_id": {
+      "type": "string",
+      "description": "ID externo del mensaje (alias compatible)"
+    },
+    "provider_message_id": {
+      "type": "string",
+      "description": "ID \u00fanico del proveedor usado para idempotencia"
+    },
+    "status_event_id": {
+      "type": "string",
+      "description": "ID \u00fanico del evento de estado del proveedor"
+    },
+    "trabajo_id": {
+      "type": "string",
+      "description": "ID del trabajo (ClientInquiry) asociado"
+    },
+    "job_id": {
+      "type": "string",
+      "description": "ID del trabajo (alias compatible)"
+    },
+    "customer_id": {
+      "type": "string",
+      "description": "ID del cliente asociado"
+    },
+    "conversation_id": {
+      "type": "string",
+      "description": "ID del hilo de conversaci\u00f3n asociado"
+    },
+    "wa_id": {
+      "type": "string",
+      "description": "WhatsApp ID del contacto"
+    },
+    "from_phone": {
+      "type": "string",
+      "description": "N\u00famero de tel\u00e9fono del remitente (formato E.164)"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Tel\u00e9fono del cliente (alias)"
+    },
+    "author_phone": {
+      "type": "string",
+      "description": "N\u00famero real del autor (\u00fatil en grupos)"
+    },
+    "to_phone": {
+      "type": "string",
+      "description": "N\u00famero destino del mensaje"
+    },
+    "contact_phone": {
+      "type": "string",
+      "description": "N\u00famero principal del contacto"
+    },
+    "texto_mensaje": {
+      "type": "string",
+      "description": "Contenido completo del mensaje (legacy)"
+    },
+    "text": {
+      "type": "string",
+      "description": "Texto del mensaje"
+    },
+    "caption": {
+      "type": "string",
+      "description": "Pie de foto para medios"
+    },
+    "media_url": {
+      "type": "string",
+      "description": "URL del archivo multimedia"
+    },
+    "media_id": {
+      "type": "string",
+      "description": "ID del medio en el proveedor"
+    },
+    "mime_type": {
+      "type": "string",
+      "description": "Tipo MIME del medio recibido"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha y hora exacta del mensaje"
+    },
+    "message_timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp original del mensaje"
+    },
+    "provider_timestamp": {
+      "type": "string",
+      "description": "Timestamp crudo del proveedor"
+    },
+    "meta_timestamp": {
+      "type": "string",
+      "description": "Timestamp legado/meta del proveedor"
+    },
+    "message_type": {
+      "type": "string",
+      "enum": [
+        "text",
+        "image",
+        "video",
+        "audio",
+        "document",
+        "reaction",
+        "status",
+        "system"
+      ],
+      "default": "text",
+      "description": "Tipo de mensaje"
+    },
+    "event_type": {
+      "type": "string",
+      "enum": [
+        "message",
+        "status",
+        "reaction",
+        "media",
+        "system",
+        "message_echo"
+      ],
+      "default": "message",
+      "description": "Tipo de evento recibido del proveedor"
+    },
+    "target_message_id": {
+      "type": "string",
+      "description": "Mensaje objetivo de una reacci\u00f3n o actualizaci\u00f3n"
+    },
+    "reaction_emoji": {
+      "type": "string",
+      "description": "Emoji de reacci\u00f3n si aplica"
+    },
+    "channel": {
+      "type": "string",
+      "default": "whatsapp",
+      "description": "Canal del mensaje"
+    },
+    "channel_id": {
+      "type": "string",
+      "description": "Identificador del canal/n\u00famero conectado"
+    },
+    "tenant_id": {
+      "type": "string",
+      "description": "Tenant o partici\u00f3n l\u00f3gica si aplica"
+    },
+    "direction": {
+      "type": "string",
+      "enum": [
+        "inbound",
+        "outbound"
+      ],
+      "default": "inbound",
+      "description": "Direcci\u00f3n del mensaje"
+    },
+    "sender_type": {
+      "type": "string",
+      "enum": [
+        "customer",
+        "bot",
+        "agent"
+      ],
+      "description": "Qui\u00e9n envi\u00f3 el mensaje"
+    },
+    "delivery_status": {
+      "type": "string",
+      "enum": [
+        "sent",
+        "delivered",
+        "read",
+        "failed"
+      ],
+      "description": "Estado de entrega (si aplica)"
+    },
+    "ad_id": {
+      "type": "string",
+      "description": "ID del anuncio (si aplica)"
+    },
+    "ad_name": {
+      "type": "string",
+      "description": "Nombre del anuncio (si aplica)"
+    },
+    "campaign_id": {
+      "type": "string",
+      "description": "ID de campa\u00f1a publicitaria (si aplica)"
+    },
+    "entry_point": {
+      "type": "string",
+      "description": "Punto de entrada"
+    },
+    "is_group": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si el mensaje proviene de un grupo"
+    },
+    "procesado": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si el mensaje ya fue procesado y vinculado a un trabajo"
+    },
+    "raw_payload": {
+      "type": "string",
+      "description": "JSON del payload crudo del proveedor"
+    }
+  },
+  "required": [
+    "mensaje_id",
+    "from_phone",
+    "timestamp"
+  ]
+}

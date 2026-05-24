@@ -47,6 +47,7 @@ export default function MessageCenter() {
   const [toDate, setToDate] = useState("");
   const [hasMedia, setHasMedia] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [eventTypeFilter, setEventTypeFilter] = useState("all");
   const [preWorkOnly, setPreWorkOnly] = useState("all");
   const [rawOpen, setRawOpen] = useState(false);
   const [rawTitle, setRawTitle] = useState("");
@@ -85,6 +86,7 @@ export default function MessageCenter() {
     if (direction !== 'all') arr = arr.filter(m => (m.direction || 'inbound') === direction);
     if (sender !== 'all') arr = arr.filter(m => (m.sender_type || (m.direction === 'inbound' ? 'customer' : 'bot')) === sender);
     if (type !== 'all') arr = arr.filter(m => (m.message_type || 'text') === type);
+    if (eventTypeFilter !== 'all') arr = arr.filter(m => (m.event_type || 'message') === eventTypeFilter);
     if (statusFilter !== 'all') arr = arr.filter(m => (m.delivery_status || '') === statusFilter);
     if (hasMedia !== 'all') arr = arr.filter(m => hasMedia === 'yes' ? !!m.media_url : !m.media_url);
     if (preWorkOnly !== 'all') arr = arr.filter(m => preWorkOnly === 'yes' ? !(m.trabajo_id || m.job_id) : !!(m.trabajo_id || m.job_id));
@@ -99,7 +101,7 @@ export default function MessageCenter() {
       );
     }
     return arr;
-  }, [messages, q, direction, sender, type, fromDate, toDate, hasMedia, statusFilter, preWorkOnly]);
+  }, [messages, q, direction, sender, type, fromDate, toDate, hasMedia, statusFilter, eventTypeFilter, preWorkOnly]);
 
   const exportCSV = (rows, headers, filename) => {
     const escape = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
@@ -118,6 +120,7 @@ export default function MessageCenter() {
     { label: 'Dirección', value: r => r.direction || '' },
     { label: 'Remitente', value: r => r.sender_type || '' },
     { label: 'Tipo', value: r => r.message_type || '' },
+    { label: 'Evento', value: r => r.event_type || '' },
     { label: 'Texto', value: r => r.text || r.texto_mensaje || '' },
     { label: 'Caption', value: r => r.caption || '' },
     { label: 'MediaURL', value: r => r.media_url || '' },
@@ -234,6 +237,17 @@ export default function MessageCenter() {
                       <SelectItem value="echo_received">Echo</SelectItem>
                     </SelectContent>
                   </Select>
+                  <Select value={eventTypeFilter} onValueChange={setEventTypeFilter}>
+                    <SelectTrigger><SelectValue placeholder="Evento"/></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="message">Mensaje</SelectItem>
+                      <SelectItem value="media">Media</SelectItem>
+                      <SelectItem value="reaction">Reacción</SelectItem>
+                      <SelectItem value="status">Estado</SelectItem>
+                      <SelectItem value="message_echo">Echo</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <Select value={preWorkOnly} onValueChange={setPreWorkOnly}>
                     <SelectTrigger><SelectValue placeholder="Etapa"/></SelectTrigger>
                     <SelectContent>
@@ -256,6 +270,7 @@ export default function MessageCenter() {
                           <th className="px-3 py-2">Dir</th>
                           <th className="px-3 py-2">Remitente</th>
                           <th className="px-3 py-2">Tipo</th>
+                          <th className="px-3 py-2">Evento</th>
                           <th className="px-3 py-2 text-left">Texto / Caption</th>
                           <th className="px-3 py-2">Medio</th>
                           <th className="px-3 py-2">Estado</th>
@@ -277,8 +292,11 @@ export default function MessageCenter() {
                             <td className="px-3 py-2 text-center">
                               <Badge variant="outline">{m.message_type || 'text'}</Badge>
                             </td>
+                            <td className="px-3 py-2 text-center">
+                              <Badge variant="outline">{m.event_type || 'message'}</Badge>
+                            </td>
                             <td className="px-3 py-2 max-w-[480px]">
-                              <div className="text-slate-800 line-clamp-2">{m.text || m.texto_mensaje || m.caption || ''}</div>
+                              <div className="text-slate-800 line-clamp-2">{m.event_type === 'reaction' ? `Reacción ${m.reaction_emoji || ''}` : m.event_type === 'status' ? `Estado: ${m.delivery_status || m.text || ''}` : (m.text || m.texto_mensaje || m.caption || '')}</div>
                             </td>
                             <td className="px-3 py-2 text-center">{m.media_url ? <MediaBadge msg={m} /> : <span className="text-slate-400">—</span>}</td>
                             <td className="px-3 py-2 text-center">{m.delivery_status ? <Badge variant="outline">{m.delivery_status}</Badge> : <span className="text-slate-400">—</span>}</td>

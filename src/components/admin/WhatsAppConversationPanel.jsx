@@ -17,6 +17,8 @@ import { es } from "date-fns/locale";
 function MessageBubble({ msg }) {
   const isOutbound = msg.direction === 'outbound';
   const isCustomer = msg.sender_type === 'customer' || (!msg.sender_type && msg.direction === 'inbound');
+  const isReaction = msg.event_type === 'reaction' || msg.message_type === 'reaction';
+  const isStatus = msg.event_type === 'status' || msg.message_type === 'status';
   const roleBadge = isCustomer ? (
     <Badge className="bg-slate-100 text-slate-700 flex items-center gap-1"><UserIcon className="w-3 h-3" />Cliente</Badge>
   ) : msg.sender_type === 'agent' ? (
@@ -32,15 +34,24 @@ function MessageBubble({ msg }) {
           <div className="flex items-center gap-2 text-xs opacity-80">
             {roleBadge}
             <Badge variant="outline">{msg.direction === 'outbound' ? 'Saliente' : 'Entrante'}</Badge>
+            {msg.event_type && <Badge variant="outline">{msg.event_type}</Badge>}
             {msg.message_type && <Badge variant="outline">{msg.message_type}</Badge>}
           </div>
           <div className="text-[11px] opacity-70">
             {msg.timestamp ? format(new Date(msg.timestamp), "dd MMM yyyy, HH:mm", { locale: es }) : ''}
           </div>
         </div>
-        {msg.text && (
+        {isReaction ? (
+          <p className={`text-sm font-medium ${isOutbound ? 'text-white' : 'text-slate-800'}`}>
+            Reacción {msg.reaction_emoji || ''} {msg.target_message_id ? `al mensaje ${msg.target_message_id}` : ''}
+          </p>
+        ) : isStatus ? (
+          <p className={`text-sm font-medium ${isOutbound ? 'text-white' : 'text-slate-800'}`}>
+            Estado: {msg.delivery_status || msg.text || 'actualizado'}
+          </p>
+        ) : msg.text ? (
           <p className={`whitespace-pre-wrap text-sm ${isOutbound ? 'text-white' : 'text-slate-800'}`}>{msg.text}</p>
-        )}
+        ) : null}
         {msg.caption && (
           <p className={`whitespace-pre-wrap text-xs mt-1 italic ${isOutbound ? 'text-white/90' : 'text-slate-600'}`}>{msg.caption}</p>
         )}
@@ -127,6 +138,7 @@ export default function WhatsAppConversationPanel({ customerId, inquiryId, phone
 
     // Filtros
     if (type !== 'all') arr = arr.filter(m => (m.message_type || 'text') === type);
+    if (type !== 'all') arr = arr.filter(m => (m.message_type || 'text') === type);
     if (direction !== 'all') arr = arr.filter(m => (m.direction || 'inbound') === direction);
     if (sender !== 'all') arr = arr.filter(m => (m.sender_type || (m.direction === 'inbound' ? 'customer' : 'bot')) === sender);
     if (selectedJobId !== 'all') arr = arr.filter(m => (m.trabajo_id === selectedJobId || m.job_id === selectedJobId));
@@ -146,10 +158,14 @@ export default function WhatsAppConversationPanel({ customerId, inquiryId, phone
       direction: m.direction || 'inbound',
       sender_type: m.sender_type || (m.direction === 'inbound' ? 'customer' : 'bot'),
       message_type: m.message_type || 'text',
+      event_type: m.event_type || 'message',
       text: m.text ?? m.texto_mensaje ?? '',
       caption: m.caption ?? '',
       media_url: m.media_url ?? '',
       mime_type: m.mime_type ?? '',
+      reaction_emoji: m.reaction_emoji ?? '',
+      target_message_id: m.target_message_id ?? '',
+      delivery_status: m.delivery_status ?? '',
       timestamp: m.message_timestamp || m.timestamp || m.created_date,
       job_id: m.trabajo_id || m.job_id || null,
     }));
@@ -234,6 +250,8 @@ export default function WhatsAppConversationPanel({ customerId, inquiryId, phone
               <SelectItem value="audio">Audio</SelectItem>
               <SelectItem value="video">Video</SelectItem>
               <SelectItem value="document">Documento</SelectItem>
+              <SelectItem value="reaction">Reacción</SelectItem>
+              <SelectItem value="status">Estado</SelectItem>
             </SelectContent>
           </Select>
           <Select value={direction} onValueChange={setDirection}>

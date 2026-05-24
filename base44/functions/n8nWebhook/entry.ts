@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 /**
  * PROMAN - Webhook robusto para N8N
@@ -63,59 +63,77 @@ Deno.serve(async (req) => {
 
     const normalizedEvents = [
       ...messages.map((msg) => ({
-        parsed_type: 'inbound',
-        event_type: 'inbound_message',
+        parsed_type: msg?.reaction ? 'reaction' : 'inbound',
+        event_type: msg?.reaction ? 'reaction' : (msg?.type && msg?.type !== 'text' ? 'media' : 'message'),
         meta_message_id: msg?.id || data?.message_id || data?.messageId || null,
         message_id: msg?.id || data?.message_id || data?.messageId || null,
+        provider_message_id: msg?.id || data?.message_id || data?.messageId || null,
+        status_event_id: null,
         direction: 'inbound',
         sender_type: 'customer',
         from_phone: msg?.from || contactPhone || '',
         to_phone: metadata?.display_phone_number || '',
         contact_phone: contacts?.[0]?.wa_id || msg?.from || contactPhone || '',
+        wa_id: contacts?.[0]?.wa_id || msg?.from || contactPhone || '',
         author_phone: msg?.author_phone || null,
-        message_type: msg?.type || data?.message_type || 'text',
-        text: msg?.text?.body || msg?.body || data?.message?.text || data?.message || '',
+        message_type: msg?.reaction ? 'reaction' : (msg?.type || data?.message_type || 'text'),
+        text: msg?.reaction ? '' : (msg?.text?.body || msg?.body || data?.message?.text || data?.message || ''),
         caption: msg?.image?.caption || msg?.video?.caption || data?.message?.caption || null,
         media_url: data?.media_url || msg?.image?.url || msg?.video?.url || msg?.audio?.url || msg?.document?.url || null,
+        media_id: data?.media_id || msg?.image?.id || msg?.video?.id || msg?.audio?.id || msg?.document?.id || null,
         mime_type: data?.mime_type || msg?.image?.mime_type || msg?.video?.mime_type || msg?.audio?.mime_type || msg?.document?.mime_type || null,
+        target_message_id: msg?.reaction?.message_id || null,
+        reaction_emoji: msg?.reaction?.emoji || null,
         timestamp: msg?.timestamp || data?.timestamp || data?.meta?.timestamp || Date.now(),
         raw_payload: msg,
       })),
       ...messageEchoes.map((msg) => ({
-        parsed_type: 'outbound',
-        event_type: 'message_echo',
+        parsed_type: msg?.reaction ? 'reaction_echo' : 'outbound',
+        event_type: msg?.reaction ? 'reaction' : 'message_echo',
         meta_message_id: msg?.id || null,
         message_id: msg?.id || null,
+        provider_message_id: msg?.id || null,
+        status_event_id: null,
         direction: 'outbound',
         sender_type: data?.sender_type || 'bot',
         from_phone: msg?.from || metadata?.display_phone_number || '',
         to_phone: msg?.to || contacts?.[0]?.wa_id || contactPhone || '',
         contact_phone: contacts?.[0]?.wa_id || msg?.to || contactPhone || '',
+        wa_id: contacts?.[0]?.wa_id || msg?.to || contactPhone || '',
         author_phone: msg?.author_phone || null,
-        message_type: msg?.type || 'text',
-        text: msg?.text?.body || msg?.reaction?.emoji || '',
+        message_type: msg?.reaction ? 'reaction' : (msg?.type || 'text'),
+        text: msg?.reaction ? '' : (msg?.text?.body || ''),
         caption: msg?.image?.caption || msg?.video?.caption || null,
         media_url: msg?.image?.url || msg?.video?.url || msg?.audio?.url || msg?.document?.url || null,
+        media_id: msg?.image?.id || msg?.video?.id || msg?.audio?.id || msg?.document?.id || null,
         mime_type: msg?.image?.mime_type || msg?.video?.mime_type || msg?.audio?.mime_type || msg?.document?.mime_type || null,
+        target_message_id: msg?.reaction?.message_id || null,
+        reaction_emoji: msg?.reaction?.emoji || null,
         timestamp: msg?.timestamp || Date.now(),
         raw_payload: msg,
       })),
       ...statuses.map((statusItem) => ({
         parsed_type: 'status',
-        event_type: 'status_update',
+        event_type: 'status',
         meta_message_id: statusItem?.id || null,
         message_id: statusItem?.id || null,
+        provider_message_id: statusItem?.id || null,
+        status_event_id: `${statusItem?.id || 'status'}_${statusItem?.status || 'unknown'}_${statusItem?.timestamp || Date.now()}`,
         direction: 'outbound',
         sender_type: 'bot',
         from_phone: metadata?.display_phone_number || '',
         to_phone: statusItem?.recipient_id || contactPhone || '',
         contact_phone: contacts?.[0]?.wa_id || statusItem?.recipient_id || contactPhone || '',
+        wa_id: contacts?.[0]?.wa_id || statusItem?.recipient_id || contactPhone || '',
         author_phone: null,
         message_type: 'status',
         text: statusItem?.status || data?.status || '',
         caption: null,
         media_url: null,
+        media_id: null,
         mime_type: null,
+        target_message_id: statusItem?.id || null,
+        reaction_emoji: null,
         timestamp: statusItem?.timestamp || data?.timestamp || Date.now(),
         raw_payload: statusItem,
       }))
@@ -186,20 +204,27 @@ Deno.serve(async (req) => {
           });
         }
 
-        const duplicateCandidates = parsedEvent.message_id
+        const duplicateCandidates = parsedEvent.provider_message_id
+          ? await base44.asServiceRole.entities.BitacoraWhatsApp.filter({ provider_message_id: parsedEvent.provider_message_id })
+          : [];
+        const duplicateByMessage = parsedEvent.message_id
           ? await base44.asServiceRole.entities.BitacoraWhatsApp.filter({ message_id: parsedEvent.message_id })
           : [];
-        const duplicateByMeta = parsedEvent.meta_message_id
-          ? await base44.asServiceRole.entities.BitacoraWhatsApp.filter({ message_id: parsedEvent.meta_message_id })
+        const duplicateByStatus = parsedEvent.status_event_id
+          ? await base44.asServiceRole.entities.BitacoraWhatsApp.filter({ status_event_id: parsedEvent.status_event_id })
           : [];
-        const duplicate = duplicateCandidates[0] || duplicateByMeta[0] || null;
+        const duplicate = duplicateCandidates[0] || duplicateByMessage[0] || duplicateByStatus[0] || null;
 
         if (duplicate) {
           console.log('duplicate skipped', JSON.stringify({ message_id: parsedEvent.message_id, meta_message_id: parsedEvent.meta_message_id }));
-          if (parsedEvent.event_type === 'status_update') {
+          if (parsedEvent.event_type === 'status') {
             await base44.asServiceRole.entities.BitacoraWhatsApp.update(duplicate.id, {
               delivery_status: (parsedEvent.text || '').toLowerCase(),
-              timestamp: timestampISO
+              timestamp: timestampISO,
+              status_event_id: parsedEvent.status_event_id || duplicate.status_event_id,
+              provider_timestamp: String(parsedEvent.timestamp || ''),
+              event_type: 'status',
+              target_message_id: parsedEvent.target_message_id || duplicate.target_message_id
             });
           }
           await base44.asServiceRole.entities.WebhookEvent.update(wh.id, { processed_ok: true });
@@ -208,28 +233,36 @@ Deno.serve(async (req) => {
         }
 
         let savedMsg = null;
-        if (parsedEvent.event_type === 'inbound_message' || parsedEvent.event_type === 'message_echo') {
+        if (['message', 'media', 'reaction', 'message_echo'].includes(parsedEvent.event_type)) {
           savedMsg = await base44.asServiceRole.entities.BitacoraWhatsApp.create({
             mensaje_id: parsedEvent.message_id || parsedEvent.meta_message_id || `${parsedEvent.contact_phone || 'unk'}_${Date.now()}`,
             message_id: parsedEvent.meta_message_id || parsedEvent.message_id || `${parsedEvent.contact_phone || 'unk'}_${Date.now()}`,
+            provider_message_id: parsedEvent.provider_message_id || parsedEvent.message_id || parsedEvent.meta_message_id || null,
+            status_event_id: parsedEvent.status_event_id || null,
             customer_id: customer?.id || null,
             conversation_id: conv?.id || null,
             trabajo_id: null,
             job_id: null,
+            wa_id: parsedEvent.wa_id || parsedEvent.contact_phone || '',
             from_phone: parsedEvent.from_phone || '',
             to_phone: parsedEvent.to_phone || '',
             contact_phone: parsedEvent.contact_phone || '',
             author_phone: parsedEvent.author_phone || null,
             phone: parsedEvent.contact_phone || '',
-            texto_mensaje: parsedEvent.text || '',
-            text: parsedEvent.text || '',
+            texto_mensaje: parsedEvent.event_type === 'reaction' ? '' : (parsedEvent.text || ''),
+            text: parsedEvent.event_type === 'reaction' ? '' : (parsedEvent.text || ''),
             caption: parsedEvent.caption || null,
             media_url: parsedEvent.media_url || null,
+            media_id: parsedEvent.media_id || null,
             mime_type: parsedEvent.mime_type || null,
             timestamp: timestampISO,
             message_timestamp: timestampISO,
+            provider_timestamp: String(parsedEvent.timestamp || ''),
             meta_timestamp: String(parsedEvent.timestamp || ''),
             message_type: parsedEvent.message_type || 'text',
+            event_type: parsedEvent.event_type,
+            target_message_id: parsedEvent.target_message_id || null,
+            reaction_emoji: parsedEvent.reaction_emoji || null,
             channel: 'whatsapp',
             channel_id: channelId,
             tenant_id: tenantId,
@@ -248,7 +281,7 @@ Deno.serve(async (req) => {
           }
         }
 
-        if (parsedEvent.event_type === 'status_update') {
+        if (parsedEvent.event_type === 'status') {
           await base44.asServiceRole.entities.DeliveryReceipt.create({
             provider_message_id: parsedEvent.meta_message_id || parsedEvent.message_id || '',
             recipient_id: parsedEvent.contact_phone || '',
