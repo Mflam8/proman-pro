@@ -45,6 +45,23 @@ Deno.serve(async (req) => {
 
   const { event, data } = body;
 
+  const normalizePhone = (value) => {
+    if (!value) return '';
+    const digits = String(value).replace(/[^\d]/g, '');
+    if (!digits) return '';
+    if (digits.startsWith('503')) return `+${digits}`;
+    if (digits.length === 8) return `+503${digits}`;
+    return `+${digits}`;
+  };
+
+  const normalizeEventType = (parsedEvent) => {
+    if (parsedEvent.parsed_type === 'status') return 'status';
+    if (parsedEvent.message_type === 'reaction' || parsedEvent.parsed_type?.includes('reaction')) return 'reaction';
+    if (['image', 'video', 'audio', 'document'].includes(parsedEvent.message_type)) return 'media';
+    if (parsedEvent.direction === 'outbound') return 'message_echo';
+    return 'message';
+  };
+
   // Soporte enriquecido (compatibilidad con nuevo formato de n8n)
   try {
     const rawPayload = data?.raw_payload || body;
@@ -54,11 +71,11 @@ Deno.serve(async (req) => {
     const messageEchoes = rawPayload?.message_echoes || data?.message_echoes || [];
     const statuses = rawPayload?.statuses || data?.statuses || [];
     const phoneNumberId = data?.phone_number_id || data?.meta?.phone_number_id || metadata?.phone_number_id || '';
-    const channel = data?.channel || 'whatsapp';
-    const channelId = phoneNumberId || metadata?.display_phone_number || '';
+    const channel = (data?.channel || 'whatsapp').toLowerCase();
+    const channelId = normalizePhone(phoneNumberId || metadata?.display_phone_number || '');
     const tenantId = data?.tenant_id || body?.tenant_id || 'default';
     const customerName = data?.name || data?.customerName || data?.contact?.name || contacts?.[0]?.profile?.name || '';
-    const contactPhone = contacts?.[0]?.wa_id || messageEchoes?.[0]?.to || messages?.[0]?.from || data?.contact?.phone || data?.phone || data?.to || data?.from || data?.recipient_id || null;
+    const contactPhone = normalizePhone(contacts?.[0]?.wa_id || messageEchoes?.[0]?.to || messages?.[0]?.from || data?.contact?.phone || data?.phone || data?.to || data?.from || data?.recipient_id || null);
     const reason = data?.reason || '';
 
     const normalizedEvents = [
@@ -143,9 +160,15 @@ Deno.serve(async (req) => {
       const results = [];
 
       for (const parsedEvent of normalizedEvents) {
+        parsedEvent.from_phone = normalizePhone(parsedEvent.from_phone);
+        parsedEvent.to_phone = normalizePhone(parsedEvent.to_phone);
+        parsedEvent.contact_phone = normalizePhone(parsedEvent.contact_phone);
+        parsedEvent.wa_id = normalizePhone(parsedEvent.wa_id);
+        parsedEvent.event_type = normalizeEventType(parsedEvent);
+
         const tsNum = Number(parsedEvent.timestamp || Date.now());
         const timestampISO = new Date(tsNum < 1e12 ? tsNum * 1000 : tsNum).toISOString();
-        const stableConversationKey = `${parsedEvent.contact_phone || 'unknown'}_${phoneNumberId || 'unknown'}`;
+        const stableConversationKey = `${parsedEvent.contact_phone || 'unknown'}_${channelId || 'unknown'}`;
 
         console.log(`${parsedEvent.parsed_type} parsed`, JSON.stringify({
           meta_message_id: parsedEvent.meta_message_id,
@@ -213,10 +236,14 @@ Deno.serve(async (req) => {
         const duplicateByStatus = parsedEvent.status_event_id
           ? await base44.asServiceRole.entities.BitacoraWhatsApp.filter({ status_event_id: parsedEvent.status_event_id })
           : [];
+        const duplicateWebhookEvent = parsedEvent.message_id
+          ? await base44.asServiceRole.entities.WebhookEvent.filter({ message_id: parsedEvent.message_id, event_type: parsedEvent.event_type, conversation_key: stableConversationKey })
+          : [];
         const duplicate = duplicateCandidates[0] || duplicateByMessage[0] || duplicateByStatus[0] || null;
+        const isDuplicateWebhook = duplicateWebhookEvent.length > 1;
 
-        if (duplicate) {
-          console.log('duplicate skipped', JSON.stringify({ message_id: parsedEvent.message_id, meta_message_id: parsedEvent.meta_message_id }));
+        if (duplicate || isDuplicateWebhook) {
+          console.log('duplicate skipped', JSON.stringify({ message_id: parsedEvent.message_id, meta_message_id: parsedEvent.meta_message_id, event_type: parsedEvent.event_type }));
           if (parsedEvent.event_type === 'status') {
             await base44.asServiceRole.entities.BitacoraWhatsApp.update(duplicate.id, {
               delivery_status: (parsedEvent.text || '').toLowerCase(),
@@ -263,7 +290,7 @@ Deno.serve(async (req) => {
             event_type: parsedEvent.event_type,
             target_message_id: parsedEvent.target_message_id || null,
             reaction_emoji: parsedEvent.reaction_emoji || null,
-            channel: 'whatsapp',
+            channel,
             channel_id: channelId,
             tenant_id: tenantId,
             direction: parsedEvent.direction,
@@ -294,7 +321,7 @@ Deno.serve(async (req) => {
           }
         }
 
-        if (conv?.id && ['message', 'media', 'message_echo', 'reaction', 'status'].includes(parsedEvent.event_type)) {
+        if (conv?.id && ['message', 'media', 'message_echo', 'reaction', 'status'].includes(parsedEvent.event_type) && !isDuplicateWebhook) {
           const timelineTitle = parsedEvent.event_type === 'reaction'
             ? 'Reacción recibida'
             : parsedEvent.event_type === 'status'
