@@ -65,9 +65,19 @@ export default function AISuggestionsPanel({ inquiry, customer, phone, conversat
     await base44.entities.ClientInquiry.update(inquiry.id, {
       service_type: latest.service || inquiry.service_type,
       priority: latest.urgency || inquiry.priority,
-      notes: [inquiry.notes, `IA: ${latest.summary}`].filter(Boolean).join('\n\n')
+      human_review_status: 'approved',
+      approved_operational_snapshot: JSON.stringify({
+        detected_service: latest.service,
+        detected_urgency: latest.urgency,
+        detected_location: latest.direction_or_location,
+        detected_amounts: latest.payments,
+        detected_dates: latest.dates,
+        ai_confidence: latest.ai_confidence_score,
+        missing_fields: latest.missing_fields || []
+      }),
+      notes: [inquiry.notes, `IA revisada y aprobada: ${latest.summary}`].filter(Boolean).join('\n\n')
     });
-    await base44.entities.ConversationAnalysis.update(latest.id, { status: 'applied', inquiry_id: inquiry.id });
+    await base44.entities.ConversationAnalysis.update(latest.id, { status: 'reviewed', inquiry_id: inquiry.id });
     queryClient.invalidateQueries({ queryKey: ['inquiry', inquiry.id] });
     queryClient.invalidateQueries({ queryKey: ['clientInquiries'] });
     queryClient.invalidateQueries({ queryKey: ['conversationAnalysis'] });
@@ -163,7 +173,7 @@ export default function AISuggestionsPanel({ inquiry, customer, phone, conversat
             <div className="grid gap-2 pt-2 border-t">
               <div className="flex flex-wrap gap-2">
                 <Button type="button" onClick={onOpenCreateInquiry} className="bg-proman-yellow text-proman-navy hover:opacity-90">Crear Inquiry</Button>
-                <Button type="button" variant="outline" onClick={handleUpdateJob} disabled={!inquiry?.id}>Actualizar estado</Button>
+                <Button type="button" variant="outline" onClick={handleUpdateJob} disabled={!inquiry?.id}>{inquiry?.human_review_status === 'approved' ? '✓ Aprobado' : 'Aprobar IA'}</Button>
                 <Button type="button" variant="destructive" onClick={handleMarkUrgent}>
                   <AlertTriangle className="w-4 h-4 mr-2" />Marcar urgente
                 </Button>
