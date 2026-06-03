@@ -1,0 +1,41 @@
+{
+  "name": "TimeEntry",
+  "type": "object",
+  "properties": {
+    "employee_email": {
+      "type": "string",
+      "description": "Email del empleado"
+    },
+    "entry_type": {
+      "type": "string",
+      "enum": [
+        "entrada",
+        "salida",
+        "hora_extra"
+      ],
+      "description": "Tipo de registro"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha y hora del registro"
+    },
+    "work_id": {
+      "type": "string",
+      "description": "ID del trabajo asociado (opcional)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notas adicionales"
+    },
+    "location": {
+      "type": "string",
+      "description": "Ubicaci\u00f3n donde se registr\u00f3"
+    }
+  },
+  "required": [
+    "employee_email",
+    "entry_type",
+    "timestamp"
+  ]
+}

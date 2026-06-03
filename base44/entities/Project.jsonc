@@ -1,0 +1,64 @@
+{
+  "name": "Project",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "T\u00edtulo del proyecto"
+    },
+    "title_en": {
+      "type": "string",
+      "description": "Project title in English"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descripci\u00f3n del trabajo realizado"
+    },
+    "description_en": {
+      "type": "string",
+      "description": "Description of the work done in English"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "fontaneria",
+        "electricidad",
+        "construccion",
+        "remodelacion",
+        "pintura",
+        "mantenimiento"
+      ],
+      "description": "Categor\u00eda del proyecto"
+    },
+    "budget": {
+      "type": "number",
+      "description": "Presupuesto del proyecto en USD"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "URL de la imagen del proyecto"
+    },
+    "before_image_url": {
+      "type": "string",
+      "description": "Imagen antes del trabajo"
+    },
+    "after_image_url": {
+      "type": "string",
+      "description": "Imagen despu\u00e9s del trabajo"
+    },
+    "completion_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha de finalizaci\u00f3n"
+    },
+    "location": {
+      "type": "string",
+      "description": "Ubicaci\u00f3n del proyecto"
+    }
+  },
+  "required": [
+    "title",
+    "description",
+    "category"
+  ]
+}

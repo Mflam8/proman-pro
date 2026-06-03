@@ -1,0 +1,63 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "employee_name": {
+      "type": "string",
+      "description": "Nombre oficial del empleado en PROMAN (editable por admin)"
+    },
+    "hire_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha de contrataci\u00f3n del empleado"
+    },
+    "profile_picture_url": {
+      "type": "string",
+      "description": "URL de la foto de perfil del usuario"
+    },
+    "onboarding_completed": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si el usuario complet\u00f3 el proceso de onboarding"
+    },
+    "employee_type": {
+      "type": "string",
+      "enum": [
+        "Empleado",
+        "Supervisor",
+        "Admin"
+      ],
+      "description": "Tipo de empleado en PROMAN (no confundir con role de Base44)"
+    },
+    "technician_type": {
+      "type": "string",
+      "enum": [
+        "planilla",
+        "subcontratado"
+      ],
+      "description": "Tipo de t\u00e9cnico: en planilla o subcontratado"
+    },
+    "proman_percentage": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Porcentaje que recibe PROMAN de la mano de obra (ej: 25)"
+    },
+    "technician_percentage": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Porcentaje que recibe el t\u00e9cnico de la mano de obra (ej: 75)"
+    },
+    "payment_method_preference": {
+      "type": "string",
+      "enum": [
+        "efectivo",
+        "transferencia",
+        "deposito"
+      ],
+      "description": "Forma de pago habitual del t\u00e9cnico"
+    }
+  },
+  "required": []
+}

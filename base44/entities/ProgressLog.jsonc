@@ -1,0 +1,104 @@
+{
+  "name": "ProgressLog",
+  "type": "object",
+  "properties": {
+    "inquiry_id": {
+      "type": "string",
+      "description": "ID del trabajo (ClientInquiry)"
+    },
+    "log_type": {
+      "type": "string",
+      "enum": [
+        "whatsapp",
+        "llamada",
+        "avance_tecnico",
+        "coordinacion",
+        "cambio_estado",
+        "nota_interna"
+      ],
+      "default": "nota_interna",
+      "description": "Tipo de registro en la bit\u00e1cora"
+    },
+    "message_text": {
+      "type": "string",
+      "description": "Texto completo del mensaje o nota (sin editar, sin resumir)"
+    },
+    "from_phone": {
+      "type": "string",
+      "description": "N\u00famero desde el cual se envi\u00f3 el mensaje (para WhatsApp/llamadas)"
+    },
+    "author_phone": {
+      "type": "string",
+      "description": "Qui\u00e9n escribi\u00f3 realmente (\u00fatil en grupos de WhatsApp)"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha y hora exacta del evento"
+    },
+    "progress_percentage": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Porcentaje de avance registrado (solo para avances t\u00e9cnicos)"
+    },
+    "hours_worked": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Horas reales trabajadas en esta actualizaci\u00f3n"
+    },
+    "work_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha en que se realiz\u00f3 el trabajo"
+    },
+    "work_done": {
+      "type": "string",
+      "description": "Qu\u00e9 se realiz\u00f3 en esta actualizaci\u00f3n"
+    },
+    "work_pending": {
+      "type": "string",
+      "description": "Qu\u00e9 falta por hacer"
+    },
+    "next_follow_up_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha del pr\u00f3ximo seguimiento"
+    },
+    "before_photos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "URLs de fotos antes"
+    },
+    "after_photos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "URLs de fotos despu\u00e9s"
+    },
+    "media_url": {
+      "type": "string",
+      "description": "URL de archivo multimedia (foto, video, audio, documento)"
+    },
+    "updated_by": {
+      "type": "string",
+      "description": "Email del usuario que hizo la actualizaci\u00f3n"
+    },
+    "created_by": {
+      "type": "string",
+      "description": "Qui\u00e9n cre\u00f3 este registro (sistema/asistente/t\u00e9cnico/admin)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notas adicionales del t\u00e9cnico"
+    }
+  },
+  "required": [
+    "inquiry_id",
+    "log_type",
+    "timestamp"
+  ]
+}

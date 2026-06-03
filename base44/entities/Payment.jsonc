@@ -1,0 +1,113 @@
+{
+  "name": "Payment",
+  "type": "object",
+  "properties": {
+    "inquiry_id": {
+      "type": "string",
+      "description": "ID de la solicitud de cliente asociada"
+    },
+    "amount_paid": {
+      "type": "number",
+      "description": "Monto total pagado por el cliente"
+    },
+    "mano_de_obra": {
+      "type": "number",
+      "description": "Monto correspondiente a mano de obra (sobre esto se calculan porcentajes)"
+    },
+    "materiales": {
+      "type": "number",
+      "description": "Monto correspondiente a materiales (siempre se registra \u00edntegro)"
+    },
+    "payment_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha en que se realiz\u00f3 el pago"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "efectivo",
+        "transferencia",
+        "deposito",
+        "tarjeta",
+        "otro"
+      ],
+      "default": "efectivo",
+      "description": "M\u00e9todo de pago utilizado"
+    },
+    "destination_account_type": {
+      "type": "string",
+      "enum": [
+        "propia",
+        "terceros",
+        "n/a"
+      ],
+      "default": "n/a",
+      "description": "Tipo de cuenta destino (propia = empresa, terceros = otros, n/a = efectivo/no aplica)"
+    },
+    "collected_by": {
+      "type": "string",
+      "description": "Nombre de la persona (t\u00e9cnico) que recibi\u00f3 el dinero f\u00edsicamente"
+    },
+    "quien_cobro": {
+      "type": "string",
+      "enum": [
+        "proman",
+        "tecnico",
+        "tercero"
+      ],
+      "description": "Qui\u00e9n cobr\u00f3 el dinero: PROMAN directamente, el T\u00e9cnico, o un Tercero"
+    },
+    "quien_pago": {
+      "type": "string",
+      "description": "Nombre de la persona que realiz\u00f3 el pago"
+    },
+    "a_quien_pago": {
+      "type": "string",
+      "enum": [
+        "empresa",
+        "tecnico",
+        "tercero"
+      ],
+      "description": "A qui\u00e9n se le pag\u00f3 directamente"
+    },
+    "iva_incluido": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si el monto pagado incluye IVA"
+    },
+    "documento_emitido": {
+      "type": "string",
+      "enum": [
+        "ninguno",
+        "recibo",
+        "factura",
+        "ccf"
+      ],
+      "default": "ninguno",
+      "description": "Tipo de documento emitido al cliente"
+    },
+    "transaction_id": {
+      "type": "string",
+      "description": "Identificador de la transacci\u00f3n (opcional)"
+    },
+    "confirmation_url": {
+      "type": "string",
+      "description": "URL de la confirmaci\u00f3n del pago (captura, recibo PDF, etc.)"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notas adicionales sobre el pago"
+    },
+    "recorded_by": {
+      "type": "string",
+      "description": "Email del usuario que registr\u00f3 el pago"
+    }
+  },
+  "required": [
+    "inquiry_id",
+    "amount_paid",
+    "payment_date",
+    "payment_method"
+  ]
+}

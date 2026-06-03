@@ -1,0 +1,156 @@
+{
+  "name": "Equipment",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nombre del equipo o herramienta"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "plomeria",
+        "electricidad",
+        "construccion",
+        "pintura",
+        "seguridad",
+        "medicion",
+        "otro"
+      ],
+      "description": "Categor\u00eda del equipo"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descripci\u00f3n detallada"
+    },
+    "brand": {
+      "type": "string",
+      "description": "Marca del equipo"
+    },
+    "model": {
+      "type": "string",
+      "description": "Modelo"
+    },
+    "serial_number": {
+      "type": "string",
+      "description": "N\u00famero de serie"
+    },
+    "total_quantity": {
+      "type": "number",
+      "default": 1,
+      "description": "Cantidad total en inventario"
+    },
+    "available_quantity": {
+      "type": "number",
+      "default": 1,
+      "description": "Cantidad disponible para uso"
+    },
+    "in_use_quantity": {
+      "type": "number",
+      "default": 0,
+      "description": "Cantidad actualmente en uso"
+    },
+    "min_stock_alert": {
+      "type": "number",
+      "default": 1,
+      "description": "Alerta cuando est\u00e9 por debajo de esta cantidad"
+    },
+    "condition": {
+      "type": "string",
+      "enum": [
+        "excelente",
+        "bueno",
+        "regular",
+        "malo",
+        "requiere_mantenimiento"
+      ],
+      "default": "bueno",
+      "description": "Estado del equipo"
+    },
+    "location": {
+      "type": "string",
+      "description": "Ubicaci\u00f3n f\u00edsica del equipo (bodega, oficina, etc.)"
+    },
+    "purchase_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha de compra"
+    },
+    "purchase_price": {
+      "type": "number",
+      "description": "Precio de compra"
+    },
+    "current_value": {
+      "type": "number",
+      "description": "Valor actual estimado"
+    },
+    "assigned_to": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "employee_email": {
+            "type": "string"
+          },
+          "quantity": {
+            "type": "number"
+          },
+          "assigned_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "expected_return_date": {
+            "type": "string",
+            "format": "date"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Lista de empleados que tienen el equipo asignado"
+    },
+    "maintenance_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "description": {
+            "type": "string"
+          },
+          "cost": {
+            "type": "number"
+          }
+        }
+      },
+      "description": "Historial de mantenimiento"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "URL de imagen del equipo"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Si el equipo est\u00e1 activo en inventario"
+    },
+    "requires_certification": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si requiere certificaci\u00f3n para usarlo"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notas adicionales"
+    }
+  },
+  "required": [
+    "name",
+    "category",
+    "total_quantity"
+  ]
+}

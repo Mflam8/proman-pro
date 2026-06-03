@@ -1,0 +1,163 @@
+{
+  "name": "Service",
+  "type": "object",
+  "properties": {
+    "rubros": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "Hogar",
+          "Comercial",
+          "Restaurantes",
+          "Hospitales",
+          "Emergencias"
+        ]
+      },
+      "description": "Rubros a los que aplica este servicio (puede ser m\u00faltiple)"
+    },
+    "service_name": {
+      "type": "string",
+      "description": "Nombre del servicio espec\u00edfico"
+    },
+    "service_name_en": {
+      "type": "string",
+      "description": "Service name in English"
+    },
+    "description": {
+      "type": "string",
+      "description": "Descripci\u00f3n detallada del servicio"
+    },
+    "description_en": {
+      "type": "string",
+      "description": "Detailed service description in English"
+    },
+    "complexity_level": {
+      "type": "string",
+      "enum": [
+        "basico",
+        "medio",
+        "complejo",
+        "experto"
+      ],
+      "default": "medio",
+      "description": "Nivel de complejidad del servicio"
+    },
+    "estimated_hours": {
+      "type": "number",
+      "description": "Horas estimadas para completar el servicio"
+    },
+    "base_price": {
+      "type": "number",
+      "description": "Precio base estimado en USD"
+    },
+    "tipo_precio": {
+      "type": "string",
+      "enum": [
+        "fijo",
+        "variable",
+        "requiere_visita"
+      ],
+      "default": "variable",
+      "description": "Tipo de precio del servicio"
+    },
+    "requiere_visita": {
+      "type": "boolean",
+      "default": false,
+      "description": "Si el servicio requiere visita t\u00e9cnica antes de cotizar"
+    },
+    "precio_base_zona_a": {
+      "type": "number",
+      "description": "Precio base para zona kilom\u00e9trica A"
+    },
+    "precio_base_zona_b": {
+      "type": "number",
+      "description": "Precio base para zona kilom\u00e9trica B"
+    },
+    "precio_base_zona_c": {
+      "type": "number",
+      "description": "Precio base para zona kilom\u00e9trica C"
+    },
+    "price_range_min": {
+      "type": "number",
+      "description": "Precio m\u00ednimo del rango"
+    },
+    "price_range_max": {
+      "type": "number",
+      "description": "Precio m\u00e1ximo del rango"
+    },
+    "required_tools": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Herramientas necesarias"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Si el servicio est\u00e1 activo"
+    },
+    "icon": {
+      "type": "string",
+      "description": "Nombre del \u00edcono de Lucide"
+    },
+    "features": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Lista de caracter\u00edsticas incluidas"
+    },
+    "features_en": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of included features in English"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "URL de imagen del servicio"
+    },
+    "notas_servicio": {
+      "type": "string",
+      "description": "Notas operativas sobre el servicio"
+    },
+    "area": {
+      "type": "string",
+      "enum": [
+        "fontaneria",
+        "cisternas",
+        "campanas_ductos_extractores"
+      ],
+      "description": "\u00c1rea/vertical interna del servicio"
+    },
+    "distance_pricing": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "km": {
+            "type": "number",
+            "description": "Radio de distancia en km"
+          },
+          "price": {
+            "type": "number",
+            "description": "Precio en USD para ese tramo"
+          }
+        },
+        "required": [
+          "km",
+          "price"
+        ]
+      },
+      "description": "Precios por tramos de distancia (ej: 10, 35, 70, 115, 175 km)"
+    }
+  },
+  "required": [
+    "rubros",
+    "service_name",
+    "estimated_hours"
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "name": "WhatsappConversation",
+  "type": "object",
+  "properties": {
+    "customer_id": {
+      "type": "string",
+      "description": "ID del cliente due\u00f1o de la conversaci\u00f3n"
+    },
+    "is_open": {
+      "type": "boolean",
+      "default": true,
+      "description": "Si la conversaci\u00f3n est\u00e1 abierta"
+    },
+    "channel": {
+      "type": "string",
+      "default": "whatsapp",
+      "description": "Canal de la conversaci\u00f3n"
+    },
+    "last_message_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha del \u00faltimo mensaje"
+    },
+    "last_message_id": {
+      "type": "string",
+      "description": "ID del \u00faltimo registro en BitacoraWhatsApp"
+    },
+    "subject": {
+      "type": "string",
+      "description": "Asunto opcional del hilo"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notas internas"
+    }
+  },
+  "required": [
+    "customer_id"
+  ]
+}

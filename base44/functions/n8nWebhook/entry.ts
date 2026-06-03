@@ -62,6 +62,133 @@ Deno.serve(async (req) => {
     return 'message';
   };
 
+  const listActiveCustomersByPhone = async (rawPhone) => {
+    const normalizedPhone = normalizePhone(rawPhone);
+    if (!normalizedPhone) return [];
+
+    const searches = await Promise.all([
+      base44.asServiceRole.entities.Customer.filter({ phone: normalizedPhone }),
+      base44.asServiceRole.entities.Customer.filter({ normalized_phone: normalizedPhone }),
+      base44.asServiceRole.entities.Customer.filter({ wa_id: normalizedPhone }),
+      base44.asServiceRole.entities.Customer.filter({ canonical_wa_id: normalizedPhone })
+    ]);
+
+    const unique = new Map();
+    searches.flat().forEach((customer) => {
+      if (customer?.id && customer.activo !== false) {
+        unique.set(customer.id, customer);
+      }
+    });
+
+    return [...unique.values()];
+  };
+
+  const chooseCanonicalCustomer = async (customers) => {
+    if (customers.length === 0) return null;
+    if (customers.length === 1) return customers[0];
+
+    const scored = await Promise.all(customers.map(async (customer) => {
+      const [messages, conversations, inquiries] = await Promise.all([
+        base44.asServiceRole.entities.BitacoraWhatsApp.filter({ customer_id: customer.id }),
+        base44.asServiceRole.entities.WhatsappConversation.filter({ customer_id: customer.id }),
+        base44.asServiceRole.entities.ClientInquiry.filter({ customer_id: customer.id })
+      ]);
+
+      return {
+        customer,
+        score: (messages.length * 10) + (conversations.length * 3) + (inquiries.length * 5)
+      };
+    }));
+
+    scored.sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return new Date(a.customer.created_date || 0).getTime() - new Date(b.customer.created_date || 0).getTime();
+    });
+
+    return scored[0].customer;
+  };
+
+  const mergeCustomerIntoCanonical = async (canonical, duplicate) => {
+    const [messages, conversations, inquiries, analyses] = await Promise.all([
+      base44.asServiceRole.entities.BitacoraWhatsApp.filter({ customer_id: duplicate.id }),
+      base44.asServiceRole.entities.WhatsappConversation.filter({ customer_id: duplicate.id }),
+      base44.asServiceRole.entities.ClientInquiry.filter({ customer_id: duplicate.id }),
+      base44.asServiceRole.entities.ConversationAnalysis.filter({ customer_id: duplicate.id })
+    ]);
+
+    for (const message of messages) {
+      await base44.asServiceRole.entities.BitacoraWhatsApp.update(message.id, { customer_id: canonical.id });
+    }
+
+    for (const conversation of conversations) {
+      await base44.asServiceRole.entities.WhatsappConversation.update(conversation.id, { customer_id: canonical.id });
+    }
+
+    for (const inquiry of inquiries) {
+      await base44.asServiceRole.entities.ClientInquiry.update(inquiry.id, { customer_id: canonical.id });
+    }
+
+    for (const analysis of analyses) {
+      await base44.asServiceRole.entities.ConversationAnalysis.update(analysis.id, { customer_id: canonical.id });
+    }
+
+    const mergeNote = `Merged into ${canonical.id} on ${new Date().toISOString()}`;
+    await base44.asServiceRole.entities.Customer.update(duplicate.id, {
+      activo: false,
+      notes: duplicate.notes ? `${duplicate.notes}\n${mergeNote}` : mergeNote
+    });
+  };
+
+  const ensureCanonicalCustomer = async ({ phone, customerName, channel = 'whatsapp' }) => {
+    const normalizedPhone = normalizePhone(phone);
+    if (!normalizedPhone) return null;
+
+    let customers = await listActiveCustomersByPhone(normalizedPhone);
+
+    if (customers.length === 0) {
+      await base44.asServiceRole.entities.Customer.create({
+        full_name: customerName || 'Sin nombre',
+        phone: normalizedPhone,
+        normalized_phone: normalizedPhone,
+        wa_id: normalizedPhone,
+        canonical_wa_id: normalizedPhone,
+        preferred_contact: 'whatsapp',
+        source: 'whatsapp_bot',
+        channel
+      });
+      customers = await listActiveCustomersByPhone(normalizedPhone);
+    }
+
+    const canonical = await chooseCanonicalCustomer(customers);
+    if (!canonical) return null;
+
+    const patch = {};
+    if (!canonical.phone) patch.phone = normalizedPhone;
+    if (!canonical.normalized_phone) patch.normalized_phone = normalizedPhone;
+    if (!canonical.wa_id) patch.wa_id = normalizedPhone;
+    if (!canonical.canonical_wa_id) patch.canonical_wa_id = normalizedPhone;
+    if ((!canonical.full_name || canonical.full_name === 'Sin nombre') && customerName) patch.full_name = customerName;
+    if (canonical.channel !== channel) patch.channel = channel;
+
+    if (Object.keys(patch).length > 0) {
+      await base44.asServiceRole.entities.Customer.update(canonical.id, patch);
+    }
+
+    for (const customer of customers) {
+      if (customer.id !== canonical.id) {
+        await mergeCustomerIntoCanonical(canonical, customer);
+      }
+    }
+
+    const refreshed = await base44.asServiceRole.entities.Customer.filter({ id: canonical.id });
+    return refreshed[0] || { ...canonical, ...patch };
+  };
+
+  const findCanonicalCustomer = async (phone) => {
+    const customers = await listActiveCustomersByPhone(phone);
+    return chooseCanonicalCustomer(customers);
+  };
+
   // Soporte enriquecido (compatibilidad con nuevo formato de n8n)
   try {
     const rawPayload = data?.raw_payload || body;
@@ -191,33 +318,26 @@ Deno.serve(async (req) => {
           raw_payload: JSON.stringify(parsedEvent.raw_payload || {})
         });
 
-        let customer = null;
-        if (parsedEvent.contact_phone) {
-          let found = await base44.asServiceRole.entities.Customer.filter({ phone: parsedEvent.contact_phone });
-          if (found.length === 0) {
-            found = await base44.asServiceRole.entities.Customer.filter({ wa_id: parsedEvent.contact_phone });
-          }
-          if (found.length > 0) {
-            customer = found[0];
-            if ((!customer.full_name || customer.full_name === 'Sin nombre') && customerName) {
-              await base44.asServiceRole.entities.Customer.update(customer.id, { full_name: customerName });
-            }
-          } else {
-            customer = await base44.asServiceRole.entities.Customer.create({
-              full_name: customerName || 'Sin nombre',
+        const customer = parsedEvent.contact_phone
+          ? await ensureCanonicalCustomer({
               phone: parsedEvent.contact_phone,
-              wa_id: parsedEvent.contact_phone,
-              preferred_contact: 'whatsapp',
-              source: 'whatsapp_bot',
+              customerName,
               channel
-            });
-          }
-        }
+            })
+          : null;
 
         let conv = null;
         if (customer) {
-          const existingConvs = await base44.asServiceRole.entities.WhatsappConversation.filter({ customer_id: customer.id, subject: stableConversationKey });
-          conv = existingConvs[0] || await base44.asServiceRole.entities.WhatsappConversation.create({
+          const exactConvs = await base44.asServiceRole.entities.WhatsappConversation.filter({ customer_id: customer.id, subject: stableConversationKey });
+          const openConvs = exactConvs.length > 0
+            ? exactConvs
+            : await base44.asServiceRole.entities.WhatsappConversation.filter({ customer_id: customer.id, is_open: true });
+
+          const matchedConv = openConvs
+            .filter((item) => item.subject === stableConversationKey || item.subject?.startsWith(`${parsedEvent.contact_phone}_`) || item.notes?.includes(`ck:${parsedEvent.contact_phone}_`))
+            .sort((a, b) => new Date(b.last_message_at || 0).getTime() - new Date(a.last_message_at || 0).getTime())[0];
+
+          conv = matchedConv || await base44.asServiceRole.entities.WhatsappConversation.create({
             customer_id: customer.id,
             is_open: true,
             channel: 'whatsapp',
@@ -225,6 +345,13 @@ Deno.serve(async (req) => {
             notes: `ck:${stableConversationKey}`,
             subject: stableConversationKey
           });
+
+          if (conv.subject !== stableConversationKey || conv.notes !== `ck:${stableConversationKey}`) {
+            await base44.asServiceRole.entities.WhatsappConversation.update(conv.id, {
+              subject: stableConversationKey,
+              notes: `ck:${stableConversationKey}`
+            });
+          }
         }
 
         const duplicateCandidates = parsedEvent.provider_message_id
@@ -392,23 +519,17 @@ Deno.serve(async (req) => {
 
         if (!phone) return Response.json({ error: 'phone is required' }, { status: 400 });
 
-        // Verificar si ya existe el cliente
-        const existing = await base44.asServiceRole.entities.Customer.filter({ phone });
-        let customer;
+        const normalizedPhone = normalizePhone(phone);
+        const existing = await listActiveCustomersByPhone(normalizedPhone);
+        const customer = await ensureCanonicalCustomer({
+          phone: normalizedPhone,
+          customerName: name,
+          channel: 'whatsapp'
+        });
 
         if (existing.length > 0) {
-          customer = existing[0];
           console.log(`♻️ Cliente existente encontrado: ${customer.id}`);
         } else {
-          // Crear nuevo cliente
-          customer = await base44.asServiceRole.entities.Customer.create({
-            full_name: name || 'Sin nombre',
-            phone,
-            status: 'nuevo',
-            customer_type: 'residencial',
-            source: 'whatsapp_bot',
-            preferred_contact: 'whatsapp',
-          });
           console.log(`✅ Nuevo cliente creado: ${customer.id}`);
         }
 
@@ -487,28 +608,11 @@ Deno.serve(async (req) => {
         }
 
         // 1) Upsert Customer by phone or wa_id
-        let customer = null;
-        let found = await base44.asServiceRole.entities.Customer.filter({ phone: resolvedPhone });
-        if (found.length === 0 && wa_id) {
-          const byWa = await base44.asServiceRole.entities.Customer.filter({ wa_id });
-          found = byWa;
-        }
-        if (found.length > 0) {
-          customer = found[0];
-          if ((!customer.full_name || customer.full_name === 'Sin nombre') && customerHints?.name) {
-            await base44.asServiceRole.entities.Customer.update(customer.id, { full_name: customerHints.name });
-            customer.full_name = customerHints.name;
-          }
-        } else {
-          customer = await base44.asServiceRole.entities.Customer.create({
-            full_name: customerHints?.name || 'Sin nombre',
-            phone: resolvedPhone,
-            wa_id: wa_id || resolvedPhone,
-            preferred_contact: 'whatsapp',
-            source: 'whatsapp_bot',
-            channel: 'whatsapp'
-          });
-        }
+        const customer = await ensureCanonicalCustomer({
+          phone: resolvedPhone,
+          customerName: customerHints?.name,
+          channel: 'whatsapp'
+        });
 
         // 4) Create or reuse open conversation
         const openConvs = await base44.asServiceRole.entities.WhatsappConversation.filter({ customer_id: customer.id, is_open: true });
@@ -765,8 +869,7 @@ Deno.serve(async (req) => {
           const results = await base44.asServiceRole.entities.Customer.filter({ id: customer_id });
           customer = results[0] || null;
         } else {
-          const results = await base44.asServiceRole.entities.Customer.filter({ phone });
-          customer = results[0] || null;
+          customer = await findCanonicalCustomer(phone);
         }
 
         if (!customer) {
@@ -831,9 +934,8 @@ Deno.serve(async (req) => {
         }
 
         // 2. Buscar en clientes existentes
-        const customers = await base44.asServiceRole.entities.Customer.filter({ phone });
-        if (customers.length > 0) {
-          const c = customers[0];
+        const c = await findCanonicalCustomer(phone);
+        if (c) {
           const isCorporate = c.customer_type === 'corporativo' || c.customer_type === 'contrato' || c.customer_type === 'comercial';
           return Response.json({
             success: true,
@@ -939,9 +1041,9 @@ Deno.serve(async (req) => {
 
         // Si no hay inquiry_id pero hay phone, buscar el trabajo activo más reciente
         if (!targetInquiryId && phone) {
-          const customers = await base44.asServiceRole.entities.Customer.filter({ phone });
-          if (customers.length > 0) {
-            const jobs = await base44.asServiceRole.entities.ClientInquiry.filter({ customer_id: customers[0].id });
+          const customer = await findCanonicalCustomer(phone);
+          if (customer) {
+            const jobs = await base44.asServiceRole.entities.ClientInquiry.filter({ customer_id: customer.id });
             const active = jobs.find(j => ['nuevo', 'pendiente_agenda', 'agendado'].includes(j.status));
             targetInquiryId = active?.id || jobs[0]?.id;
           }

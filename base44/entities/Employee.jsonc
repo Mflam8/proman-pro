@@ -1,0 +1,77 @@
+{
+  "name": "Employee",
+  "type": "object",
+  "properties": {
+    "employee_name": {
+      "type": "string",
+      "description": "Nombre completo del empleado"
+    },
+    "employee_type": {
+      "type": "string",
+      "enum": [
+        "Empleado",
+        "Supervisor"
+      ],
+      "default": "Empleado",
+      "description": "Tipo de empleado"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Tel\u00e9fono del empleado"
+    },
+    "email": {
+      "type": "string",
+      "description": "Email del empleado (opcional)"
+    },
+    "hire_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha de contrataci\u00f3n"
+    },
+    "profile_picture_url": {
+      "type": "string",
+      "description": "URL de foto de perfil"
+    },
+    "technician_type": {
+      "type": "string",
+      "enum": [
+        "planilla",
+        "subcontratado"
+      ],
+      "default": "planilla",
+      "description": "Tipo de t\u00e9cnico para pagos"
+    },
+    "proman_percentage": {
+      "type": "number",
+      "default": 100,
+      "description": "% PROMAN de mano de obra"
+    },
+    "technician_percentage": {
+      "type": "number",
+      "default": 0,
+      "description": "% T\u00e9cnico de mano de obra"
+    },
+    "payment_method_preference": {
+      "type": "string",
+      "enum": [
+        "efectivo",
+        "transferencia",
+        "deposito"
+      ],
+      "default": "efectivo",
+      "description": "M\u00e9todo de pago preferido"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Si el empleado est\u00e1 activo"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Notas sobre el empleado"
+    }
+  },
+  "required": [
+    "employee_name"
+  ]
+}
