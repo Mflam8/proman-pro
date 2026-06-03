@@ -193,25 +193,19 @@ Deno.serve(async (req) => {
       return patch;
     };
 
-    const buildReferenceCache = async (targets) => {
-      const cache = {};
-      for (const target of targets) {
-        cache[target.entity] = await listAll(base44.asServiceRole.entities[target.entity]);
-      }
-      return cache;
-    };
-
-    const updateCachedEntityReferences = async (cache, entityName, field, fromId, toId) => {
+    const updateEntityReferences = async (entityName, field, fromId, toId) => {
       if (!fromId || !toId || fromId === toId) return 0;
       const entityApi = base44.asServiceRole.entities[entityName];
-      const records = cache[entityName] || [];
       let updated = 0;
 
-      for (const record of records) {
-        if (record[field] !== fromId) continue;
-        await entityApi.update(record.id, { [field]: toId });
-        record[field] = toId;
-        updated += 1;
+      while (true) {
+        const batch = await entityApi.filter({ [field]: fromId }, 'created_date', pageSize, 0);
+        if (!Array.isArray(batch) || batch.length === 0) break;
+
+        for (const record of batch) {
+          await entityApi.update(record.id, { [field]: toId });
+          updated += 1;
+        }
       }
 
       return updated;
@@ -266,8 +260,6 @@ Deno.serve(async (req) => {
       };
     };
 
-    const customerReferenceCache = mergeDuplicates ? await buildReferenceCache(customerReferenceTargets) : {};
-    const conversationReferenceCache = mergeDuplicates ? await buildReferenceCache(conversationReferenceTargets) : {};
     const initialCustomers = await listAll(base44.asServiceRole.entities.Customer);
     const initialConversations = await listAll(base44.asServiceRole.entities.WhatsappConversation);
     const initialState = summarizeState(initialCustomers, initialConversations);
@@ -310,7 +302,7 @@ Deno.serve(async (req) => {
           }
 
           for (const target of customerReferenceTargets) {
-            customerReferenceUpdates += await updateCachedEntityReferences(customerReferenceCache, target.entity, target.field, duplicate.id, canonical.id);
+            customerReferenceUpdates += await updateEntityReferences(target.entity, target.field, duplicate.id, canonical.id);
           }
 
           await base44.asServiceRole.entities.Customer.delete(duplicate.id);
@@ -377,7 +369,7 @@ Deno.serve(async (req) => {
           }
 
           for (const target of conversationReferenceTargets) {
-            conversationReferenceUpdates += await updateCachedEntityReferences(conversationReferenceCache, target.entity, target.field, duplicate.id, keep.id);
+            conversationReferenceUpdates += await updateEntityReferences(target.entity, target.field, duplicate.id, keep.id);
           }
 
           await base44.asServiceRole.entities.WhatsappConversation.delete(duplicate.id);
