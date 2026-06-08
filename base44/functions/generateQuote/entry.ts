@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.20';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 const LOGO_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ef04efb2facc1f9d963736/135f5bee2_21558763_235265087000605_2527538411050239409_n-Editado.png';
 
@@ -264,29 +264,11 @@ Deno.serve(async (req) => {
 </html>
         `;
 
-        // Crear archivo HTML
         const quoteNum = inquiry.id.substring(0, 8).toUpperCase();
-        const timestamp = Date.now();
-        
-        // Convertir string a Uint8Array para Deno
-        const encoder = new TextEncoder();
-        const fileContent = encoder.encode(html);
-        
-        // Crear File usando el constructor de Deno
-        const file = new File([fileContent], `cotizacion-${quoteNum}-${timestamp}.html`, { 
-            type: 'text/html; charset=utf-8' 
-        });
-        
-        const { file_url } = await base44.asServiceRole.integrations.Core.UploadFile({ file });
-
-        // Actualizar el inquiry con la URL
-        await base44.asServiceRole.entities.ClientInquiry.update(inquiryId, {
-            quote_pdf_url: file_url
-        });
 
         return Response.json({ 
-            success: true, 
-            pdf_url: file_url,
+            success: true,
+            filename: `cotizacion-${quoteNum}.html`,
             html: html,
             message: 'Cotización generada exitosamente'
         });
