@@ -1,7 +1,18 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 import { jsPDF } from 'npm:jspdf@2.5.1';
 
 const LOGO_URL = 'https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68ef04efb2facc1f9d963736/135f5bee2_21558763_235265087000605_2527538411050239409_n-Editado.png';
+
+function arrayBufferToBase64(buffer) {
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+
+    for (let i = 0; i < bytes.length; i += 0x8000) {
+        binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+    }
+
+    return btoa(binary);
+}
 
 async function loadImageAsBase64(url) {
     try {
@@ -279,21 +290,13 @@ Deno.serve(async (req) => {
         doc.setFont(undefined, 'bold');
         doc.text('¡Gracias por confiar en PROMAN SERVICES!', 105, 278, { align: 'center' });
 
-        // Convertir a buffer y subir
         const pdfBytes = doc.output('arraybuffer');
-        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-        const file = new File([blob], `factura-${facturaNum}.pdf`, { type: 'application/pdf' });
-        
-        const { file_url } = await base44.asServiceRole.integrations.Core.UploadFile({ file });
-
-        // Actualizar el inquiry
-        await base44.asServiceRole.entities.ClientInquiry.update(inquiryId, {
-            quote_pdf_url: file_url
-        });
+        const pdfBase64 = arrayBufferToBase64(pdfBytes);
 
         return Response.json({ 
-            success: true, 
-            pdf_url: file_url,
+            success: true,
+            pdf_base64: pdfBase64,
+            filename: `factura-${facturaNum}.pdf`,
             message: 'Factura generada exitosamente'
         });
 

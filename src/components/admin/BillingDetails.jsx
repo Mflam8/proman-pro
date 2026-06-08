@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Plus, Edit2, Trash2, DollarSign, Wrench, FileText, FileDown, CheckCircle, Layers, ChevronUp, ChevronDown, Award } from "lucide-react";
 import CleaningCertificateModal from "./CleaningCertificateModal";
+import { openPdfFromBase64 } from "@/utils/openPdfFromBase64";
 
 const tipoItemConfig = {
   servicio: { label: "Servicio/Trabajo", icon: Wrench, color: "bg-blue-100 text-blue-800" },
@@ -229,19 +230,26 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
         invoiceDate: selectedDate
       });
 
-      // La respuesta viene directamente, no en response.data
       if (response.success || response.data?.success) {
         await queryClient.invalidateQueries({ queryKey: ['clientInquiries'] });
+        const pdfBase64 = response.pdf_base64 || response.data?.pdf_base64;
         const pdfUrl = response.pdf_url || response.data?.pdf_url;
-        if (pdfUrl) {
+        const filename = response.filename || response.data?.filename;
+
+        if (pdfBase64) {
+          openPdfFromBase64(pdfBase64, filename);
+        } else if (pdfUrl) {
           window.open(pdfUrl, '_blank');
+        } else {
+          alert('No se pudo abrir la factura generada');
         }
       } else {
-        alert('Error al generar factura');
+        alert(response.data?.details || response.data?.error || 'Error al generar factura');
       }
     } catch (err) {
       console.error('Error generating invoice:', err);
-      alert('Error al generar factura: ' + err.message);
+      const errorMessage = err?.response?.data?.details || err?.response?.data?.error || err.message;
+      alert('Error al generar factura: ' + errorMessage);
     } finally {
       setIsGeneratingInvoice(false);
     }

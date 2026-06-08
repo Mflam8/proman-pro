@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FileDown, ExternalLink } from "lucide-react";
+import { openPdfFromBase64 } from "@/utils/openPdfFromBase64";
 
 export default function GenerateInvoiceButton({ inquiry }) {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -25,13 +26,20 @@ export default function GenerateInvoiceButton({ inquiry }) {
       if (response.data.success) {
         await queryClient.invalidateQueries({ queryKey: ['clientInquiries'] });
         await queryClient.invalidateQueries({ queryKey: ['inquiry', inquiry.id] });
-        
-        window.open(response.data.pdf_url, '_blank');
+
+        if (response.data.pdf_base64) {
+          openPdfFromBase64(response.data.pdf_base64, response.data.filename);
+        } else if (response.data.pdf_url) {
+          window.open(response.data.pdf_url, '_blank');
+        } else {
+          setError('No se pudo abrir la factura generada');
+        }
       } else {
-        setError('Error al generar factura');
+        setError(response.data?.details || response.data?.error || 'Error al generar factura');
       }
     } catch (err) {
-      setError('Error al generar factura: ' + err.message);
+      const errorMessage = err?.response?.data?.details || err?.response?.data?.error || err.message;
+      setError('Error al generar factura: ' + errorMessage);
     } finally {
       setIsGenerating(false);
     }
