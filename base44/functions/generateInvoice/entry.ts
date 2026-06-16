@@ -134,23 +134,14 @@ Deno.serve(async (req) => {
         
         const clientName = customer?.full_name || inquiry.client_name || 'N/A';
         const clientPhone = customer?.phone || inquiry.phone || 'N/A';
-        // Combinar nombre del lugar con departamento
-        const locationName = inquiry.location_name || '';
-        const departamento = inquiry.location || '';
-        
-        // Debug: Log para verificar los valores
-        console.log('DEBUG location_name:', inquiry.location_name);
-        console.log('DEBUG location:', inquiry.location);
-        console.log('DEBUG inquiry keys:', Object.keys(inquiry));
-        
-        let direccion = 'N/A';
-        if (locationName && departamento) {
-            direccion = `${locationName}, ${departamento}`;
-        } else if (locationName) {
-            direccion = locationName;
-        } else if (departamento) {
-            direccion = departamento;
-        }
+        const primaryAddress = customer?.addresses?.find((address) => address?.is_primary) || customer?.addresses?.[0] || null;
+        const inquiryAddress = inquiry.address || inquiry.location_name || '';
+        const inquiryDepartment = inquiry.location || '';
+        const addressText = inquiryAddress || primaryAddress?.address || primaryAddress?.label || 'N/A';
+        const departamento = inquiryDepartment || primaryAddress?.location || '';
+        const direccion = departamento && addressText !== 'N/A'
+            ? `${addressText}, ${departamento}`
+            : (addressText !== 'N/A' ? addressText : (departamento || 'N/A'));
         // Usar fecha seleccionada o fecha actual si no se proporciona
         const fechaFactura = invoiceDate ? new Date(invoiceDate + 'T12:00:00') : new Date();
         const fechaFormato = fechaFactura.toLocaleDateString('es-SV', { day: '2-digit', month: '2-digit', year: 'numeric' });
