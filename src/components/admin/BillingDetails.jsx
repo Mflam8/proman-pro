@@ -601,7 +601,7 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
                 <p className="text-xs text-gray-500 mt-1">
                   {documentType === "cotizacion" 
                     ? "Propuesta de precios para aprobación del cliente (sin IVA incluido)." 
-                    : "Documento final de cobro por servicios realizados (incluye IVA)."}
+                    : "Documento final de cobro por servicios realizados: Factura Comercial."}
                 </p>
               </div>
 

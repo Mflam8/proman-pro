@@ -122,10 +122,15 @@ Deno.serve(async (req) => {
         const facturaNum = inquiry.id.substring(0, 8).toUpperCase();
         doc.text(`No. ${facturaNum}`, 177.5, 23, { align: 'center' });
 
+        doc.setTextColor(...navyColor);
+        doc.setFontSize(14);
+        doc.setFont(undefined, 'bold');
+        doc.text('FACTURA COMERCIAL', 105, 43, { align: 'center' });
+
         // ======================
         // DATOS DEL CLIENTE
         // ======================
-        let yPos = 50;
+        let yPos = 55;
         
         const clientName = customer?.full_name || inquiry.client_name || 'N/A';
         const clientPhone = customer?.phone || inquiry.phone || 'N/A';
