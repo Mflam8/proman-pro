@@ -22,6 +22,13 @@ const normalizePhone = (value) => {
   return digits.startsWith('503') ? digits.slice(-8) : digits.slice(-8);
 };
 
+const normalizeText = (value) =>
+  String(value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+
 export default function CustomerManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRubro, setFilterRubro] = useState("all");
@@ -33,7 +40,10 @@ export default function CustomerManagement() {
 
   const { data: customers, isLoading } = useQuery({
     queryKey: ['customers'],
-    queryFn: () => base44.entities.Customer.list('-created_date'),
+    queryFn: async () => {
+      const raw = await base44.entities.Customer.list('-created_date');
+      return raw.map((customer) => (customer?.data ? { ...customer, ...customer.data } : customer));
+    },
     initialData: [],
   });
 
@@ -67,14 +77,17 @@ export default function CustomerManagement() {
   });
 
   const filteredCustomers = customers.filter(c => {
-    const normalizedSearch = searchTerm.toLowerCase().trim();
+    const normalizedSearch = normalizeText(searchTerm);
     const normalizedSearchPhone = normalizePhone(searchTerm);
     const matchesSearch = normalizedSearch === "" ||
-      c.full_name?.toLowerCase().includes(normalizedSearch) ||
-      c.email?.toLowerCase().includes(normalizedSearch) ||
-      normalizePhone(c.phone).includes(normalizedSearchPhone) ||
-      normalizePhone(c.secondary_phone).includes(normalizedSearchPhone) ||
-      normalizePhone(c.wa_id).includes(normalizedSearchPhone);
+      normalizeText(c.full_name).includes(normalizedSearch) ||
+      normalizeText(c.fiscal_name).includes(normalizedSearch) ||
+      normalizeText(c.email).includes(normalizedSearch) ||
+      (normalizedSearchPhone && (
+        normalizePhone(c.phone).includes(normalizedSearchPhone) ||
+        normalizePhone(c.secondary_phone).includes(normalizedSearchPhone) ||
+        normalizePhone(c.wa_id).includes(normalizedSearchPhone)
+      ));
     const matchesRubro = filterRubro === "all" || c.primary_rubro === filterRubro;
     const matchesStatus = filterStatus === "all" || c.status === filterStatus;
     return matchesSearch && matchesRubro && matchesStatus;
