@@ -19,5 +19,81 @@
   "required": [
     "inquiry_id",
     "google_event_id"
-  ]
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "employee_type": "Supervisor"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "employee_type": "Supervisor"
+          }
+        },
+        {
+          "data.inquiry_id": {
+            "$in": {
+              "query": "ClientInquiry",
+              "field": "id",
+              "filter": {
+                "$or": [
+                  {
+                    "data.assigned_to_employee_id": "{{user.id}}"
+                  },
+                  {
+                    "data.assigned_to": "{{user.email}}"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "employee_type": "Supervisor"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "employee_type": "Supervisor"
+          }
+        }
+      ]
+    }
+  }
 }

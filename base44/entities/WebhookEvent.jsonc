@@ -39,5 +39,36 @@
   "required": [
     "event_type",
     "raw_payload"
-  ]
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "system"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "employee_type": "Supervisor"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
 }
