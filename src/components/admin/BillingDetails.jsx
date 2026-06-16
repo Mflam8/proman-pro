@@ -223,6 +223,12 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
   const handleGenerateInvoice = async () => {
     if (!inquiry) return;
     setIsGeneratingInvoice(true);
+    const previewWindow = window.open('', '_blank');
+    
+    if (previewWindow) {
+      previewWindow.document.write('<html><body style="font-family: sans-serif; padding: 24px;">Generando factura...</body></html>');
+      previewWindow.document.close();
+    }
     
     try {
       const response = await base44.functions.invoke('generateInvoice', {
@@ -237,16 +243,23 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
         const filename = response.filename || response.data?.filename;
 
         if (pdfBase64) {
-          openPdfFromBase64(pdfBase64, filename);
+          openPdfFromBase64(pdfBase64, filename, previewWindow);
         } else if (pdfUrl) {
-          window.open(pdfUrl, '_blank');
+          if (previewWindow && !previewWindow.closed) {
+            previewWindow.location.href = pdfUrl;
+          } else {
+            window.open(pdfUrl, '_blank');
+          }
         } else {
+          if (previewWindow && !previewWindow.closed) previewWindow.close();
           alert('No se pudo abrir la factura generada');
         }
       } else {
+        if (previewWindow && !previewWindow.closed) previewWindow.close();
         alert(response.data?.details || response.data?.error || 'Error al generar factura');
       }
     } catch (err) {
+      if (previewWindow && !previewWindow.closed) previewWindow.close();
       console.error('Error generating invoice:', err);
       const errorMessage = err?.response?.data?.details || err?.response?.data?.error || err.message;
       alert('Error al generar factura: ' + errorMessage);

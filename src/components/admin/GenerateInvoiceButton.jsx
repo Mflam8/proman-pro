@@ -16,6 +16,12 @@ export default function GenerateInvoiceButton({ inquiry }) {
   const handleGenerate = async () => {
     setIsGenerating(true);
     setError(null);
+    const previewWindow = window.open('', '_blank');
+
+    if (previewWindow) {
+      previewWindow.document.write('<html><body style="font-family: sans-serif; padding: 24px;">Generando factura...</body></html>');
+      previewWindow.document.close();
+    }
     
     try {
       const response = await base44.functions.invoke('generateInvoice', {
@@ -28,16 +34,23 @@ export default function GenerateInvoiceButton({ inquiry }) {
         await queryClient.invalidateQueries({ queryKey: ['inquiry', inquiry.id] });
 
         if (response.data.pdf_base64) {
-          openPdfFromBase64(response.data.pdf_base64, response.data.filename);
+          openPdfFromBase64(response.data.pdf_base64, response.data.filename, previewWindow);
         } else if (response.data.pdf_url) {
-          window.open(response.data.pdf_url, '_blank');
+          if (previewWindow && !previewWindow.closed) {
+            previewWindow.location.href = response.data.pdf_url;
+          } else {
+            window.open(response.data.pdf_url, '_blank');
+          }
         } else {
+          if (previewWindow && !previewWindow.closed) previewWindow.close();
           setError('No se pudo abrir la factura generada');
         }
       } else {
+        if (previewWindow && !previewWindow.closed) previewWindow.close();
         setError(response.data?.details || response.data?.error || 'Error al generar factura');
       }
     } catch (err) {
+      if (previewWindow && !previewWindow.closed) previewWindow.close();
       const errorMessage = err?.response?.data?.details || err?.response?.data?.error || err.message;
       setError('Error al generar factura: ' + errorMessage);
     } finally {
@@ -72,7 +85,7 @@ export default function GenerateInvoiceButton({ inquiry }) {
         <a href={inquiry.quote_pdf_url} target="_blank" rel="noopener noreferrer" className="block mt-2">
           <Button type="button" variant="outline" size="sm" className="w-full text-xs">
             <ExternalLink className="w-3 h-3 mr-1" />
-            Ver Última Factura Generada
+            Ver Último PDF Generado
           </Button>
         </a>
       )}

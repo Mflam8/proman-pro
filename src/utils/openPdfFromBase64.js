@@ -1,4 +1,4 @@
-export function openPdfFromBase64(pdfBase64, filename = 'documento.pdf') {
+export function openPdfFromBase64(pdfBase64, filename = 'documento.pdf', targetWindow = null) {
   if (!pdfBase64) return;
 
   const byteCharacters = atob(pdfBase64);
@@ -11,13 +11,20 @@ export function openPdfFromBase64(pdfBase64, filename = 'documento.pdf') {
   const byteArray = new Uint8Array(byteNumbers);
   const blob = new Blob([byteArray], { type: 'application/pdf' });
   const blobUrl = URL.createObjectURL(blob);
-  const newWindow = window.open(blobUrl, '_blank');
 
-  if (!newWindow) {
-    const link = document.createElement('a');
-    link.href = blobUrl;
-    link.download = filename;
-    link.click();
+  if (targetWindow && !targetWindow.closed) {
+    targetWindow.location.href = blobUrl;
+  } else {
+    const newWindow = window.open(blobUrl, '_blank');
+
+    if (!newWindow) {
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    }
   }
 
   setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
