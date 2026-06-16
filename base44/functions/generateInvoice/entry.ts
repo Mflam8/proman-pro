@@ -190,16 +190,16 @@ Deno.serve(async (req) => {
         doc.setFillColor(...navyColor);
         doc.setDrawColor(...navyColor);
         doc.setLineWidth(0.5);
-        doc.rect(20, yPos, 25, 8, 'FD');
-        doc.rect(45, yPos, 90, 8, 'FD');
+        doc.rect(20, yPos, 90, 8, 'FD');
+        doc.rect(110, yPos, 25, 8, 'FD');
         doc.rect(135, yPos, 25, 8, 'FD');
         doc.rect(160, yPos, 30, 8, 'FD');
         
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(9);
         doc.setFont(undefined, 'bold');
-        doc.text('CANT.', 32.5, yPos + 5.5, { align: 'center' });
-        doc.text('DESCRIPCIÓN', 90, yPos + 5.5, { align: 'center' });
+        doc.text('DESCRIPCIÓN', 65, yPos + 5.5, { align: 'center' });
+        doc.text('CANT.', 122.5, yPos + 5.5, { align: 'center' });
         doc.text('P. UNIT.', 147.5, yPos + 5.5, { align: 'center' });
         doc.text('V. TOTALES', 175, yPos + 5.5, { align: 'center' });
 
@@ -215,15 +215,15 @@ Deno.serve(async (req) => {
             doc.setFillColor(...navyColor);
             doc.setDrawColor(...navyColor);
             doc.setLineWidth(0.5);
-            doc.rect(20, positionY, 25, 8, 'FD');
-            doc.rect(45, positionY, 90, 8, 'FD');
+            doc.rect(20, positionY, 90, 8, 'FD');
+            doc.rect(110, positionY, 25, 8, 'FD');
             doc.rect(135, positionY, 25, 8, 'FD');
             doc.rect(160, positionY, 30, 8, 'FD');
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(9);
             doc.setFont(undefined, 'bold');
-            doc.text('CANT.', 32.5, positionY + 5.5, { align: 'center' });
-            doc.text('DESCRIPCIÓN', 90, positionY + 5.5, { align: 'center' });
+            doc.text('DESCRIPCIÓN', 65, positionY + 5.5, { align: 'center' });
+            doc.text('CANT.', 122.5, positionY + 5.5, { align: 'center' });
             doc.text('P. UNIT.', 147.5, positionY + 5.5, { align: 'center' });
             doc.text('V. TOTALES', 175, positionY + 5.5, { align: 'center' });
         };
@@ -252,8 +252,8 @@ Deno.serve(async (req) => {
                 const rowHeight = Math.max(10, (descripcionLineas.length * baseLineHeight) + 4);
                 ensureRowSpace(rowHeight);
 
-                doc.rect(20, yPos, 25, rowHeight, 'D');
-                doc.rect(45, yPos, 90, rowHeight, 'D');
+                doc.rect(20, yPos, 90, rowHeight, 'D');
+                doc.rect(110, yPos, 25, rowHeight, 'D');
                 doc.rect(135, yPos, 25, rowHeight, 'D');
                 doc.rect(160, yPos, 30, rowHeight, 'D');
                 
@@ -263,8 +263,8 @@ Deno.serve(async (req) => {
                 
                 totalFactura += montoItem;
                 
-                doc.text(cantidad.toString(), 32.5, yPos + 6, { align: 'center' });
-                doc.text(descripcionLineas, 47, yPos + 5.5);
+                doc.text(descripcionLineas, 22, yPos + 5.5);
+                doc.text(cantidad.toString(), 122.5, yPos + 6, { align: 'center' });
                 doc.text(`$${precioUnit.toFixed(2)}`, 157, yPos + 6, { align: 'right' });
                 doc.text(`$${montoItem.toFixed(2)}`, 187, yPos + 6, { align: 'right' });
                 
@@ -278,8 +278,8 @@ Deno.serve(async (req) => {
             const rowHeight = Math.max(10, (descripcionLineas.length * baseLineHeight) + 4);
             ensureRowSpace(rowHeight);
 
-            doc.rect(20, yPos, 25, rowHeight, 'D');
-            doc.rect(45, yPos, 90, rowHeight, 'D');
+            doc.rect(20, yPos, 90, rowHeight, 'D');
+            doc.rect(110, yPos, 25, rowHeight, 'D');
             doc.rect(135, yPos, 25, rowHeight, 'D');
             doc.rect(160, yPos, 30, rowHeight, 'D');
             
@@ -289,8 +289,8 @@ Deno.serve(async (req) => {
             
             totalFactura = montoFinal;
             
-            doc.text('1', 32.5, yPos + 6, { align: 'center' });
-            doc.text(descripcionLineas, 47, yPos + 5.5);
+            doc.text(descripcionLineas, 22, yPos + 5.5);
+            doc.text('1', 122.5, yPos + 6, { align: 'center' });
             doc.text(`$${montoFinal.toFixed(2)}`, 157, yPos + 6, { align: 'right' });
             doc.text(`$${montoFinal.toFixed(2)}`, 187, yPos + 6, { align: 'right' });
             
