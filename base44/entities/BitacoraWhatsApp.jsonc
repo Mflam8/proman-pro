@@ -212,5 +212,82 @@
     "mensaje_id",
     "from_phone",
     "timestamp"
-  ]
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "employee_type": "Supervisor"
+          }
+        },
+        {
+          "data.customer_id": {
+            "$in": {
+              "query": "Customer",
+              "field": "id",
+              "filter": {
+                "data.commercial_owner": "{{user.email}}"
+              }
+            }
+          }
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "employee_type": "Supervisor"
+          }
+        },
+        {
+          "data.customer_id": {
+            "$in": {
+              "query": "Customer",
+              "field": "id",
+              "filter": {
+                "data.commercial_owner": "{{user.email}}"
+              }
+            }
+          }
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "employee_type": "Supervisor"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
 }
