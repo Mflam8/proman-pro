@@ -744,7 +744,7 @@ export default function ClientManagement() {
       
       {selectedInquiry && (
         <Dialog open={!!selectedInquiry} onOpenChange={() => setSelectedInquiry(null)}>
-          <DialogContent className="w-screen h-screen max-w-none max-h-none rounded-none p-0 overflow-y-auto">
+          <DialogContent className="w-[calc(100vw-1rem)] sm:w-[calc(100vw-2rem)] lg:w-[calc(100vw-4rem)] max-w-7xl h-[calc(100vh-1rem)] sm:h-[calc(100vh-2rem)] max-h-[calc(100vh-1rem)] sm:max-h-[calc(100vh-2rem)] rounded-2xl p-0 overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-2xl">Detalles de Solicitud</DialogTitle>
             </DialogHeader>
