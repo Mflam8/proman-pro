@@ -66,11 +66,14 @@ Deno.serve(async (req) => {
 
         // Obtener items de facturación (solo servicios y mano de obra)
         const allBillingItems = await base44.asServiceRole.entities.DetalleFacturaTrabajo.filter({ inquiry_id: inquiryId });
-        // Los datos vienen en item.data.tipo_item o item.tipo_item dependiendo del contexto
-        const billingItems = allBillingItems.filter(item => {
-            const tipoItem = item.data?.tipo_item || item.tipo_item;
-            return tipoItem === 'servicio' || tipoItem === 'mano_de_obra';
-        });
+        const billingItems = allBillingItems
+            .map((item) => item.data ? { ...item, ...item.data } : item)
+            .filter((item) => item.tipo_item === 'servicio' || item.tipo_item === 'mano_de_obra')
+            .sort((a, b) => {
+                const opcionDiff = Number(a.opcion_numero || 0) - Number(b.opcion_numero || 0);
+                if (opcionDiff !== 0) return opcionDiff;
+                return Number(a.orden || 0) - Number(b.orden || 0);
+            });
 
         // Cargar logo
         const logoBase64 = await loadImageAsBase64(LOGO_URL);
@@ -207,57 +210,91 @@ Deno.serve(async (req) => {
         doc.setDrawColor(200, 200, 200);
         doc.setLineWidth(0.3);
         
-        const itemHeight = 10;
+        const baseLineHeight = 5;
+        const drawTableHeader = (positionY) => {
+            doc.setFillColor(...navyColor);
+            doc.setDrawColor(...navyColor);
+            doc.setLineWidth(0.5);
+            doc.rect(20, positionY, 25, 8, 'FD');
+            doc.rect(45, positionY, 90, 8, 'FD');
+            doc.rect(135, positionY, 25, 8, 'FD');
+            doc.rect(160, positionY, 30, 8, 'FD');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(9);
+            doc.setFont(undefined, 'bold');
+            doc.text('CANT.', 32.5, positionY + 5.5, { align: 'center' });
+            doc.text('DESCRIPCIÓN', 90, positionY + 5.5, { align: 'center' });
+            doc.text('P. UNIT.', 147.5, positionY + 5.5, { align: 'center' });
+            doc.text('V. TOTALES', 175, positionY + 5.5, { align: 'center' });
+        };
+        const ensureRowSpace = (rowHeight) => {
+            if (yPos + rowHeight <= 250) return;
+            doc.addPage();
+            yPos = 20;
+            drawTableHeader(yPos);
+            yPos += 8;
+            doc.setFillColor(255, 255, 255);
+            doc.setDrawColor(200, 200, 200);
+            doc.setLineWidth(0.3);
+        };
         let totalFactura = 0;
 
         // Si hay items de facturación, usarlos
         if (billingItems.length > 0) {
-            for (const item of billingItems) {
-                // Acceder a los datos correctamente (pueden estar en item.data o directamente en item)
-                const itemData = item.data || item;
-                
-                doc.rect(20, yPos, 25, itemHeight, 'D');
-                doc.rect(45, yPos, 90, itemHeight, 'D');
-                doc.rect(135, yPos, 25, itemHeight, 'D');
-                doc.rect(160, yPos, 30, itemHeight, 'D');
+            for (const itemData of billingItems) {
+                const cantidad = Number(itemData.cantidad || 1);
+                const precioUnit = Number(itemData.precio_unitario || 0);
+                const montoItem = Number(itemData.monto_total_item || (cantidad * precioUnit));
+                const descripcionCompleta = [itemData.descripcion, itemData.descripcion_detallada]
+                    .filter(Boolean)
+                    .join('\n');
+                const descripcionLineas = doc.splitTextToSize(descripcionCompleta || 'Servicio', 84);
+                const rowHeight = Math.max(10, (descripcionLineas.length * baseLineHeight) + 4);
+                ensureRowSpace(rowHeight);
+
+                doc.rect(20, yPos, 25, rowHeight, 'D');
+                doc.rect(45, yPos, 90, rowHeight, 'D');
+                doc.rect(135, yPos, 25, rowHeight, 'D');
+                doc.rect(160, yPos, 30, rowHeight, 'D');
                 
                 doc.setTextColor(...navyColor);
                 doc.setFont(undefined, 'normal');
                 doc.setFontSize(9);
                 
-                const cantidad = itemData.cantidad || 1;
-                const precioUnit = itemData.precio_unitario || 0;
-                const montoItem = itemData.monto_total_item || (cantidad * precioUnit);
                 totalFactura += montoItem;
                 
                 doc.text(cantidad.toString(), 32.5, yPos + 6, { align: 'center' });
-                doc.text(itemData.descripcion || 'Servicio', 47, yPos + 6);
+                doc.text(descripcionLineas, 47, yPos + 5.5);
                 doc.text(`$${precioUnit.toFixed(2)}`, 157, yPos + 6, { align: 'right' });
                 doc.text(`$${montoItem.toFixed(2)}`, 187, yPos + 6, { align: 'right' });
                 
-                yPos += itemHeight;
+                yPos += rowHeight;
             }
         } else {
             // Fallback: usar datos del inquiry
-            doc.rect(20, yPos, 25, itemHeight, 'D');
-            doc.rect(45, yPos, 90, itemHeight, 'D');
-            doc.rect(135, yPos, 25, itemHeight, 'D');
-            doc.rect(160, yPos, 30, itemHeight, 'D');
+            const montoFinal = Number(inquiry.final_amount || inquiry.quote_amount || 0);
+            const servicioDescripcion = inquiry.service_type || inquiry.message || 'Servicio de reparación';
+            const descripcionLineas = doc.splitTextToSize(servicioDescripcion, 84);
+            const rowHeight = Math.max(10, (descripcionLineas.length * baseLineHeight) + 4);
+            ensureRowSpace(rowHeight);
+
+            doc.rect(20, yPos, 25, rowHeight, 'D');
+            doc.rect(45, yPos, 90, rowHeight, 'D');
+            doc.rect(135, yPos, 25, rowHeight, 'D');
+            doc.rect(160, yPos, 30, rowHeight, 'D');
             
             doc.setTextColor(...navyColor);
             doc.setFont(undefined, 'normal');
             doc.setFontSize(9);
             
-            const montoFinal = inquiry.final_amount || inquiry.quote_amount || 0;
-            const servicioDescripcion = inquiry.service_type || 'Servicio de reparación';
             totalFactura = montoFinal;
             
             doc.text('1', 32.5, yPos + 6, { align: 'center' });
-            doc.text(servicioDescripcion, 47, yPos + 6);
+            doc.text(descripcionLineas, 47, yPos + 5.5);
             doc.text(`$${montoFinal.toFixed(2)}`, 157, yPos + 6, { align: 'right' });
             doc.text(`$${montoFinal.toFixed(2)}`, 187, yPos + 6, { align: 'right' });
             
-            yPos += itemHeight;
+            yPos += rowHeight;
         }
 
         // ======================
