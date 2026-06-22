@@ -39,24 +39,59 @@ function buildDescription(inquiry, customer) {
   ].filter(Boolean).join('\n');
 }
 
-Deno.serve(async (req) => {
-  try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+async function logSystemError(base44, { message, details, severity = 'error', relatedEntityId, context }) {
+  await base44.asServiceRole.entities.SystemError.create({
+    source_type: 'function',
+    source_name: 'syncInquiryToGoogleCalendar',
+    severity,
+    status: 'open',
+    message,
+    details: details || '',
+    related_entity: 'ClientInquiry',
+    related_entity_id: relatedEntityId || '',
+    context_json: JSON.stringify(context || {}),
+    occurred_at: new Date().toISOString()
+  });
+}
 
-    if (user?.role !== 'admin' && user?.employee_type !== 'Supervisor') {
+Deno.serve(async (req) => {
+  let base44 = null;
+  let inquiryId = '';
+
+  try {
+    base44 = createClientFromRequest(req);
+    const payload = await req.json().catch(() => ({}));
+    inquiryId = payload?.inquiryId || '';
+    const user = await base44.auth.me().catch(() => null);
+
+    if (!user || (user.role !== 'admin' && user.employee_type !== 'Supervisor')) {
+      await logSystemError(base44, {
+        message: 'La sincronización con Google Calendar fue bloqueada por permisos.',
+        details: 'La función requiere admin o supervisor autenticado. Si la ejecuta una automatización, fallará con 403.',
+        severity: 'critical',
+        relatedEntityId: inquiryId,
+        context: { inquiryId }
+      });
       return Response.json({ error: 'Forbidden: Admin or Supervisor access required' }, { status: 403 });
     }
 
-    const payload = await req.json();
-    const inquiryId = payload?.inquiryId;
-
     if (!inquiryId) {
+      await logSystemError(base44, {
+        message: 'La sincronización con Google Calendar se ejecutó sin inquiryId.',
+        details: 'Falta el dato inquiryId en el payload.',
+        severity: 'warning'
+      });
       return Response.json({ error: 'inquiryId is required' }, { status: 400 });
     }
 
     const inquiry = await base44.asServiceRole.entities.ClientInquiry.get(inquiryId);
     if (!inquiry) {
+      await logSystemError(base44, {
+        message: 'La sincronización con Google Calendar recibió un trabajo inexistente.',
+        details: 'No se encontró el ClientInquiry solicitado.',
+        severity: 'warning',
+        relatedEntityId: inquiryId
+      });
       return Response.json({ error: 'Inquiry not found' }, { status: 404 });
     }
 
@@ -65,18 +100,39 @@ Deno.serve(async (req) => {
     const existingLinks = await base44.asServiceRole.entities.CalendarSyncState.filter({ inquiry_id: inquiry.id });
     const existingLink = existingLinks[0] || null;
 
-    const { accessToken } = await base44.asServiceRole.connectors.getConnection('googlecalendar');
+    const connection = await base44.asServiceRole.connectors.getConnection('googlecalendar');
+    if (!connection?.accessToken) {
+      await logSystemError(base44, {
+        message: 'No hay conexión activa con Google Calendar.',
+        details: 'La cuenta autorizada no devolvió accessToken.',
+        severity: 'critical',
+        relatedEntityId: inquiry.id
+      });
+      return Response.json({ error: 'Google Calendar is not connected' }, { status: 500 });
+    }
+
     const headers = {
-      'Authorization': `Bearer ${accessToken}`,
+      'Authorization': `Bearer ${connection.accessToken}`,
       'Content-Type': 'application/json'
     };
 
     if (!shouldSync) {
       if (existingLink?.google_event_id) {
-        await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${existingLink.google_event_id}`, {
+        const deleteResponse = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${existingLink.google_event_id}`, {
           method: 'DELETE',
           headers
         });
+
+        if (!deleteResponse.ok && deleteResponse.status !== 404) {
+          const errorText = await deleteResponse.text();
+          await logSystemError(base44, {
+            message: 'No se pudo quitar el evento de Google Calendar.',
+            details: errorText,
+            relatedEntityId: inquiry.id
+          });
+          return Response.json({ error: errorText }, { status: 500 });
+        }
+
         await base44.asServiceRole.entities.CalendarSyncState.delete(existingLink.id);
       }
 
@@ -123,6 +179,11 @@ Deno.serve(async (req) => {
 
       if (!createResponse.ok) {
         const errorText = await createResponse.text();
+        await logSystemError(base44, {
+          message: 'No se pudo crear el evento en Google Calendar.',
+          details: errorText,
+          relatedEntityId: inquiry.id
+        });
         return Response.json({ error: errorText }, { status: 500 });
       }
 
@@ -146,6 +207,14 @@ Deno.serve(async (req) => {
 
     return Response.json({ success: true, action, google_event_id: googleEventId });
   } catch (error) {
+    if (base44) {
+      await logSystemError(base44, {
+        message: 'Falló la sincronización con Google Calendar.',
+        details: error.message,
+        severity: 'critical',
+        relatedEntityId: inquiryId
+      });
+    }
     return Response.json({ error: error.message }, { status: 500 });
   }
 });

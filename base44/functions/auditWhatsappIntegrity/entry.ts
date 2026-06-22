@@ -1,11 +1,33 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
+async function logSystemError(base44, { message, details, severity = 'error' }) {
+  await base44.asServiceRole.entities.SystemError.create({
+    source_type: 'automation',
+    source_name: 'WhatsApp Dedup Cleanup',
+    severity,
+    status: 'open',
+    message,
+    details: details || '',
+    related_entity: 'Customer',
+    related_entity_id: '',
+    context_json: '{}',
+    occurred_at: new Date().toISOString()
+  });
+}
+
 Deno.serve(async (req) => {
+  let base44 = null;
+
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
+    base44 = createClientFromRequest(req);
+    const user = await base44.auth.me().catch(() => null);
 
     if (user?.role !== 'admin') {
+      await logSystemError(base44, {
+        message: 'La revisión de duplicados de WhatsApp fue bloqueada por permisos.',
+        details: 'La función requiere un admin autenticado para ejecutarse.',
+        severity: 'critical'
+      });
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
@@ -455,6 +477,13 @@ Deno.serve(async (req) => {
       }
     });
   } catch (error) {
+    if (base44) {
+      await logSystemError(base44, {
+        message: 'Falló la revisión de duplicados de WhatsApp.',
+        details: error.message,
+        severity: 'critical'
+      });
+    }
     return Response.json({ error: error.message }, { status: 500 });
   }
 });

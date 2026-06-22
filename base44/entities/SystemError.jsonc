@@ -1,0 +1,105 @@
+{
+  "name": "SystemError",
+  "type": "object",
+  "properties": {
+    "source_type": {
+      "type": "string",
+      "enum": [
+        "automation",
+        "function",
+        "system"
+      ],
+      "description": "Origen general del error"
+    },
+    "source_name": {
+      "type": "string",
+      "description": "Nombre de la automatizaci\u00f3n o funci\u00f3n"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "warning",
+        "error",
+        "critical"
+      ],
+      "default": "error",
+      "description": "Nivel de gravedad"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "resolved"
+      ],
+      "default": "open",
+      "description": "Estado del incidente"
+    },
+    "message": {
+      "type": "string",
+      "description": "Resumen corto del problema"
+    },
+    "details": {
+      "type": "string",
+      "description": "Detalle t\u00e9cnico o contexto adicional"
+    },
+    "related_entity": {
+      "type": "string",
+      "description": "Entidad relacionada si aplica"
+    },
+    "related_entity_id": {
+      "type": "string",
+      "description": "ID del registro relacionado si aplica"
+    },
+    "context_json": {
+      "type": "string",
+      "description": "Contexto serializado en JSON"
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha y hora del error"
+    },
+    "resolved_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha y hora de resoluci\u00f3n"
+    }
+  },
+  "required": [
+    "source_type",
+    "source_name",
+    "message",
+    "occurred_at"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "system"
+          }
+        }
+      ]
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

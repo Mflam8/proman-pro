@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { Phone, Menu, X, Users, Briefcase, Facebook, Instagram, Youtube, LogIn, MapPin, MessageCircle } from "lucide-react";
+import { Phone, Menu, X, Users, Briefcase, Facebook, Instagram, Youtube, LogIn, MapPin, MessageCircle, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
 import { LanguageProvider, useLanguage } from "@/components/LanguageContext";
@@ -24,6 +24,7 @@ function LayoutContent({ children }) {
   const managementPrefixes = [
     createPageUrl("ClientManagement"),
     "/MessageCenter",
+    "/ErrorCenter",
     createPageUrl("EmployeeDashboard"),
     createPageUrl("CorporateScheduling"),
     createPageUrl("AutomationsControl"),
@@ -92,6 +93,13 @@ function LayoutContent({ children }) {
         href: createPageUrl("MessageCenter"),
         icon: MessageCircle
       });
+      if (isAdmin) {
+        navigation.push({
+          name: "Errores",
+          href: "/ErrorCenter",
+          icon: AlertTriangle
+        });
+      }
     } else {
       navigation.push({ 
         name: t({ es: "Mi Portal", en: "My Portal" }), 

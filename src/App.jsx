@@ -7,6 +7,7 @@ import NavigationTracker from '@/lib/NavigationTracker'
 import { pagesConfig } from './pages.config'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import MessageCenter from './pages/MessageCenter';
+import ErrorCenter from './pages/ErrorCenter';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -52,6 +53,7 @@ const AuthenticatedApp = () => {
         ))}
         {/* Explicit new routes */}
         <Route path="/MessageCenter" element={<MessageCenter />} />
+        <Route path="/ErrorCenter" element={<ErrorCenter />} />
         <Route path="*" element={<PageNotFound />} />
       </Routes>
     </LayoutWrapper>
