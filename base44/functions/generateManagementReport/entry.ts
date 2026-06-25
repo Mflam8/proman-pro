@@ -1,365 +1,482 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
-// Helper function to format money
-const fmtMoney = (amount) => {
-    return new Intl.NumberFormat('es-SV', { style: 'currency', currency: 'USD' }).format(amount || 0);
+const fmtMoney = (amount) => new Intl.NumberFormat('es-SV', {
+  style: 'currency',
+  currency: 'USD'
+}).format(Number(amount || 0));
+
+const fmtNumber = (value) => new Intl.NumberFormat('es-SV').format(Number(value || 0));
+
+const formatMonthLabel = (date) => new Intl.DateTimeFormat('es-SV', {
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'UTC'
+}).format(date);
+
+const formatShortDate = (value) => {
+  if (!value) return '-';
+  return new Intl.DateTimeFormat('es-SV', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    timeZone: 'UTC'
+  }).format(new Date(value));
+};
+
+const escapeHtml = (value) => String(value ?? '')
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
+
+const getInquiryDate = (inquiry) => inquiry?.scheduled_date || inquiry?.created_date;
+
+const getInquiryAmount = (inquiry) => {
+  const candidates = [
+    inquiry?.final_amount,
+    inquiry?.subtotal_amount,
+    inquiry?.quote_amount,
+    inquiry?.precio_sin_iva
+  ].map(Number).filter((value) => Number.isFinite(value) && value > 0);
+
+  return candidates[0] || 0;
+};
+
+const getCustomerKey = (inquiry) => {
+  return inquiry?.customer_id || inquiry?.normalized_phone || inquiry?.phone || inquiry?.client_name || inquiry?.source_conversation_id || inquiry?.id;
+};
+
+const getCustomerName = (inquiry, customerMap) => {
+  if (inquiry?.customer_id && customerMap.has(inquiry.customer_id)) {
+    return customerMap.get(inquiry.customer_id)?.full_name || inquiry.client_name || 'Cliente sin nombre';
+  }
+  return inquiry?.client_name || inquiry?.phone || 'Cliente sin nombre';
+};
+
+const groupCount = (items, extractor) => {
+  const counts = {};
+  items.forEach((item) => {
+    const key = extractor(item) || 'Sin especificar';
+    counts[key] = (counts[key] || 0) + 1;
+  });
+  return Object.entries(counts)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value);
+};
+
+const groupRevenue = (items, keyExtractor, amountExtractor) => {
+  const stats = {};
+  items.forEach((item) => {
+    const key = keyExtractor(item) || 'Sin especificar';
+    if (!stats[key]) stats[key] = { count: 0, revenue: 0 };
+    stats[key].count += 1;
+    stats[key].revenue += amountExtractor(item);
+  });
+  return Object.entries(stats)
+    .map(([name, value]) => ({ name, count: value.count, revenue: value.revenue }))
+    .sort((a, b) => b.count - a.count || b.revenue - a.revenue);
+};
+
+const listAll = async (entityApi, sort = '-created_date', batchSize = 500) => {
+  const results = [];
+  let skip = 0;
+
+  while (true) {
+    const batch = await entityApi.list(sort, batchSize, skip);
+    if (!Array.isArray(batch) || batch.length === 0) break;
+    results.push(...batch);
+    if (batch.length < batchSize) break;
+    skip += batch.length;
+    if (skip >= 5000) break;
+  }
+
+  return results;
 };
 
 Deno.serve(async (req) => {
-    if (req.method === 'OPTIONS') {
-        return new Response(null, {
-            headers: {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'POST, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-            }
-        });
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+      }
+    });
+  }
+
+  try {
+    const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    try {
-        const base44 = createClientFromRequest(req);
-        const user = await base44.auth.me();
+    const body = await req.json();
+    const { startDate, endDate, filterLabel } = body;
 
-        if (!user) {
-            return Response.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        const body = await req.json();
-        const { startDate, endDate, filterLabel } = body;
-        
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-        end.setHours(23, 59, 59, 999);
-
-        // 1. Fetch Data
-        const [inquiries, payments, customers] = await Promise.all([
-            base44.entities.ClientInquiry.list(),
-            base44.entities.Payment.list(),
-            base44.entities.Customer.list()
-        ]);
-
-        // 2. Filter Data
-        const filteredInquiries = inquiries.filter(i => {
-            const date = new Date(i.scheduled_date || i.created_date);
-            return date >= start && date <= end;
-        });
-
-        const filteredPayments = payments.filter(p => {
-            const date = new Date(p.payment_date);
-            return date >= start && date <= end;
-        });
-
-        // 3. Calculations
-        const totalTrabajos = filteredInquiries.length;
-        const trabajosCompletados = filteredInquiries.filter(i => i.status === 'completado').length;
-        const pendientesCotizacion = filteredInquiries.filter(i => i.status === 'cotizacion_pendiente').length;
-        const serviciosNuevos = filteredInquiries.filter(i => i.status === 'nuevo').length;
-        
-        const totalIngresos = filteredPayments.reduce((sum, p) => sum + (p.amount_paid || 0), 0);
-
-        // Helper classification
-        const getPaymentType = (p) => {
-             if (p.destination_account_type === 'propia') return 'propia';
-             if (p.destination_account_type === 'terceros') return 'terceros';
-             // Implicit classification based on method
-             if (['transferencia', 'deposito', 'tarjeta'].includes(p.payment_method)) return 'propia';
-             return 'efectivo';
-        };
-
-        // Ingresos breakdown
-        const ingresosPropia = filteredPayments
-            .filter(p => getPaymentType(p) === 'propia')
-            .reduce((sum, p) => sum + (p.amount_paid || 0), 0);
-        const ingresosTerceros = filteredPayments
-            .filter(p => getPaymentType(p) === 'terceros')
-            .reduce((sum, p) => sum + (p.amount_paid || 0), 0);
-        const ingresosEfectivo = filteredPayments
-            .filter(p => getPaymentType(p) === 'efectivo')
-            .reduce((sum, p) => sum + (p.amount_paid || 0), 0);
-
-        // Cuentas por cobrar (Historical, not just filtered range usually, but keeping consistency)
-        // Usually Accounts Receivable is a snapshot of ALL open debts, regardless of when they were created.
-        // But let's stick to the requested scope or all active debts if preferred. 
-        // Here we calculate ALL pending debts as it's a status report.
-        const cuentasPorCobrar = inquiries
-            .filter(i => i.status === 'completado' && i.payment_status !== 'pagado')
-            .map(i => {
-                const total = i.final_amount || i.quote_amount || 0;
-                const pagado = payments
-                    .filter(p => p.inquiry_id === i.id)
-                    .reduce((s, p) => s + (p.amount_paid || 0), 0);
-                return { 
-                    client: i.client_name || 'Cliente',
-                    service: i.service_type || '-',
-                    date: i.created_date,
-                    saldo: total - pagado 
-                };
-            })
-            .filter(i => i.saldo > 0.01)
-            .sort((a, b) => b.saldo - a.saldo);
-        
-        const totalPorCobrar = cuentasPorCobrar.reduce((sum, i) => sum + i.saldo, 0);
-
-        // Dinero por Responsable (Efectivo + Cuentas Terceros a liquidar)
-        const dineroEmpleados = {};
-        filteredPayments
-            .forEach(p => {
-                const type = getPaymentType(p);
-                // Incluir efectivo y cuentas de terceros (dinero que tiene alguien más)
-                if ((type === 'efectivo' || type === 'terceros') && p.collected_by) {
-                    const collector = p.collected_by;
-                    if (!dineroEmpleados[collector]) dineroEmpleados[collector] = 0;
-                    dineroEmpleados[collector] += (p.amount_paid || 0);
-                }
-            });
-
-        // Top Servicios
-        const serviceStats = {};
-        filteredInquiries.forEach(i => {
-            const srv = i.service_type || 'Otros';
-            if (!serviceStats[srv]) serviceStats[srv] = { count: 0, revenue: 0 };
-            serviceStats[srv].count++;
-            serviceStats[srv].revenue += (i.final_amount || i.quote_amount || 0);
-        });
-        const topServices = Object.entries(serviceStats)
-            .sort((a, b) => b[1].revenue - a[1].revenue)
-            .slice(0, 10);
-
-
-        // 4. HTML Generation
-        const css = `
-            body { font-family: 'Helvetica', 'Arial', sans-serif; color: #333; max-width: 1000px; margin: 0 auto; padding: 20px; }
-            .header { background-color: #252a5c; color: white; padding: 20px; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center; }
-            .header h1 { margin: 0; font-size: 24px; }
-            .meta { font-size: 12px; opacity: 0.9; text-align: right; }
-            .section { margin-top: 30px; border: 1px solid #eee; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-            .section-title { background-color: #f4f6f8; padding: 12px 20px; font-weight: bold; color: #252a5c; border-bottom: 1px solid #eee; font-size: 16px; }
-            .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; padding: 20px; }
-            .kpi-card { background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #e0e0e0; text-align: center; }
-            .kpi-value { font-size: 24px; font-weight: bold; color: #252a5c; margin: 5px 0; }
-            .kpi-label { font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
-            table { width: 100%; border-collapse: collapse; }
-            th { background-color: #f8f9fa; text-align: left; padding: 12px 20px; font-size: 12px; color: #666; text-transform: uppercase; border-bottom: 2px solid #eee; }
-            td { padding: 12px 20px; border-bottom: 1px solid #eee; font-size: 14px; }
-            tr:last-child td { border-bottom: none; }
-            .amount { font-family: 'Courier New', monospace; font-weight: bold; }
-            .text-right { text-align: right; }
-            .text-red { color: #dc2626; }
-            .text-green { color: #16a34a; }
-            .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #999; border-top: 1px solid #eee; padding-top: 20px; }
-            @media print {
-                body { padding: 0; max-width: 100%; }
-                .section { break-inside: avoid; box-shadow: none; border: 1px solid #ddd; }
-            }
-        `;
-
-        const html = `
-        <!DOCTYPE html>
-        <html lang="es">
-        <head>
-            <meta charset="UTF-8">
-            <title>Reporte Gerencial - ${filterLabel}</title>
-            <style>${css}</style>
-        </head>
-        <body>
-            <div class="header">
-                <div>
-                    <h1>PROMAN Services</h1>
-                    <div style="font-size: 14px; opacity: 0.8; margin-top: 5px;">Reporte Gerencial</div>
-                </div>
-                <div class="meta">
-                    <div>Período: <strong>${filterLabel}</strong></div>
-                    <div>Generado: ${new Date().toLocaleString('es-SV')}</div>
-                </div>
-            </div>
-
-            <div class="section">
-                <div class="section-title">1. Resumen Ejecutivo</div>
-                <div class="summary-grid">
-                    <div class="kpi-card">
-                        <div class="kpi-value text-green">${serviciosNuevos}</div>
-                        <div class="kpi-label">Servicios Nuevos</div>
-                    </div>
-                    <div class="kpi-card">
-                        <div class="kpi-value text-green">${trabajosCompletados}</div>
-                        <div class="kpi-label">Completados</div>
-                    </div>
-                    <div class="kpi-card">
-                        <div class="kpi-value" style="color: #f59e0b;">${pendientesCotizacion}</div>
-                        <div class="kpi-label">Pendientes Cotización</div>
-                    </div>
-                    <div class="kpi-card">
-                        <div class="kpi-value">${totalTrabajos}</div>
-                        <div class="kpi-label">Total Trabajos</div>
-                    </div>
-                    <div class="kpi-card">
-                        <div class="kpi-value text-green">${fmtMoney(totalIngresos)}</div>
-                        <div class="kpi-label">Ingresos Totales</div>
-                    </div>
-                    <div class="kpi-card">
-                        <div class="kpi-value text-red">${fmtMoney(totalPorCobrar)}</div>
-                        <div class="kpi-label">Por Cobrar (Global)</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="section">
-                <div class="section-title">2. Desglose de Ingresos (Flujo de Caja)</div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Cuenta Destino</th>
-                            <th class="text-right">Monto</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Cuenta Empresa (Propia)</td>
-                            <td class="text-right amount text-green">${fmtMoney(ingresosPropia)}</td>
-                        </tr>
-                        <tr>
-                            <td>Cuenta Terceros</td>
-                            <td class="text-right amount">${fmtMoney(ingresosTerceros)}</td>
-                        </tr>
-                        <tr>
-                            <td>Efectivo (En Mano)</td>
-                            <td class="text-right amount">${fmtMoney(ingresosEfectivo)}</td>
-                        </tr>
-                        <tr style="background-color: #f8f9fa; font-weight: bold;">
-                            <td>TOTAL INGRESOS</td>
-                            <td class="text-right amount">${fmtMoney(totalIngresos)}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            ${Object.keys(dineroEmpleados).length > 0 ? `
-            <div class="section">
-                <div class="section-title">3. Dinero a Liquidar por Responsable (Efectivo y Ctas. Terceros)</div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Responsable</th>
-                            <th class="text-right">Monto Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${Object.entries(dineroEmpleados).map(([k, v]) => `
-                        <tr>
-                            <td>${k}</td>
-                            <td class="text-right amount text-red">${fmtMoney(v)}</td>
-                        </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-            ` : ''}
-
-            <div class="section">
-                <div class="section-title">4. Top Servicios (Más Vendidos)</div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Servicio</th>
-                            <th class="text-right">Cantidad</th>
-                            <th class="text-right">Generado (Est.)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${topServices.map(([k, v]) => `
-                        <tr>
-                            <td>${k}</td>
-                            <td class="text-right">${v.count}</td>
-                            <td class="text-right amount">${fmtMoney(v.revenue)}</td>
-                        </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-            
-            ${cuentasPorCobrar.length > 0 ? `
-            <div class="section">
-                <div class="section-title">5. Detalle Cuentas por Cobrar (Top 10)</div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Cliente</th>
-                            <th>Servicio</th>
-                            <th class="text-right">Saldo Pendiente</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${cuentasPorCobrar.slice(0, 10).map(i => `
-                        <tr>
-                            <td>${i.client}</td>
-                            <td>${i.service}</td>
-                            <td class="text-right amount text-red">${fmtMoney(i.saldo)}</td>
-                        </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            </div>
-            ` : ''}
-
-            <div class="section">
-                <div class="section-title">6. Detalle Completo de Pagos Recibidos</div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Cliente</th>
-                            <th>Municipio</th>
-                            <th>Responsable / Recibido Por</th>
-                            <th>Método / Destino</th>
-                            <th class="text-right">Monto</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${filteredPayments.sort((a, b) => new Date(b.payment_date) - new Date(a.payment_date)).map(p => {
-                            const inquiry = inquiries.find(i => i.id === p.inquiry_id);
-                            const customer = inquiry ? customers.find(c => c.id === inquiry.customer_id) : null;
-                            const clientName = customer?.full_name || inquiry?.client_name || 'N/A';
-                            const clientLocation = inquiry?.location || 'N/A';
-                            
-                            const type = getPaymentType(p);
-                            const typeLabel = type === 'propia' ? 'Cta. Empresa' : (type === 'terceros' ? 'Cta. Terceros' : 'Efectivo');
-                            return `
-                            <tr>
-                                <td>${p.payment_date}</td>
-                                <td>${clientName}</td>
-                                <td>${clientLocation}</td>
-                                <td>${p.collected_by || '-'}</td>
-                                <td>
-                                    <div style="font-weight: bold;">${p.payment_method}</div>
-                                    <div style="font-size: 11px; color: #666;">Destino: ${typeLabel}</div>
-                                </td>
-                                <td class="text-right amount">${fmtMoney(p.amount_paid)}</td>
-                            </tr>
-                            `;
-                        }).join('')}
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="footer">
-                <p>Reporte generado automáticamente por el sistema PROMAN Services.</p>
-            </div>
-            
-            <script>
-                // Auto print when loaded
-                window.onload = function() { setTimeout(function() { window.print(); }, 500); }
-            </script>
-        </body>
-        </html>
-        `;
-
-        return Response.json({ success: true, html: html });
-
-    } catch (error) {
-        console.error("HTML REPORT ERROR:", error);
-        return Response.json({ 
-            success: false, 
-            error: error.message || "Error generico"
-        }, { status: 500 });
+    if (!startDate || !endDate) {
+      return Response.json({ success: false, error: 'startDate y endDate son requeridos' }, { status: 400 });
     }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    end.setUTCHours(23, 59, 59, 999);
+
+    const today = new Date();
+    const reportEnd = end > today ? today : end;
+
+    const [inquiries, payments, customers] = await Promise.all([
+      listAll(base44.entities.ClientInquiry, '-created_date'),
+      listAll(base44.entities.Payment, '-created_date'),
+      listAll(base44.entities.Customer, '-created_date')
+    ]);
+
+    const customerMap = new Map(customers.map((customer) => [customer.id, customer]));
+
+    const filteredInquiries = inquiries.filter((inquiry) => {
+      const rawDate = getInquiryDate(inquiry);
+      if (!rawDate) return false;
+      const date = new Date(rawDate);
+      return date >= start && date <= end;
+    });
+
+    const filteredPayments = payments.filter((payment) => {
+      if (!payment?.payment_date) return false;
+      const date = new Date(payment.payment_date);
+      return date >= start && date <= end;
+    });
+
+    const monthCursor = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1));
+    const monthEndBoundary = new Date(Date.UTC(reportEnd.getUTCFullYear(), reportEnd.getUTCMonth(), 1));
+    const monthlyBreakdown = [];
+
+    while (monthCursor <= monthEndBoundary) {
+      const monthStart = new Date(Date.UTC(monthCursor.getUTCFullYear(), monthCursor.getUTCMonth(), 1));
+      const monthEnd = new Date(Date.UTC(monthCursor.getUTCFullYear(), monthCursor.getUTCMonth() + 1, 0, 23, 59, 59, 999));
+
+      const monthInquiries = filteredInquiries.filter((inquiry) => {
+        const date = new Date(getInquiryDate(inquiry));
+        return date >= monthStart && date <= monthEnd;
+      });
+
+      const monthPayments = filteredPayments.filter((payment) => {
+        const date = new Date(payment.payment_date);
+        return date >= monthStart && date <= monthEnd;
+      });
+
+      const uniqueCustomers = new Set(monthInquiries.map(getCustomerKey).filter(Boolean));
+      const generated = monthPayments.reduce((sum, payment) => sum + Number(payment.amount_paid || 0), 0);
+      const operationalRevenue = monthInquiries.reduce((sum, inquiry) => sum + getInquiryAmount(inquiry), 0);
+
+      monthlyBreakdown.push({
+        label: formatMonthLabel(monthStart),
+        clients: uniqueCustomers.size,
+        jobs: monthInquiries.length,
+        generated,
+        operationalRevenue,
+        estimatedClientValue: uniqueCustomers.size * 40,
+        referenceTicket: monthInquiries.length * 155
+      });
+
+      monthCursor.setUTCMonth(monthCursor.getUTCMonth() + 1);
+    }
+
+    const monthsCount = monthlyBreakdown.length || 1;
+    const totalGenerated = filteredPayments.reduce((sum, payment) => sum + Number(payment.amount_paid || 0), 0);
+    const totalOperationalRevenue = filteredInquiries.reduce((sum, inquiry) => sum + getInquiryAmount(inquiry), 0);
+    const totalClients = monthlyBreakdown.reduce((sum, month) => sum + month.clients, 0);
+    const avgMonthlyGenerated = totalGenerated / monthsCount;
+    const avgMonthlyClients = totalClients / monthsCount;
+
+    const servicesRanking = groupRevenue(
+      filteredInquiries,
+      (inquiry) => inquiry.service_type || 'Sin especificar',
+      (inquiry) => getInquiryAmount(inquiry)
+    ).slice(0, 10);
+
+    const departmentDistribution = groupCount(filteredInquiries, (inquiry) => inquiry.location || 'Sin especificar');
+    const rubroDistribution = groupCount(filteredInquiries, (inquiry) => inquiry.rubro || 'Sin especificar');
+
+    const latestTenClients = [];
+    const seenClients = new Set();
+    const recentSorted = [...filteredInquiries].sort((a, b) => new Date(getInquiryDate(b)).getTime() - new Date(getInquiryDate(a)).getTime());
+
+    recentSorted.forEach((inquiry) => {
+      const customerKey = getCustomerKey(inquiry);
+      if (!customerKey || seenClients.has(customerKey) || latestTenClients.length >= 10) return;
+      seenClients.add(customerKey);
+      latestTenClients.push({
+        name: getCustomerName(inquiry, customerMap),
+        department: inquiry.location || 'Sin especificar',
+        rubro: inquiry.rubro || 'Sin especificar',
+        service: inquiry.service_type || 'Sin especificar',
+        amount: getInquiryAmount(inquiry),
+        date: getInquiryDate(inquiry)
+      });
+    });
+
+    const css = `
+      body { font-family: Arial, Helvetica, sans-serif; color: #1f2937; max-width: 1120px; margin: 0 auto; padding: 24px; background: #f8fafc; }
+      .header { background: #252a5c; color: white; padding: 24px; border-radius: 16px; }
+      .header h1 { margin: 0 0 6px; font-size: 28px; }
+      .subtitle { opacity: 0.88; font-size: 14px; }
+      .meta { margin-top: 12px; font-size: 13px; opacity: 0.92; }
+      .section { margin-top: 24px; background: white; border-radius: 16px; border: 1px solid #e5e7eb; overflow: hidden; }
+      .section-title { background: #f3f4f6; color: #252a5c; padding: 14px 18px; font-weight: 700; font-size: 16px; border-bottom: 1px solid #e5e7eb; }
+      .section-body { padding: 18px; }
+      .note { background: #fff8dc; border: 1px solid #f5d76e; color: #6b4f00; padding: 14px 16px; border-radius: 12px; line-height: 1.5; }
+      .grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+      .card { border: 1px solid #e5e7eb; border-radius: 14px; padding: 16px; background: #ffffff; }
+      .card-label { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: #6b7280; }
+      .card-value { margin-top: 8px; font-size: 26px; font-weight: 700; color: #252a5c; }
+      .card-sub { margin-top: 6px; font-size: 12px; color: #6b7280; }
+      table { width: 100%; border-collapse: collapse; }
+      th { text-align: left; background: #f9fafb; color: #6b7280; font-size: 12px; text-transform: uppercase; padding: 12px 14px; border-bottom: 1px solid #e5e7eb; }
+      td { padding: 12px 14px; border-bottom: 1px solid #e5e7eb; font-size: 14px; vertical-align: top; }
+      tr:last-child td { border-bottom: none; }
+      .amount { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+      .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+      .small { font-size: 12px; color: #6b7280; }
+      .footer { margin-top: 24px; color: #6b7280; font-size: 12px; text-align: center; }
+      @media print {
+        body { background: white; padding: 0; }
+        .section, .header { break-inside: avoid; }
+      }
+    `;
+
+    const html = `
+      <!DOCTYPE html>
+      <html lang="es">
+      <head>
+        <meta charset="UTF-8" />
+        <title>Reporte Anual Bancario - ${escapeHtml(filterLabel || 'Reporte')}</title>
+        <style>${css}</style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>PROMAN Services</h1>
+          <div class="subtitle">Reporte anual ampliado para presentación bancaria</div>
+          <div class="meta">
+            Período analizado: <strong>${escapeHtml(filterLabel || 'Personalizado')}</strong><br/>
+            Cobertura: ${escapeHtml(formatShortDate(start))} al ${escapeHtml(formatShortDate(reportEnd))}<br/>
+            Generado: ${escapeHtml(new Intl.DateTimeFormat('es-SV', { dateStyle: 'full', timeStyle: 'short', timeZone: 'UTC' }).format(new Date()))}
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">1. Criterios y referencias usadas en este reporte</div>
+          <div class="section-body">
+            <div class="note">
+              Para fines bancarios, este reporte incorpora dos referencias de negocio indicadas por la empresa: <strong>valor promedio por cliente de USD 40</strong> y <strong>ticket promedio de USD 155</strong>.
+              La base operativa usa clientes identificados por customer_id, teléfono normalizado, nombre o conversación cuando no existe un identificador único perfecto.
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">2. Resumen ejecutivo anual</div>
+          <div class="section-body">
+            <div class="grid">
+              <div class="card">
+                <div class="card-label">Ingresos generados</div>
+                <div class="card-value">${escapeHtml(fmtMoney(totalGenerated))}</div>
+                <div class="card-sub">Cobrado en el período</div>
+              </div>
+              <div class="card">
+                <div class="card-label">Promedio mensual generado</div>
+                <div class="card-value">${escapeHtml(fmtMoney(avgMonthlyGenerated))}</div>
+                <div class="card-sub">Desde inicio del año</div>
+              </div>
+              <div class="card">
+                <div class="card-label">Clientes por mes</div>
+                <div class="card-value">${escapeHtml(avgMonthlyClients.toFixed(1))}</div>
+                <div class="card-sub">Promedio mensual</div>
+              </div>
+              <div class="card">
+                <div class="card-label">Servicios registrados</div>
+                <div class="card-value">${escapeHtml(fmtNumber(filteredInquiries.length))}</div>
+                <div class="card-sub">Trabajos en el período</div>
+              </div>
+              <div class="card">
+                <div class="card-label">Valor promedio por cliente</div>
+                <div class="card-value">${escapeHtml(fmtMoney(40))}</div>
+                <div class="card-sub">Referencia de negocio</div>
+              </div>
+              <div class="card">
+                <div class="card-label">Ticket promedio</div>
+                <div class="card-value">${escapeHtml(fmtMoney(155))}</div>
+                <div class="card-sub">Referencia de negocio</div>
+              </div>
+              <div class="card">
+                <div class="card-label">Valor operativo estimado</div>
+                <div class="card-value">${escapeHtml(fmtMoney(totalOperationalRevenue))}</div>
+                <div class="card-sub">Según montos de trabajos</div>
+              </div>
+              <div class="card">
+                <div class="card-label">Valor por clientes estimado</div>
+                <div class="card-value">${escapeHtml(fmtMoney(totalClients * 40))}</div>
+                <div class="card-sub">Clientes mensuales acumulados × USD 40</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">3. Clientes e ingresos por mes</div>
+          <div class="section-body">
+            <table>
+              <thead>
+                <tr>
+                  <th>Mes</th>
+                  <th>Clientes</th>
+                  <th>Servicios</th>
+                  <th class="amount">Ingresos cobrados</th>
+                  <th class="amount">Valor clientes (USD 40)</th>
+                  <th class="amount">Ticket ref. (USD 155)</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${monthlyBreakdown.map((row) => `
+                  <tr>
+                    <td>${escapeHtml(row.label)}</td>
+                    <td>${escapeHtml(fmtNumber(row.clients))}</td>
+                    <td>${escapeHtml(fmtNumber(row.jobs))}</td>
+                    <td class="amount">${escapeHtml(fmtMoney(row.generated))}</td>
+                    <td class="amount">${escapeHtml(fmtMoney(row.estimatedClientValue))}</td>
+                    <td class="amount">${escapeHtml(fmtMoney(row.referenceTicket))}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">4. Servicios más vendidos</div>
+          <div class="section-body">
+            <table>
+              <thead>
+                <tr>
+                  <th>Servicio</th>
+                  <th>Cantidad</th>
+                  <th class="amount">Valor asociado</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${servicesRanking.map((item) => `
+                  <tr>
+                    <td>${escapeHtml(item.name)}</td>
+                    <td>${escapeHtml(fmtNumber(item.count))}</td>
+                    <td class="amount">${escapeHtml(fmtMoney(item.revenue))}</td>
+                  </tr>
+                `).join('') || '<tr><td colspan="3">Sin datos</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">5. Distribución geográfica y por rubro</div>
+          <div class="section-body two-col">
+            <div>
+              <h3 style="margin-top:0;color:#252a5c;">Por departamento</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Departamento</th>
+                    <th>Cantidad</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${departmentDistribution.map((item) => `
+                    <tr>
+                      <td>${escapeHtml(item.name)}</td>
+                      <td>${escapeHtml(fmtNumber(item.value))}</td>
+                    </tr>
+                  `).join('') || '<tr><td colspan="2">Sin datos</td></tr>'}
+                </tbody>
+              </table>
+            </div>
+            <div>
+              <h3 style="margin-top:0;color:#252a5c;">Por rubro</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Rubro</th>
+                    <th>Cantidad</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${rubroDistribution.map((item) => `
+                    <tr>
+                      <td>${escapeHtml(item.name)}</td>
+                      <td>${escapeHtml(fmtNumber(item.value))}</td>
+                    </tr>
+                  `).join('') || '<tr><td colspan="2">Sin datos</td></tr>'}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">6. Ejemplos de los últimos 10 clientes</div>
+          <div class="section-body">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Cliente</th>
+                  <th>Departamento</th>
+                  <th>Rubro</th>
+                  <th>Servicio</th>
+                  <th class="amount">Monto</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${latestTenClients.map((item) => `
+                  <tr>
+                    <td>${escapeHtml(formatShortDate(item.date))}</td>
+                    <td>${escapeHtml(item.name)}</td>
+                    <td>${escapeHtml(item.department)}</td>
+                    <td>${escapeHtml(item.rubro)}</td>
+                    <td>${escapeHtml(item.service)}</td>
+                    <td class="amount">${escapeHtml(fmtMoney(item.amount))}</td>
+                  </tr>
+                `).join('') || '<tr><td colspan="6">Sin datos</td></tr>'}
+              </tbody>
+            </table>
+            <p class="small" style="margin-top:12px;">Estos registros se muestran como muestra operativa reciente para respaldo del comportamiento comercial.</p>
+          </div>
+        </div>
+
+        <div class="footer">
+          Reporte generado automáticamente por PROMAN Services para uso administrativo y bancario.
+        </div>
+
+        <script>
+          window.onload = function () {
+            setTimeout(function () { window.print(); }, 500);
+          };
+        </script>
+      </body>
+      </html>
+    `;
+
+    return Response.json({
+      success: true,
+      html,
+      summary: {
+        totalGenerated,
+        avgMonthlyGenerated,
+        avgMonthlyClients,
+        totalServices: filteredInquiries.length
+      }
+    });
+  } catch (error) {
+    console.error('MANAGEMENT REPORT ERROR:', error);
+    return Response.json({ success: false, error: error.message || 'Error generico' }, { status: 500 });
+  }
 });
