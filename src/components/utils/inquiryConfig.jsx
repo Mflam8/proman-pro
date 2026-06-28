@@ -2,6 +2,8 @@ import { AlertCircle, Calendar, Clock, ClipboardCheck, FileText, FileCheck, Thum
 
 export const statusConfig = {
   nuevo: { label: "Nuevo", color: "bg-blue-100 text-blue-800", icon: AlertCircle },
+  pendiente_cotizacion: { label: "Pendiente de cotización", color: "bg-orange-100 text-orange-800", icon: FileText },
+  pendiente_agenda: { label: "Pendiente de agenda", color: "bg-amber-100 text-amber-800", icon: Clock },
   evaluacion_agendada: { label: "Evaluación Agendada", color: "bg-indigo-100 text-indigo-800", icon: Calendar },
   evaluacion_pendiente: { label: "Evaluación Pendiente", color: "bg-yellow-100 text-yellow-800", icon: Clock },
   evaluacion_realizada: { label: "Evaluación Realizada", color: "bg-green-100 text-green-800", icon: ClipboardCheck },
@@ -15,6 +17,9 @@ export const statusConfig = {
   en_proceso: { label: "En Proceso", color: "bg-blue-100 text-blue-800", icon: Clock },
   terminado: { label: "Terminado", color: "bg-emerald-100 text-emerald-800", icon: CheckCircle },
   completado: { label: "Completado", color: "bg-green-100 text-green-800", icon: CheckCircle },
+  pendiente_facturacion: { label: "Pendiente facturación", color: "bg-orange-100 text-orange-800", icon: FileText },
+  facturado: { label: "Facturado", color: "bg-sky-100 text-sky-800", icon: FileCheck },
+  pagado: { label: "Pagado", color: "bg-emerald-100 text-emerald-900", icon: CheckCircle },
   cerrado: { label: "Cerrado", color: "bg-gray-100 text-gray-800", icon: CheckCircle },
   incidencia: { label: "Incidencia", color: "bg-red-100 text-red-800", icon: AlertCircle },
   perdido: { label: "Perdido", color: "bg-gray-200 text-gray-700", icon: AlertCircle },

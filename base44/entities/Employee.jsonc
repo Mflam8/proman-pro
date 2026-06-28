@@ -61,6 +61,27 @@
       "default": "efectivo",
       "description": "M\u00e9todo de pago preferido"
     },
+    "specialties": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Especialidades o tipos de servicio que puede atender"
+    },
+    "base_location": {
+      "type": "string",
+      "description": "Departamento o zona base del t\u00e9cnico"
+    },
+    "max_active_jobs": {
+      "type": "number",
+      "default": 4,
+      "description": "Cantidad m\u00e1xima recomendada de trabajos activos"
+    },
+    "is_field_technician": {
+      "type": "boolean",
+      "default": true,
+      "description": "Si presta servicio t\u00e9cnico en campo"
+    },
     "is_active": {
       "type": "boolean",
       "default": true,

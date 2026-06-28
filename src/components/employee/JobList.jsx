@@ -1,88 +1,97 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import JobDetailModal from "./JobDetailModal";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Phone, MapPin, FileText, User } from "lucide-react";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import { CalendarDays, Clock3, MapPin, Wrench } from "lucide-react";
+import TechnicianWorkOrderModal from "./TechnicianWorkOrderModal";
+import { getWorkflowStage } from "@/lib/workflow";
 
-const statusConfig = {
-  nuevo: { label: "Nuevo", color: "bg-blue-100 text-blue-800" },
-  en_proceso: { label: "En Proceso", color: "bg-indigo-100 text-indigo-800" },
-  completado: { label: "Completado", color: "bg-green-100 text-green-800" },
-  // ... add other statuses if needed
-};
+function buildMapUrl(address, location) {
+  const query = [address, location].filter(Boolean).join(', ');
+  return query ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}` : null;
+}
 
-export default function JobList({ user }) {
-  const [selectedJob, setSelectedJob] = useState(null);
-
-  const { data: jobs, isLoading } = useQuery({
-    queryKey: ['assignedJobs', user.email],
-    queryFn: () => base44.entities.ClientInquiry.filter({ assigned_to: user.email }, '-created_date'),
+export default function JobList({ user, filterMode = 'all' }) {
+  const [selectedWorkOrder, setSelectedWorkOrder] = useState(null);
+  const { data: workOrders = [], isLoading: isLoadingOrders } = useQuery({
+    queryKey: ['assignedWorkOrders', user.email],
+    queryFn: () => base44.entities.WorkOrder.filter({ technician_email: user.email }, '-updated_date', 200),
     enabled: !!user,
+    initialData: []
+  });
+  const { data: inquiries = [], isLoading: isLoadingInquiries } = useQuery({
+    queryKey: ['assignedInquiries', user.email],
+    queryFn: () => base44.entities.ClientInquiry.filter({ assigned_to: user.email }, '-updated_date', 200),
+    enabled: !!user,
+    initialData: []
   });
 
-  if (isLoading) return <p>Cargando tus trabajos asignados...</p>;
+  const visibleOrders = useMemo(() => {
+    const workOrderMap = Object.fromEntries(workOrders.map((item) => [item.inquiry_id, item]));
+    const derived = inquiries.map((inquiry) => {
+      const workOrder = workOrderMap[inquiry.id];
+      if (workOrder) return workOrder;
+      return {
+        id: null,
+        inquiry_id: inquiry.id,
+        workflow_stage: getWorkflowStage(inquiry, null),
+        status: 'draft',
+        customer_name: inquiry.client_name,
+        contact_name: inquiry.client_name,
+        contact_phone: inquiry.phone,
+        address: inquiry.address,
+        location: inquiry.location_name || inquiry.location,
+        map_url: buildMapUrl(inquiry.address, inquiry.location_name || inquiry.location),
+        requested_services: inquiry.service_type ? [inquiry.service_type] : [],
+        required_materials: [],
+        scheduled_date: inquiry.scheduled_date,
+        scheduled_start_time: inquiry.scheduled_start_time,
+        special_instructions: inquiry.notes,
+        customer_observations: inquiry.descripcion_libre || inquiry.message,
+        completion_summary: inquiry.work_notes_done,
+        materials_used_summary: null,
+        before_photo_urls: inquiry.before_image_url ? [inquiry.before_image_url] : [],
+        after_photo_urls: inquiry.after_image_url ? [inquiry.after_image_url] : []
+      };
+    });
+    const today = new Date().toISOString().split('T')[0];
+    return (filterMode === 'today' ? derived.filter((item) => item.scheduled_date === today) : derived);
+  }, [filterMode, inquiries, workOrders]);
+
+  if (isLoadingOrders || isLoadingInquiries) return <p>Cargando órdenes de trabajo...</p>;
 
   return (
-    <div>
-      <div className="grid gap-6">
-        {jobs && jobs.length > 0 ? jobs.map(job => (
-          <Card key={job.id} className="hover:shadow-md transition-shadow">
-            <CardContent className="p-6">
-              <div className="grid md:grid-cols-3 gap-4">
-                <div className="md:col-span-2">
-                    <div className="flex items-center gap-2 mb-2">
-                        <Badge className={statusConfig[job.status]?.color || 'bg-gray-100'}>{statusConfig[job.status]?.label || job.status}</Badge>
-                        <span className="text-xs text-gray-500">Recibido: {format(new Date(job.created_date), "dd MMM yyyy", { locale: es })}</span>
-                    </div>
-                    <h3 className="text-xl font-bold text-proman-navy mb-3">{job.service_type}</h3>
-                    <div className="space-y-2 text-sm">
-                        <InfoRow icon={User} text={job.client_name} />
-                        <InfoRow icon={Phone} text={job.phone} />
-                        <InfoRow icon={MapPin} text={job.location} />
-                    </div>
-                </div>
-
-                <div className="flex flex-col justify-between">
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                        <span className="text-xs font-semibold text-gray-500">PROGRESO</span>
-                        <span className="text-sm font-bold text-proman-navy">{job.progress_percentage || 0}%</span>
-                    </div>
-                    <Progress value={job.progress_percentage || 0} className="w-full h-2" />
+    <div className="space-y-4">
+      <div className="rounded-3xl border bg-white p-5">
+        <h2 className="text-xl font-bold text-proman-navy">{filterMode === 'today' ? 'Agenda de hoy' : 'Mis órdenes de trabajo'}</h2>
+        <p className="mt-1 text-sm text-gray-600">Aquí ves solo la información operativa que necesitas para ejecutar el servicio en campo.</p>
+      </div>
+      <div className="grid gap-4">
+        {visibleOrders.length > 0 ? visibleOrders.map((order, index) => (
+          <Card key={order.id || `${order.inquiry_id}-${index}`} className="border-l-4 border-proman-yellow shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-lg font-bold text-proman-navy">{order.customer_name}</h3>
+                    <Badge className="bg-cyan-100 text-cyan-900">{order.workflow_stage}</Badge>
                   </div>
-                  <div className="mt-4 flex flex-col gap-2">
-                     <Button onClick={() => setSelectedJob(job)}>Actualizar Progreso</Button>
-                     <Button variant="outline">Marcar Asistencia</Button>
+                  <p className="text-sm text-gray-700">{order.requested_services?.join(' · ') || 'Servicio por confirmar'}</p>
+                  <div className="space-y-1 text-sm text-gray-600">
+                    <div className="flex items-center gap-2"><MapPin className="w-4 h-4 text-proman-yellow" />{order.address || order.location || 'Ubicación pendiente'}</div>
+                    <div className="flex items-center gap-2"><CalendarDays className="w-4 h-4 text-proman-yellow" />{order.scheduled_date || 'Sin fecha'}</div>
+                    <div className="flex items-center gap-2"><Clock3 className="w-4 h-4 text-proman-yellow" />{order.scheduled_start_time || 'Sin hora'}</div>
                   </div>
                 </div>
+                <Button className="bg-proman-yellow text-proman-navy hover:opacity-90" onClick={() => setSelectedWorkOrder(order)}><Wrench className="w-4 h-4 mr-2" />Abrir orden</Button>
               </div>
             </CardContent>
           </Card>
-        )) : (
-          <p>No tienes trabajos asignados en este momento.</p>
-        )}
+        )) : <div className="rounded-3xl border border-dashed bg-white p-8 text-center text-gray-500">No hay órdenes {filterMode === 'today' ? 'para hoy' : 'asignadas'} en este momento.</div>}
       </div>
-
-      {selectedJob && (
-        <JobDetailModal 
-          job={selectedJob} 
-          isOpen={!!selectedJob} 
-          onClose={() => setSelectedJob(null)}
-        />
-      )}
+      {selectedWorkOrder && <TechnicianWorkOrderModal workOrder={selectedWorkOrder} isOpen={!!selectedWorkOrder} onClose={() => setSelectedWorkOrder(null)} user={user} />}
     </div>
   );
 }
-
-const InfoRow = ({ icon: Icon, text }) => (
-    <div className="flex items-center gap-2 text-gray-700">
-        <Icon className="w-4 h-4 text-proman-yellow flex-shrink-0" />
-        <span>{text}</span>
-    </div>
-);

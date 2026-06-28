@@ -31,6 +31,7 @@ import TrustedDirectory from "../components/admin/TrustedDirectory";
 import CorporateSchedulingManagement from "../components/admin/CorporateSchedulingManagement";
 import CorporateReports from "../components/admin/CorporateReports";
 import WhatsAppManagement from "../components/admin/WhatsAppManagement";
+import WorkflowKanban from "../components/admin/WorkflowKanban";
 import AgentChatWidget from "../components/agents/AgentChatWidget";
 
 const normalizePhone = (value) => {
@@ -337,6 +338,15 @@ export default function ClientManagement() {
                   >
                     <span className="text-lg">📋</span>
                     <span>Gestión de Trabajos</span>
+                  </button>
+                  <button
+                    onClick={() => setMainTab("pipeline")}
+                    className={`w-full text-left px-4 py-3 rounded-lg font-medium transition-colors flex items-center gap-3 ${
+                      mainTab === "pipeline" ? "bg-proman-yellow text-proman-navy" : "hover:bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    <span className="text-lg">🧠</span>
+                    <span>Pipeline Inteligente</span>
                   </button>
                   <button
                     onClick={() => setMainTab("calendario")}
@@ -710,6 +720,10 @@ export default function ClientManagement() {
               {totalFiltered === 0 && !isLoadingInquiries && <p className="text-center text-gray-500 mt-8">No se encontraron solicitudes con los filtros seleccionados.</p>}
               {isLoadingInquiries && <p className="text-center text-gray-500 mt-8">Cargando solicitudes...</p>}
             </div>
+          </TabsContent>
+
+          <TabsContent value="pipeline">
+            <WorkflowKanban inquiries={allInquiries} customers={customers} onOpenInquiry={setSelectedInquiry} />
           </TabsContent>
 
           <TabsContent value="calendario">

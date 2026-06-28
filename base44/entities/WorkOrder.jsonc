@@ -1,0 +1,288 @@
+{
+  "name": "WorkOrder",
+  "type": "object",
+  "properties": {
+    "inquiry_id": {
+      "type": "string",
+      "description": "ID del ClientInquiry asociado"
+    },
+    "customer_id": {
+      "type": "string",
+      "description": "ID del cliente asociado"
+    },
+    "conversation_id": {
+      "type": "string",
+      "description": "ID de la conversaci\u00f3n fuente"
+    },
+    "analysis_id": {
+      "type": "string",
+      "description": "ID del \u00faltimo an\u00e1lisis IA aplicado"
+    },
+    "workflow_stage": {
+      "type": "string",
+      "enum": [
+        "New Conversation",
+        "Needs Information",
+        "Pending Review",
+        "Ready for Quote",
+        "Quote Sent",
+        "Customer Approved",
+        "Scheduled",
+        "Technician Assigned",
+        "In Progress",
+        "Pending Billing",
+        "Paid",
+        "Closed"
+      ],
+      "default": "New Conversation",
+      "description": "Etapa operativa visible en el pipeline"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "ready",
+        "scheduled",
+        "assigned",
+        "in_progress",
+        "pending_billing",
+        "paid",
+        "closed",
+        "cancelled"
+      ],
+      "default": "draft",
+      "description": "Estado operativo resumido de la orden"
+    },
+    "customer_name": {
+      "type": "string",
+      "description": "Nombre principal del cliente"
+    },
+    "company_name": {
+      "type": "string",
+      "description": "Empresa o raz\u00f3n social si aplica"
+    },
+    "contact_name": {
+      "type": "string",
+      "description": "Nombre del contacto operativo"
+    },
+    "contact_phone": {
+      "type": "string",
+      "description": "Tel\u00e9fono principal del contacto"
+    },
+    "contact_email": {
+      "type": "string",
+      "description": "Correo del contacto si existe"
+    },
+    "address": {
+      "type": "string",
+      "description": "Direcci\u00f3n completa de trabajo"
+    },
+    "location": {
+      "type": "string",
+      "description": "Departamento o zona del trabajo"
+    },
+    "gps_location": {
+      "type": "string",
+      "description": "Coordenadas o referencia GPS si existen"
+    },
+    "map_url": {
+      "type": "string",
+      "description": "Enlace de navegaci\u00f3n"
+    },
+    "scheduled_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Fecha programada"
+    },
+    "scheduled_start_time": {
+      "type": "string",
+      "description": "Hora programada de inicio"
+    },
+    "estimated_duration_hours": {
+      "type": "number",
+      "description": "Duraci\u00f3n estimada en horas"
+    },
+    "requested_services": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Servicios solicitados por el cliente"
+    },
+    "equipment_needed": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Equipo o herramientas destacadas"
+    },
+    "required_materials": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Materiales requeridos o sugeridos"
+    },
+    "technician_user_id": {
+      "type": "string",
+      "description": "ID del usuario t\u00e9cnico asignado"
+    },
+    "technician_name": {
+      "type": "string",
+      "description": "Nombre del t\u00e9cnico asignado"
+    },
+    "technician_email": {
+      "type": "string",
+      "description": "Correo del t\u00e9cnico asignado"
+    },
+    "special_instructions": {
+      "type": "string",
+      "description": "Instrucciones especiales para el t\u00e9cnico"
+    },
+    "customer_observations": {
+      "type": "string",
+      "description": "Observaciones clave del cliente"
+    },
+    "safety_notes": {
+      "type": "string",
+      "description": "Notas de seguridad y riesgos"
+    },
+    "operational_summary": {
+      "type": "string",
+      "description": "Resumen operativo listo para ejecuci\u00f3n"
+    },
+    "ai_summary": {
+      "type": "string",
+      "description": "Resumen textual generado a partir del an\u00e1lisis IA"
+    },
+    "missing_operational_fields": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Informaci\u00f3n faltante para ejecutar correctamente"
+    },
+    "admin_notes": {
+      "type": "string",
+      "description": "Notas adicionales del equipo administrativo"
+    },
+    "before_photo_urls": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Fotos de antes del trabajo"
+    },
+    "after_photo_urls": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Fotos de despu\u00e9s del trabajo"
+    },
+    "materials_used_summary": {
+      "type": "string",
+      "description": "Resumen libre de materiales usados en campo"
+    },
+    "completion_summary": {
+      "type": "string",
+      "description": "Resumen final del trabajo realizado"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Fecha real de finalizaci\u00f3n"
+    },
+    "last_synced_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "\u00daltima sincronizaci\u00f3n autom\u00e1tica"
+    }
+  },
+  "required": [
+    "inquiry_id",
+    "workflow_stage",
+    "status",
+    "customer_name"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "employee_type": "Supervisor"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "system"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "employee_type": "Supervisor"
+          }
+        },
+        {
+          "data.technician_user_id": "{{user.id}}"
+        },
+        {
+          "data.technician_email": "{{user.email}}"
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "employee_type": "Supervisor"
+          }
+        },
+        {
+          "data.technician_user_id": "{{user.id}}"
+        },
+        {
+          "data.technician_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "system"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "employee_type": "Supervisor"
+          }
+        }
+      ]
+    }
+  }
+}

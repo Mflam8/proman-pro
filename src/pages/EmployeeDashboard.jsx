@@ -74,22 +74,26 @@ export default function EmployeeDashboard() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <Tabs defaultValue="clock">
-          <TabsList className="mb-6">
-            <TabsTrigger value="clock"><Clock className="w-4 h-4 mr-2" />Marcaje</TabsTrigger>
+        <Tabs defaultValue="today">
+          <TabsList className="mb-6 flex flex-wrap h-auto gap-2 bg-transparent p-0">
+            <TabsTrigger value="today"><Calendar className="w-4 h-4 mr-2" />Hoy</TabsTrigger>
             <TabsTrigger value="jobs"><ListChecks className="w-4 h-4 mr-2" />Mis Trabajos</TabsTrigger>
-            <TabsTrigger value="schedule"><Calendar className="w-4 h-4 mr-2" />Mi Horario</TabsTrigger>
+            <TabsTrigger value="schedule"><Calendar className="w-4 h-4 mr-2" />Disponibilidad</TabsTrigger>
+            <TabsTrigger value="clock"><Clock className="w-4 h-4 mr-2" />Marcaje</TabsTrigger>
             <TabsTrigger value="profile"><User className="w-4 h-4 mr-2" />Mi Perfil</TabsTrigger>
           </TabsList>
-          
-          <TabsContent value="clock">
-            <ClockInOut user={user} />
+
+          <TabsContent value="today">
+            <JobList user={user} filterMode="today" />
           </TabsContent>
           <TabsContent value="jobs">
-            <JobList user={user} />
+            <JobList user={user} filterMode="all" />
           </TabsContent>
           <TabsContent value="schedule">
             <ScheduleManager user={user} />
+          </TabsContent>
+          <TabsContent value="clock">
+            <ClockInOut user={user} />
           </TabsContent>
           <TabsContent value="profile">
             <ProfileSection user={user} />

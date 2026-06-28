@@ -27,6 +27,7 @@ import WhatsAppConversationPanel from "./WhatsAppConversationPanel";
 import WhatsAppQuoteActions from "./WhatsAppQuoteActions";
 import CustomerContextAgentCard from "./CustomerContextAgentCard";
 import AISuggestionsPanel from "./AISuggestionsPanel";
+import WorkOrderPreviewCard from "./WorkOrderPreviewCard";
 import { commercialStatusConfig, workStatusConfig } from "@/components/utils/inquiryConfig";
 
 export default function InquiryDetailForm({ 
@@ -470,6 +471,8 @@ export default function InquiryDetailForm({
             onOpenCreateInquiry={() => onCreateInquiry?.(customer?.id || inquiry.customer_id || null)}
           />
 
+          <WorkOrderPreviewCard inquiryId={inquiry.id} />
+
           <WhatsAppConversationPanel 
             customerId={customer?.id || inquiry.customer_id}
             inquiryId={inquiry.id}
@@ -553,6 +556,7 @@ export default function InquiryDetailForm({
                     selectedDate={formData.scheduled_date} 
                     startTime={formData.scheduled_start_time} 
                     duration={formData.estimated_duration_hours} 
+                    serviceType={formData.service_type}
                     onSelect={(email) => setFormData(p => ({...p, assigned_to: email}))} 
                     currentAssignee={formData.assigned_to} 
                   />
