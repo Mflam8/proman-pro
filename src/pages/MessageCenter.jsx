@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Download, FileText, Search, Filter, Eye, Image as ImageIcon, PlayCircle, FileAudio, File, MessageCircle } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import WhatsAppSimulatorPanel from "@/components/admin/WhatsAppSimulatorPanel";
 
 function RawJsonDialog({ open, onOpenChange, title, jsonString }) {
   let pretty = "";
@@ -66,7 +67,7 @@ export default function MessageCenter() {
   });
 
   // Webhook Events
-  const { data: events = [], isLoading: loadingEvents } = useQuery({
+  const { data: events = [], isLoading: loadingEvents, refetch: refetchEvents } = useQuery({
     queryKey: ['messageCenter','webhookEvents'],
     queryFn: async () => base44.entities.WebhookEvent.filter({}, '-created_date', 300),
     initialData: [],
@@ -74,7 +75,7 @@ export default function MessageCenter() {
   });
 
   // Delivery Receipts
-  const { data: receipts = [], isLoading: loadingReceipts } = useQuery({
+  const { data: receipts = [], isLoading: loadingReceipts, refetch: refetchReceipts } = useQuery({
     queryKey: ['messageCenter','receipts'],
     queryFn: async () => base44.entities.DeliveryReceipt.filter({}, '-created_date', 300),
     initialData: [],
@@ -148,6 +149,12 @@ export default function MessageCenter() {
     { label: 'Estado', value: r => r.status || '' },
   ];
 
+  const refreshAll = () => {
+    refetch();
+    refetchEvents();
+    refetchReceipts();
+  };
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-[120rem] mx-auto space-y-4">
@@ -173,6 +180,7 @@ export default function MessageCenter() {
             <TabsTrigger value="messages">Mensajes</TabsTrigger>
             <TabsTrigger value="events">Webhook Events</TabsTrigger>
             <TabsTrigger value="receipts">Recepciones</TabsTrigger>
+            <TabsTrigger value="simulator">Simulador</TabsTrigger>
           </TabsList>
 
           <TabsContent value="messages" className="mt-4">
@@ -420,6 +428,10 @@ export default function MessageCenter() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="simulator" className="mt-4">
+            <WhatsAppSimulatorPanel onSimulated={refreshAll} />
           </TabsContent>
         </Tabs>
       </div>
