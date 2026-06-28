@@ -61,15 +61,18 @@ function shouldAnalyze({ latestMessage, lastAnalysis, lastState, recentMessages,
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const startedAt = Date.now();
     const body = await req.json();
-    const { customer_id, inquiry_id, phone, conversation_id, trigger_reason } = body || {};
+    const { customer_id, inquiry_id, phone, conversation_id, trigger_reason, internal_invocation } = body || {};
+
+    let user = null;
+    try {
+      user = await base44.auth.me();
+    } catch {}
+
+    if (!user && internal_invocation !== true) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     let messages = [];
     if (conversation_id) messages = await base44.asServiceRole.entities.BitacoraWhatsApp.filter({ conversation_id }, '-created_date', 30);

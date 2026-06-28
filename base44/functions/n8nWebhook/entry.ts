@@ -569,7 +569,8 @@ Deno.serve(async (req) => {
               customer_id: customer?.id || null,
               inquiry_id: null,
               phone: parsedEvent.contact_phone || null,
-              trigger_reason: parsedEvent.event_type === 'media' ? 'new_customer_media' : 'new_customer_message'
+              trigger_reason: parsedEvent.event_type === 'media' ? 'new_customer_media' : 'new_customer_message',
+              internal_invocation: true
             });
           } catch (error) {
             await logPipelineFailure({
@@ -942,7 +943,8 @@ Deno.serve(async (req) => {
               customer_id: customer.id,
               inquiry_id: inquiry.id,
               phone: customer.phone || normalizedPhone || null,
-              trigger_reason: ['image', 'video', 'audio', 'document'].includes(messageTypeGuessed) ? 'legacy_customer_media' : 'legacy_customer_message'
+              trigger_reason: ['image', 'video', 'audio', 'document'].includes(messageTypeGuessed) ? 'legacy_customer_media' : 'legacy_customer_message',
+              internal_invocation: true
             });
           } catch (error) {
             await logPipelineFailure({
