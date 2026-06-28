@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 const PROMPT_VERSION = 'conversation-intelligence-v2';
 const ANALYSIS_MODEL = 'automatic';
@@ -41,6 +41,9 @@ function shouldAnalyze({ latestMessage, lastAnalysis, lastState, recentMessages,
   const lastAnalysisAt = lastAnalysis?.created_date ? new Date(lastAnalysis.created_date).getTime() : 0;
   const sinceLastAnalysis = now - lastAnalysisAt;
   const flags = detectSignalFlags(recentMessages);
+  const latestText = normalizeText(latestMessage?.text || latestMessage?.texto_mensaje || latestMessage?.caption);
+  const latestHasUrgency = /(urgente|emergencia|ya|ahora|rápido|rapido|hoy mismo|inmediato)/.test(latestText);
+  const latestHasStructuredSignal = /(mañana|hoy|lunes|martes|miércoles|miercoles|jueves|viernes|sábado|sabado|domingo|\d{1,2}[:.]\d{2}|dirección|direccion|ubicación|ubicacion|maps|waze|colonia|avenida|pasaje|casa|local|km\s?\d+|pago|abono|transfer|depósito|deposito|factura|comprobante|saldo|\$\d+)/.test(latestText);
   const currentIntent = normalizeText(lastState?.current_intent);
   const previousIntent = normalizeText(lastAnalysis?.intent || lastState?.current_intent);
   const silenceGap = recentMessages.length >= 2
@@ -50,6 +53,7 @@ function shouldAnalyze({ latestMessage, lastAnalysis, lastState, recentMessages,
   if (!lastAnalysis) return { run: true, reason: 'no_recent_analysis' };
   if (lastAnalysis.requires_human_review) return { run: true, reason: 'requires_human_review' };
   if (lastAnalysis.unread_customer_message) return { run: true, reason: 'unread_customer_message' };
+  if (String(trigger_reason || '').startsWith('bitacora_customer_') && (latestHasUrgency || latestHasStructuredSignal)) return { run: true, reason: 'new_customer_signal' };
   if (flags.hasUrgency && sinceLastAnalysis > 30 * 1000) return { run: true, reason: 'urgency_detected' };
   if ((flags.hasDate || flags.hasPayment || flags.hasLocation) && sinceLastAnalysis > 60 * 1000) return { run: true, reason: 'new_structured_signal' };
   if (silenceGap > LONG_SILENCE_MS) return { run: true, reason: 'customer_returned_after_long_time' };
@@ -63,14 +67,26 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const startedAt = Date.now();
     const body = await req.json();
-    const { customer_id, inquiry_id, phone, conversation_id, trigger_reason, internal_invocation } = body || {};
+    const { internal_invocation } = body || {};
+    let { customer_id, inquiry_id, phone, conversation_id, trigger_reason } = body || {};
+    let forcedLatestMessage = null;
+
+    if (body?.event?.entity_name === 'BitacoraWhatsApp' && body?.event?.entity_id) {
+      const messageRecord = await base44.asServiceRole.entities.BitacoraWhatsApp.get(body.event.entity_id);
+      forcedLatestMessage = messageRecord || null;
+      conversation_id = conversation_id || messageRecord?.conversation_id || null;
+      customer_id = customer_id || messageRecord?.customer_id || null;
+      inquiry_id = inquiry_id || messageRecord?.trabajo_id || messageRecord?.job_id || null;
+      phone = phone || messageRecord?.phone || messageRecord?.from_phone || null;
+      trigger_reason = trigger_reason || (['image', 'video', 'audio', 'document'].includes(messageRecord?.message_type) ? 'bitacora_customer_media' : 'bitacora_customer_message');
+    }
 
     let user = null;
     try {
       user = await base44.auth.me();
     } catch {}
 
-    if (!user && internal_invocation !== true) {
+    if (!user && internal_invocation !== true && !body?.event?.entity_id) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -88,7 +104,7 @@ Deno.serve(async (req) => {
     }
 
     const resolvedConversationId = conversation_id || recentMessages[0]?.conversation_id || null;
-    const latestMessage = recentMessages[recentMessages.length - 1];
+    const latestMessage = forcedLatestMessage || recentMessages[recentMessages.length - 1];
 
     const previousAnalyses = resolvedConversationId
       ? await base44.asServiceRole.entities.ConversationAnalysis.filter({ conversation_id: resolvedConversationId }, '-created_date', 1)

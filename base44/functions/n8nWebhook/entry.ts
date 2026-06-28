@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 /**
  * PROMAN - Webhook robusto para N8N
@@ -554,36 +554,6 @@ Deno.serve(async (req) => {
           });
         }
 
-        if (conv?.id && hasUsefulCustomerContent({
-          eventType: parsedEvent.event_type,
-          messageType: parsedEvent.message_type,
-          text: parsedEvent.text,
-          caption: parsedEvent.caption,
-          mediaUrl: parsedEvent.media_url,
-          direction: parsedEvent.direction,
-          senderType: parsedEvent.sender_type
-        })) {
-          try {
-            await base44.asServiceRole.functions.invoke('analyzeConversation', {
-              conversation_id: conv.id,
-              customer_id: customer?.id || null,
-              inquiry_id: null,
-              phone: parsedEvent.contact_phone || null,
-              trigger_reason: parsedEvent.event_type === 'media' ? 'new_customer_media' : 'new_customer_message',
-              internal_invocation: true
-            });
-          } catch (error) {
-            await logPipelineFailure({
-              conversationId: conv.id,
-              sourceName: 'analyzeConversation',
-              eventType: 'pipeline_analysis_failed',
-              message: 'Falló el análisis IA automático',
-              details: error.message,
-              relatedEntityId: savedMsg?.id || wh.id,
-              relatedEntity: 'WhatsappConversation'
-            });
-          }
-        }
 
         await base44.asServiceRole.entities.WebhookEvent.update(wh.id, { processed_ok: true });
         results.push({ webhook_event_id: wh.id, duplicate: false, conversation_id: conv?.id || null, message_id: savedMsg?.id || null, event_type: parsedEvent.event_type });
@@ -928,36 +898,6 @@ Deno.serve(async (req) => {
           notes: `ck:${stableConversationKey}`
         });
 
-        if (hasUsefulCustomerContent({
-          eventType: ['image', 'video', 'audio', 'document'].includes(messageTypeGuessed) ? 'media' : 'message',
-          messageType: messageTypeGuessed,
-          text: resolvedMessage,
-          caption,
-          mediaUrl,
-          direction: 'inbound',
-          senderType: 'customer'
-        })) {
-          try {
-            await base44.asServiceRole.functions.invoke('analyzeConversation', {
-              conversation_id: conversation.id,
-              customer_id: customer.id,
-              inquiry_id: inquiry.id,
-              phone: customer.phone || normalizedPhone || null,
-              trigger_reason: ['image', 'video', 'audio', 'document'].includes(messageTypeGuessed) ? 'legacy_customer_media' : 'legacy_customer_message',
-              internal_invocation: true
-            });
-          } catch (error) {
-            await logPipelineFailure({
-              conversationId: conversation.id,
-              sourceName: 'analyzeConversation',
-              eventType: 'pipeline_analysis_failed',
-              message: 'Falló el análisis IA automático',
-              details: error.message,
-              relatedEntityId: msgRecord.id,
-              relatedEntity: 'ClientInquiry'
-            });
-          }
-        }
 
         await base44.asServiceRole.entities.WebhookEvent.update(webhookLog.id, { processed_ok: true });
 
