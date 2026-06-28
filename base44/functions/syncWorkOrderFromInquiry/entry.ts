@@ -60,6 +60,19 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const body = await req.json();
 
+    const addTimelineEvent = async ({ conversationId, eventType, title, description, relatedEntityId = null, metadata = {} }) => {
+      if (!conversationId) return;
+      await base44.asServiceRole.entities.ConversationTimelineEvent.create({
+        conversation_id: conversationId,
+        event_type: eventType,
+        title,
+        description,
+        source: metadata.status === 'error' ? 'system' : 'system',
+        related_entity_id: relatedEntityId,
+        metadata_json: JSON.stringify(metadata)
+      });
+    };
+
     let inquiry = body?.data || null;
     if (!inquiry && body?.inquiry_id) {
       inquiry = await base44.asServiceRole.entities.ClientInquiry.get(body.inquiry_id);
@@ -112,7 +125,7 @@ Deno.serve(async (req) => {
       gps_location: null,
       map_url: buildMapUrl(inquiry.address || analysis?.detected_address, inquiry.location_name || inquiry.location || analysis?.direction_or_location),
       scheduled_date: inquiry.scheduled_date || inquiry.visit_date || null,
-      scheduled_start_time: inquiry.scheduled_start_time || null,
+      scheduled_start_time: inquiry.scheduled_start_time || inquiry.preferred_time || null,
       estimated_duration_hours: inquiry.estimated_duration_hours || null,
       requested_services: requestedServices,
       equipment_needed: [],
@@ -136,12 +149,53 @@ Deno.serve(async (req) => {
     };
 
     const existing = await base44.asServiceRole.entities.WorkOrder.filter({ inquiry_id: inquiry.id }, '-updated_date', 1);
+    const wasCreated = !existing[0];
     const workOrder = existing[0]
       ? await base44.asServiceRole.entities.WorkOrder.update(existing[0].id, workOrderPayload)
       : await base44.asServiceRole.entities.WorkOrder.create(workOrderPayload);
 
+    await addTimelineEvent({
+      conversationId: workOrderPayload.conversation_id,
+      eventType: 'pipeline_work_order_synced',
+      title: 'Work Order creada/actualizada',
+      description: `${wasCreated ? 'Creada' : 'Actualizada'} · ${workflowStage} · ${workOrder.contact_name || 'Sin cliente'}`,
+      relatedEntityId: workOrder.id,
+      metadata: { status: 'success', work_order_id: workOrder.id, created: wasCreated }
+    });
+
     return Response.json({ success: true, work_order_id: workOrder.id, workflow_stage: workflowStage, status: workOrder.status });
   } catch (error) {
+    let fallbackBody = {};
+    try {
+      fallbackBody = await req.clone().json();
+    } catch {}
+    const fallbackConversationId = fallbackBody?.data?.source_conversation_id || fallbackBody?.data?.conversation_id || null;
+    const fallbackInquiryId = fallbackBody?.inquiry_id || fallbackBody?.event?.entity_id || null;
+    try {
+      const base44 = createClientFromRequest(req);
+      if (fallbackConversationId) {
+        await base44.asServiceRole.entities.ConversationTimelineEvent.create({
+          conversation_id: fallbackConversationId,
+          event_type: 'pipeline_work_order_sync_failed',
+          title: 'Falló la sincronización hacia Work Order',
+          description: error.message,
+          source: 'system',
+          related_entity_id: fallbackInquiryId,
+          metadata_json: JSON.stringify({ status: 'error' })
+        });
+      }
+      await base44.asServiceRole.entities.SystemError.create({
+        source_type: 'function',
+        source_name: 'syncWorkOrderFromInquiry',
+        severity: 'error',
+        status: 'open',
+        message: 'Falló la sincronización hacia Work Order',
+        details: error.message,
+        related_entity: 'ClientInquiry',
+        related_entity_id: fallbackInquiryId,
+        occurred_at: new Date().toISOString()
+      });
+    } catch {}
     return Response.json({ error: error.message }, { status: 500 });
   }
 });

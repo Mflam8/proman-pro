@@ -151,6 +151,19 @@ Deno.serve(async (req) => {
       }
     });
 
+    const addTimelineEvent = async ({ eventType, title, description, relatedEntityId = null, metadata = {} }) => {
+      if (!resolvedConversationId) return;
+      await base44.asServiceRole.entities.ConversationTimelineEvent.create({
+        conversation_id: resolvedConversationId,
+        event_type: eventType,
+        title,
+        description,
+        source: metadata.status === 'error' ? 'system' : 'ai',
+        related_entity_id: relatedEntityId,
+        metadata_json: JSON.stringify(metadata)
+      });
+    };
+
     const duration = Date.now() - startedAt;
     const saved = await base44.asServiceRole.entities.ConversationAnalysis.create({
       customer_id: customer_id || recentMessages[0]?.customer_id || null,
@@ -218,55 +231,63 @@ Deno.serve(async (req) => {
         });
       }
 
-      await base44.asServiceRole.entities.ConversationTimelineEvent.create({
-        conversation_id: resolvedConversationId,
-        event_type: 'conversation_analysis_created',
+      await addTimelineEvent({
+        eventType: 'conversation_analysis_created',
         title: 'Nuevo análisis IA',
         description: `${analysis.intent} · ${analysis.urgency} · ${analysis.suggested_action}`,
-        source: 'ai',
-        related_entity_id: saved.id,
-        metadata_json: JSON.stringify({ trigger_reason: decision.reason, service: analysis.service, risk: analysis.operational_risk })
+        relatedEntityId: saved.id,
+        metadata: { status: 'success', trigger_reason: decision.reason, service: analysis.service, risk: analysis.operational_risk }
       });
 
       if ((analysis.payments || []).length > 0) {
-        await base44.asServiceRole.entities.ConversationTimelineEvent.create({
-          conversation_id: resolvedConversationId,
-          event_type: 'payment_detected',
+        await addTimelineEvent({
+          eventType: 'payment_detected',
           title: 'Pago detectado',
           description: (analysis.payments || []).join(', '),
-          source: 'ai',
-          related_entity_id: saved.id,
-          metadata_json: JSON.stringify({ payments: analysis.payments })
+          relatedEntityId: saved.id,
+          metadata: { status: 'success', payments: analysis.payments }
         });
       }
 
       if (analysis.direction_or_location) {
-        await base44.asServiceRole.entities.ConversationTimelineEvent.create({
-          conversation_id: resolvedConversationId,
-          event_type: 'customer_sent_location',
+        await addTimelineEvent({
+          eventType: 'customer_sent_location',
           title: 'Ubicación detectada',
           description: analysis.direction_or_location,
-          source: 'ai',
-          related_entity_id: saved.id,
-          metadata_json: JSON.stringify({ location: analysis.direction_or_location })
+          relatedEntityId: saved.id,
+          metadata: { status: 'success', location: analysis.direction_or_location }
         });
       }
 
       if (analysis.urgency === 'urgente') {
-        await base44.asServiceRole.entities.ConversationTimelineEvent.create({
-          conversation_id: resolvedConversationId,
-          event_type: 'ai_detected_urgency',
+        await addTimelineEvent({
+          eventType: 'ai_detected_urgency',
           title: 'Urgencia alta detectada',
           description: analysis.summary,
-          source: 'ai',
-          related_entity_id: saved.id,
-          metadata_json: JSON.stringify({ urgency: analysis.urgency })
+          relatedEntityId: saved.id,
+          metadata: { status: 'success', urgency: analysis.urgency }
         });
       }
     }
 
     return Response.json({ success: true, analysis: saved, source_messages: recentMessages.length, trigger_reason: decision.reason });
   } catch (error) {
+    try {
+      const base44 = createClientFromRequest(req);
+      const body = await req.clone().json().catch(() => ({}));
+      const fallbackConversationId = body?.conversation_id || null;
+      if (fallbackConversationId) {
+        await base44.asServiceRole.entities.ConversationTimelineEvent.create({
+          conversation_id: fallbackConversationId,
+          event_type: 'pipeline_analysis_failed',
+          title: 'Falló el análisis IA automático',
+          description: error.message,
+          source: 'system',
+          related_entity_id: null,
+          metadata_json: JSON.stringify({ status: 'error' })
+        });
+      }
+    } catch {}
     return Response.json({ error: error.message }, { status: 500 });
   }
 });

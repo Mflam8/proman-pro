@@ -85,7 +85,7 @@ function buildUpdatePayload(existing, analysis, requiresReview, approved) {
     phone: existing.phone || analysis.phone || null,
     source_conversation_id: existing.source_conversation_id || analysis.conversation_id || null,
     service_type: serviceType || existing.service_type,
-    message: analysis.summary || existing.message,
+    message: existing.message || analysis.summary || null,
     descripcion_libre: existing.descripcion_libre || analysis.summary || null,
     preferred_time: existing.preferred_time || analysis.detected_schedule || (analysis.dates || [])[0] || null,
     location_name: existing.location_name || analysis.direction_or_location || null,
@@ -103,6 +103,12 @@ function buildUpdatePayload(existing, analysis, requiresReview, approved) {
     payload.status = 'trabajo_aprobado';
     payload.commercial_status = 'aprobado';
     payload.approved_at = existing.approved_at || new Date().toISOString();
+  } else if (requiresReview && existing.human_review_status !== 'approved') {
+    if (!['agendado', 'en_ruta', 'en_sitio', 'en_proceso', 'completado', 'terminado', 'cerrado', 'pagado'].includes(existing.status)) {
+      payload.status = serviceType && serviceType !== 'unknown' ? 'pendiente_cotizacion' : 'nuevo';
+    }
+    payload.commercial_status = serviceType && serviceType !== 'unknown' ? 'cotizacion_pendiente' : 'nuevo';
+    payload.approved_at = null;
   } else if (!existing.commercial_status || existing.commercial_status === 'nuevo') {
     payload.commercial_status = serviceType && serviceType !== 'unknown' ? 'cotizacion_pendiente' : 'nuevo';
   }
@@ -116,6 +122,41 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const body = await req.json();
+
+    const addTimelineEvent = async ({ conversationId, eventType, title, description, relatedEntityId = null, metadata = {} }) => {
+      if (!conversationId) return;
+      await base44.asServiceRole.entities.ConversationTimelineEvent.create({
+        conversation_id: conversationId,
+        event_type: eventType,
+        title,
+        description,
+        source: metadata.status === 'error' ? 'system' : 'ai',
+        related_entity_id: relatedEntityId,
+        metadata_json: JSON.stringify(metadata)
+      });
+    };
+
+    const logFailure = async ({ conversationId, message, details, relatedEntityId = null }) => {
+      await addTimelineEvent({
+        conversationId,
+        eventType: 'pipeline_inquiry_sync_failed',
+        title: message,
+        description: details,
+        relatedEntityId,
+        metadata: { status: 'error' }
+      });
+      await base44.asServiceRole.entities.SystemError.create({
+        source_type: 'function',
+        source_name: 'syncInquiryFromConversationAnalysis',
+        severity: 'error',
+        status: 'open',
+        message,
+        details,
+        related_entity: 'ClientInquiry',
+        related_entity_id: relatedEntityId,
+        occurred_at: new Date().toISOString()
+      });
+    };
 
     let analysis = body?.data || null;
     if (!analysis && body?.analysis_id) {
@@ -131,7 +172,7 @@ Deno.serve(async (req) => {
 
     const confidence = analysis.ai_confidence_score ?? analysis.confidence_score ?? 0;
     const requiresReview = analysis.requires_human_review || confidence < 0.72;
-    const approved = detectApproval(analysis);
+    const approved = !requiresReview && detectApproval(analysis);
 
     let inquiry = null;
     if (analysis.inquiry_id) {
@@ -149,6 +190,7 @@ Deno.serve(async (req) => {
     }
 
     let result;
+    const wasCreated = !inquiry;
     if (inquiry) {
       const updateData = buildUpdatePayload(inquiry, analysis, requiresReview, approved);
       result = await base44.asServiceRole.entities.ClientInquiry.update(inquiry.id, updateData);
@@ -156,6 +198,16 @@ Deno.serve(async (req) => {
       const createData = buildCreatePayload(analysis, requiresReview, approved);
       result = await base44.asServiceRole.entities.ClientInquiry.create(createData);
     }
+
+    const conversationId = analysis.conversation_id || result.source_conversation_id || inquiry?.source_conversation_id || null;
+    await addTimelineEvent({
+      conversationId,
+      eventType: 'pipeline_inquiry_synced',
+      title: wasCreated ? 'ClientInquiry creado/actualizado' : 'ClientInquiry creado/actualizado',
+      description: `${wasCreated ? 'Creado' : 'Actualizado'} · ${result.service_type || 'Sin servicio'} · ${requiresReview ? 'Revisión pendiente' : 'Listo'}`,
+      relatedEntityId: result.id,
+      metadata: { status: 'success', inquiry_id: result.id, created: wasCreated, requires_review: requiresReview }
+    });
 
     if (analysis.inquiry_id !== result.id || analysis.human_review_status !== (requiresReview ? 'pending_review' : 'approved')) {
       await base44.asServiceRole.entities.ConversationAnalysis.update(analysis.id, {
@@ -174,6 +226,37 @@ Deno.serve(async (req) => {
       workflow_hint: getWorkflowHint(analysis, requiresReview, approved)
     });
   } catch (error) {
+    let fallbackBody = {};
+    try {
+      fallbackBody = await req.clone().json();
+    } catch {}
+    const fallbackConversationId = fallbackBody?.data?.conversation_id || fallbackBody?.conversation_id || null;
+    const fallbackEntityId = fallbackBody?.analysis_id || fallbackBody?.event?.entity_id || null;
+    try {
+      const base44 = createClientFromRequest(req);
+      if (fallbackConversationId) {
+        await base44.asServiceRole.entities.ConversationTimelineEvent.create({
+          conversation_id: fallbackConversationId,
+          event_type: 'pipeline_inquiry_sync_failed',
+          title: 'Falló la sincronización hacia ClientInquiry',
+          description: error.message,
+          source: 'system',
+          related_entity_id: fallbackEntityId,
+          metadata_json: JSON.stringify({ status: 'error' })
+        });
+      }
+      await base44.asServiceRole.entities.SystemError.create({
+        source_type: 'function',
+        source_name: 'syncInquiryFromConversationAnalysis',
+        severity: 'error',
+        status: 'open',
+        message: 'Falló la sincronización hacia ClientInquiry',
+        details: error.message,
+        related_entity: 'ConversationAnalysis',
+        related_entity_id: fallbackEntityId,
+        occurred_at: new Date().toISOString()
+      });
+    } catch {}
     return Response.json({ error: error.message }, { status: 500 });
   }
 });

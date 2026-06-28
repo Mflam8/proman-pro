@@ -36,6 +36,52 @@ Deno.serve(async (req) => {
 
   const base44 = createClientFromRequest(req);
 
+  const safeStringify = (value) => {
+    try {
+      return JSON.stringify(value || {});
+    } catch {
+      return '{}';
+    }
+  };
+
+  const addTimelineEvent = async ({ conversationId, eventType, title, description, relatedEntityId = null, metadata = {} }) => {
+    if (!conversationId) return;
+    await base44.asServiceRole.entities.ConversationTimelineEvent.create({
+      conversation_id: conversationId,
+      event_type: eventType,
+      title,
+      description,
+      source: metadata.status === 'error' ? 'system' : 'webhook',
+      related_entity_id: relatedEntityId,
+      metadata_json: safeStringify(metadata)
+    });
+  };
+
+  const logPipelineFailure = async ({ conversationId, sourceName, eventType, message, details, relatedEntityId = null, relatedEntity = null }) => {
+    if (conversationId) {
+      await addTimelineEvent({
+        conversationId,
+        eventType,
+        title: message,
+        description: details,
+        relatedEntityId,
+        metadata: { status: 'error', source_name: sourceName }
+      });
+    }
+
+    await base44.asServiceRole.entities.SystemError.create({
+      source_type: 'function',
+      source_name: sourceName,
+      severity: 'error',
+      status: 'open',
+      message,
+      details,
+      related_entity: relatedEntity,
+      related_entity_id: relatedEntityId,
+      occurred_at: new Date().toISOString()
+    });
+  };
+
   let body;
   try {
     body = await req.json();
@@ -60,6 +106,17 @@ Deno.serve(async (req) => {
     if (['image', 'video', 'audio', 'document'].includes(parsedEvent.message_type)) return 'media';
     if (parsedEvent.direction === 'outbound') return 'message_echo';
     return 'message';
+  };
+
+  const ANALYSIS_NOISE = new Set(['ok', 'gracias', '👍', '👍🏻', '👍🏼', '👍🏽', '👍🏾', '👍🏿', 'sent', 'delivered', 'read']);
+  const normalizeMessageContent = (value) => String(value || '').trim().toLowerCase();
+  const hasUsefulCustomerContent = ({ eventType, messageType = 'text', text = '', caption = '', mediaUrl = null, direction = 'inbound', senderType = 'customer' }) => {
+    if (direction !== 'inbound' || senderType !== 'customer') return false;
+    if (!['message', 'media'].includes(eventType)) return false;
+    if (['reaction', 'status'].includes(messageType)) return false;
+    const normalized = normalizeMessageContent(text || caption);
+    if (normalized) return normalized.length > 2 && !ANALYSIS_NOISE.has(normalized);
+    return Boolean(mediaUrl);
   };
 
   const listActiveCustomersByPhone = async (rawPhone) => {
@@ -352,6 +409,23 @@ Deno.serve(async (req) => {
               notes: `ck:${stableConversationKey}`
             });
           }
+
+          await addTimelineEvent({
+            conversationId: conv.id,
+            eventType: 'pipeline_webhook_received',
+            title: 'Webhook recibido',
+            description: `${parsedEvent.event_type} ${parsedEvent.direction === 'inbound' ? 'entrante' : 'saliente'}`,
+            relatedEntityId: wh.id,
+            metadata: { status: 'success', webhook_event_id: wh.id, event_type: parsedEvent.event_type }
+          });
+          await addTimelineEvent({
+            conversationId: conv.id,
+            eventType: 'pipeline_conversation_grouped',
+            title: 'Conversación agrupada',
+            description: stableConversationKey,
+            relatedEntityId: conv.id,
+            metadata: { status: 'success', conversation_key: stableConversationKey }
+          });
         }
 
         const duplicateCandidates = parsedEvent.provider_message_id
@@ -480,14 +554,34 @@ Deno.serve(async (req) => {
           });
         }
 
-        if (conv?.id && ['message', 'media'].includes(parsedEvent.event_type) && parsedEvent.direction === 'inbound' && parsedEvent.sender_type === 'customer') {
-          await base44.asServiceRole.functions.invoke('analyzeConversation', {
-            conversation_id: conv.id,
-            customer_id: customer?.id || null,
-            inquiry_id: null,
-            phone: parsedEvent.contact_phone || null,
-            trigger_reason: parsedEvent.event_type === 'media' ? 'new_customer_media' : 'new_customer_message'
-          });
+        if (conv?.id && hasUsefulCustomerContent({
+          eventType: parsedEvent.event_type,
+          messageType: parsedEvent.message_type,
+          text: parsedEvent.text,
+          caption: parsedEvent.caption,
+          mediaUrl: parsedEvent.media_url,
+          direction: parsedEvent.direction,
+          senderType: parsedEvent.sender_type
+        })) {
+          try {
+            await base44.asServiceRole.functions.invoke('analyzeConversation', {
+              conversation_id: conv.id,
+              customer_id: customer?.id || null,
+              inquiry_id: null,
+              phone: parsedEvent.contact_phone || null,
+              trigger_reason: parsedEvent.event_type === 'media' ? 'new_customer_media' : 'new_customer_message'
+            });
+          } catch (error) {
+            await logPipelineFailure({
+              conversationId: conv.id,
+              sourceName: 'analyzeConversation',
+              eventType: 'pipeline_analysis_failed',
+              message: 'Falló el análisis IA automático',
+              details: error.message,
+              relatedEntityId: savedMsg?.id || wh.id,
+              relatedEntity: 'WhatsappConversation'
+            });
+          }
         }
 
         await base44.asServiceRole.entities.WebhookEvent.update(wh.id, { processed_ok: true });
@@ -607,6 +701,19 @@ Deno.serve(async (req) => {
           return Response.json({ error: 'phone and message are required' }, { status: 400 });
         }
 
+        const normalizedPhone = normalizePhone(resolvedPhone);
+        const stableConversationKey = `${normalizedPhone || 'unknown'}_legacy`;
+        const webhookLog = await base44.asServiceRole.entities.WebhookEvent.create({
+          event: event || 'message_received',
+          event_type: ['image', 'video', 'audio', 'document'].includes(message_type) ? 'media' : 'message',
+          phone: normalizedPhone || '',
+          message_id: messageId || '',
+          direction: 'inbound',
+          conversation_key: stableConversationKey,
+          reason: 'legacy_message_received',
+          raw_payload: safeStringify(data)
+        });
+
         // 1) Upsert Customer by phone or wa_id
         const customer = await ensureCanonicalCustomer({
           phone: resolvedPhone,
@@ -617,15 +724,39 @@ Deno.serve(async (req) => {
         // 4) Create or reuse open conversation
         const openConvs = await base44.asServiceRole.entities.WhatsappConversation.filter({ customer_id: customer.id, is_open: true });
         const nowISO = timestamp ? new Date((String(timestamp).length < 13 ? Number(timestamp) * 1000 : Number(timestamp))).toISOString() : new Date().toISOString();
-        let conversation = openConvs[0];
+        let conversation = openConvs.find((item) => item.subject === stableConversationKey || item.notes?.includes(`ck:${stableConversationKey}`)) || openConvs[0];
         if (!conversation) {
           conversation = await base44.asServiceRole.entities.WhatsappConversation.create({
             customer_id: customer.id,
             is_open: true,
             channel: 'whatsapp',
-            last_message_at: nowISO
+            last_message_at: nowISO,
+            notes: `ck:${stableConversationKey}`,
+            subject: stableConversationKey
+          });
+        } else if (conversation.subject !== stableConversationKey || conversation.notes !== `ck:${stableConversationKey}`) {
+          await base44.asServiceRole.entities.WhatsappConversation.update(conversation.id, {
+            subject: stableConversationKey,
+            notes: `ck:${stableConversationKey}`
           });
         }
+
+        await addTimelineEvent({
+          conversationId: conversation.id,
+          eventType: 'pipeline_webhook_received',
+          title: 'Webhook recibido',
+          description: 'message_received entrante',
+          relatedEntityId: webhookLog.id,
+          metadata: { status: 'success', webhook_event_id: webhookLog.id, event_type: 'message' }
+        });
+        await addTimelineEvent({
+          conversationId: conversation.id,
+          eventType: 'pipeline_conversation_grouped',
+          title: 'Conversación agrupada',
+          description: stableConversationKey,
+          relatedEntityId: conversation.id,
+          metadata: { status: 'success', conversation_key: stableConversationKey }
+        });
 
         // Heuristics: classify service, detect priority, compute missing info & next step
         const txt = (resolvedMessage || '').toLowerCase();
@@ -677,6 +808,7 @@ Deno.serve(async (req) => {
             customer_id: customer.id,
             client_name: customer.full_name,
             phone: customer.phone,
+            source_conversation_id: conversation.id,
             lead_source: (source?.platform === 'whatsapp' ? 'whatsapp' : 'whatsapp'),
             source: 'whatsapp_bot',
             rubro: 'Hogar',
@@ -696,6 +828,7 @@ Deno.serve(async (req) => {
         } else {
           // Update inquiry with latest context if fields are empty
           const patch = { last_message_at: nowISO };
+          if (!inquiry.source_conversation_id) patch.source_conversation_id = conversation.id;
           if (!inquiry.service_type && serviceType !== 'unknown') patch.service_type = serviceType;
           if (!inquiry.next_step) patch.next_step = nextStep;
           if (!Array.isArray(inquiry.missing_info) || inquiry.missing_info.length === 0) patch.missing_info = missing;
@@ -711,6 +844,7 @@ Deno.serve(async (req) => {
           const dup = await base44.asServiceRole.entities.BitacoraWhatsApp.filter({ mensaje_id: messageId });
           if (dup.length > 0) {
             await base44.asServiceRole.entities.WhatsappConversation.update(conversation.id, { last_message_at: nowISO, last_message_id: dup[0].id });
+            await base44.asServiceRole.entities.WebhookEvent.update(webhookLog.id, { processed_ok: true });
             return Response.json({ success: true, event, customer_id: customer.id, inquiry_id: inquiry.id, service_type: serviceType, next_step: nextStep, missing_info: missing, conversation_id: conversation.id, message_id: dup[0].id, duplicate: true });
           }
         }
@@ -788,8 +922,42 @@ Deno.serve(async (req) => {
 
         await base44.asServiceRole.entities.WhatsappConversation.update(conversation.id, {
           last_message_at: nowISO,
-          last_message_id: msgRecord.id
+          last_message_id: msgRecord.id,
+          subject: stableConversationKey,
+          notes: `ck:${stableConversationKey}`
         });
+
+        if (hasUsefulCustomerContent({
+          eventType: ['image', 'video', 'audio', 'document'].includes(messageTypeGuessed) ? 'media' : 'message',
+          messageType: messageTypeGuessed,
+          text: resolvedMessage,
+          caption,
+          mediaUrl,
+          direction: 'inbound',
+          senderType: 'customer'
+        })) {
+          try {
+            await base44.asServiceRole.functions.invoke('analyzeConversation', {
+              conversation_id: conversation.id,
+              customer_id: customer.id,
+              inquiry_id: inquiry.id,
+              phone: customer.phone || normalizedPhone || null,
+              trigger_reason: ['image', 'video', 'audio', 'document'].includes(messageTypeGuessed) ? 'legacy_customer_media' : 'legacy_customer_message'
+            });
+          } catch (error) {
+            await logPipelineFailure({
+              conversationId: conversation.id,
+              sourceName: 'analyzeConversation',
+              eventType: 'pipeline_analysis_failed',
+              message: 'Falló el análisis IA automático',
+              details: error.message,
+              relatedEntityId: msgRecord.id,
+              relatedEntity: 'ClientInquiry'
+            });
+          }
+        }
+
+        await base44.asServiceRole.entities.WebhookEvent.update(webhookLog.id, { processed_ok: true });
 
         return Response.json({
           success: true,
