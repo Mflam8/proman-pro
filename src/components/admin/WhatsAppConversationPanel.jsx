@@ -119,9 +119,9 @@ export default function WhatsAppConversationPanel({ customerId, inquiryId, phone
       const unique = Array.from(new Map(merged.map((item) => [item.id, item])).values());
       return unique;
     },
-    enabled: !!customerId || !!phone,
+    enabled: isOpen && (!!customerId || !!phone),
     initialData: [],
-    refetchInterval: 5000,
+    refetchInterval: isOpen ? 5000 : false,
   });
 
   const { data: jobs = [] } = useQuery({
@@ -130,7 +130,7 @@ export default function WhatsAppConversationPanel({ customerId, inquiryId, phone
       if (!customerId) return [];
       return base44.entities.ClientInquiry.filter({ customer_id: customerId }, '-created_date');
     },
-    enabled: !!customerId,
+    enabled: isOpen && !!customerId,
     initialData: [],
   });
 

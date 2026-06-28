@@ -9,6 +9,8 @@ const DAYS_MAP = { 0: "domingo", 1: "lunes", 2: "martes", 3: "miercoles", 4: "ju
 const ACTIVE_STATUSES = ["nuevo", "agendado", "en_ruta", "en_sitio", "en_proceso", "trabajo_aprobado", "pendiente_facturacion"];
 
 export default function EmployeeSelector({ selectedDate, startTime, duration, serviceType, onSelect, currentAssignee }) {
+  const readyForRecommendations = Boolean(selectedDate && startTime);
+
   const { data: employees = [] } = useQuery({
     queryKey: ['employeesWithProfiles'],
     queryFn: async () => {
@@ -21,11 +23,12 @@ export default function EmployeeSelector({ selectedDate, startTime, duration, se
         .filter((user) => user.employee_type === 'Empleado' || user.employee_type === 'Supervisor')
         .map((user) => ({ ...user, profile: profilesByEmail[user.email] || null }));
     },
+    enabled: readyForRecommendations,
     initialData: []
   });
 
-  const { data: allSchedules = [] } = useQuery({ queryKey: ['allSchedules'], queryFn: () => base44.entities.EmployeeSchedule.list(), initialData: [] });
-  const { data: allInquiries = [] } = useQuery({ queryKey: ['assignmentLoad'], queryFn: () => base44.entities.ClientInquiry.list('-updated_date', 500), initialData: [] });
+  const { data: allSchedules = [] } = useQuery({ queryKey: ['allSchedules'], queryFn: () => base44.entities.EmployeeSchedule.list(), enabled: readyForRecommendations, initialData: [] });
+  const { data: allInquiries = [] } = useQuery({ queryKey: ['assignmentLoad'], queryFn: () => base44.entities.ClientInquiry.list('-updated_date', 500), enabled: readyForRecommendations, initialData: [] });
 
   const scoredEmployees = useMemo(() => employees.map((employee) => {
     if (!selectedDate || !startTime) return { employee, availability: null, score: 0, workload: 0, specialtyMatch: false };

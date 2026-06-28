@@ -28,6 +28,7 @@ import WhatsAppQuoteActions from "./WhatsAppQuoteActions";
 import CustomerContextAgentCard from "./CustomerContextAgentCard";
 import AISuggestionsPanel from "./AISuggestionsPanel";
 import WorkOrderPreviewCard from "./WorkOrderPreviewCard";
+import DetailSection from "./DetailSection";
 import { commercialStatusConfig, workStatusConfig } from "@/components/utils/inquiryConfig";
 
 export default function InquiryDetailForm({ 
@@ -451,33 +452,39 @@ export default function InquiryDetailForm({
 
           {/* 2. PANEL ADMINISTRATIVO — movido a columna derecha */}
 
-          <WhatsAppQuoteActions
-            inquiryId={inquiry.id}
-            customerId={customer?.id || inquiry.customer_id}
-            phone={customer?.phone || inquiry.phone}
-          />
+          <DetailSection title="Orden de trabajo inteligente" defaultOpen>
+            <WorkOrderPreviewCard inquiryId={inquiry.id} />
+          </DetailSection>
 
-          <CustomerContextAgentCard
-            inquiry={inquiry}
-            customer={customer}
-          />
+          <DetailSection title="Análisis y asistente IA">
+            <CustomerContextAgentCard
+              inquiry={inquiry}
+              customer={customer}
+            />
 
-          <AISuggestionsPanel
-            inquiry={inquiry}
-            customer={customer}
-            phone={customer?.phone || inquiry.phone}
-            conversationId={null}
-            compact
-            onOpenCreateInquiry={() => onCreateInquiry?.(customer?.id || inquiry.customer_id || null)}
-          />
+            <AISuggestionsPanel
+              inquiry={inquiry}
+              customer={customer}
+              phone={customer?.phone || inquiry.phone}
+              conversationId={null}
+              compact
+              onOpenCreateInquiry={() => onCreateInquiry?.(customer?.id || inquiry.customer_id || null)}
+            />
+          </DetailSection>
 
-          <WorkOrderPreviewCard inquiryId={inquiry.id} />
+          <DetailSection title="Conversación y cotización por WhatsApp">
+            <WhatsAppQuoteActions
+              inquiryId={inquiry.id}
+              customerId={customer?.id || inquiry.customer_id}
+              phone={customer?.phone || inquiry.phone}
+            />
 
-          <WhatsAppConversationPanel 
-            customerId={customer?.id || inquiry.customer_id}
-            inquiryId={inquiry.id}
-            phone={customer?.phone || inquiry.phone}
-          />
+            <WhatsAppConversationPanel 
+              customerId={customer?.id || inquiry.customer_id}
+              inquiryId={inquiry.id}
+              phone={customer?.phone || inquiry.phone}
+            />
+          </DetailSection>
 
         </div>
 
@@ -862,7 +869,9 @@ export default function InquiryDetailForm({
           <BillingDetails inquiryId={inquiry.id} canEdit={canEdit} inquiry={inquiry} />
 
           {/* 4. GASTOS DEL TRABAJO */}
-          <WorkExpenses inquiryId={inquiry.id} canEdit={canEdit} />
+          <DetailSection title="Gastos internos del trabajo">
+            <WorkExpenses inquiryId={inquiry.id} canEdit={canEdit} />
+          </DetailSection>
 
           {inquiry.satisfaction_rating && (
             <Card>
