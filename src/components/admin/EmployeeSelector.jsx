@@ -4,6 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, CheckCircle, Clock, Sparkles } from "lucide-react";
+import { unwrapRecords } from "@/utils/entityRecord";
 
 const DAYS_MAP = { 0: "domingo", 1: "lunes", 2: "martes", 3: "miercoles", 4: "jueves", 5: "viernes", 6: "sabado" };
 const ACTIVE_STATUSES = ["nuevo", "agendado", "en_ruta", "en_sitio", "en_proceso", "trabajo_aprobado", "pendiente_facturacion"];
@@ -14,10 +15,11 @@ export default function EmployeeSelector({ selectedDate, startTime, duration, se
   const { data: employees = [] } = useQuery({
     queryKey: ['employeesWithProfiles'],
     queryFn: async () => {
-      const [usersResponse, employeeProfiles] = await Promise.all([
+      const [usersResponse, employeeProfilesRaw] = await Promise.all([
         base44.functions.invoke('listAllUsers', {}),
         base44.entities.Employee.list()
       ]);
+      const employeeProfiles = unwrapRecords(employeeProfilesRaw);
       const profilesByEmail = Object.fromEntries(employeeProfiles.map((item) => [item.email, item]));
       return (usersResponse.data.users || [])
         .filter((user) => user.employee_type === 'Empleado' || user.employee_type === 'Supervisor')
@@ -28,7 +30,7 @@ export default function EmployeeSelector({ selectedDate, startTime, duration, se
   });
 
   const { data: allSchedules = [] } = useQuery({ queryKey: ['allSchedules'], queryFn: () => base44.entities.EmployeeSchedule.list(), enabled: readyForRecommendations, initialData: [] });
-  const { data: allInquiries = [] } = useQuery({ queryKey: ['assignmentLoad'], queryFn: () => base44.entities.ClientInquiry.list('-updated_date', 500), enabled: readyForRecommendations, initialData: [] });
+  const { data: allInquiries = [] } = useQuery({ queryKey: ['assignmentLoad'], queryFn: () => base44.entities.ClientInquiry.list('-updated_date', 500).then(unwrapRecords), enabled: readyForRecommendations, initialData: [] });
 
   const scoredEmployees = useMemo(() => employees.map((employee) => {
     if (!selectedDate || !startTime) return { employee, availability: null, score: 0, workload: 0, specialtyMatch: false };

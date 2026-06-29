@@ -35,5 +35,15 @@ export function getWorkflowStage(inquiry, workOrder) {
 }
 
 export function formatMissingFields(values) {
-  return (values || []).map((value) => String(value).replace(/_/g, ' '));
+  if (Array.isArray(values)) {
+    return values.map((value) => String(value).replace(/_/g, ' '));
+  }
+
+  if (!values) return [];
+
+  return String(values)
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .map((value) => value.replace(/_/g, ' '));
 }

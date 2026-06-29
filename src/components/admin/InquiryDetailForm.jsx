@@ -31,6 +31,7 @@ import WorkOrderPreviewCard from "./WorkOrderPreviewCard";
 import DetailSection from "./DetailSection";
 import { unwrapRecord, unwrapRecords } from "@/utils/entityRecord";
 import { commercialStatusConfig, workStatusConfig } from "@/components/utils/inquiryConfig";
+import SectionErrorBoundary from "@/components/common/SectionErrorBoundary";
 
 export default function InquiryDetailForm({ 
   inquiry, 
@@ -454,7 +455,9 @@ export default function InquiryDetailForm({
           {/* 2. PANEL ADMINISTRATIVO — movido a columna derecha */}
 
           <DetailSection title="Orden de trabajo inteligente" defaultOpen>
-            <WorkOrderPreviewCard inquiryId={inquiry.id} />
+            <SectionErrorBoundary title="La orden de trabajo no pudo mostrarse">
+              <WorkOrderPreviewCard inquiryId={inquiry.id} />
+            </SectionErrorBoundary>
           </DetailSection>
 
           <DetailSection title="Análisis y asistente IA">
@@ -560,14 +563,16 @@ export default function InquiryDetailForm({
                     <div><Label className="text-xs">Hora</Label><Input type="time" value={formData.scheduled_start_time || ''} onChange={(e) => setFormData(p => ({...p, scheduled_start_time: e.target.value}))} disabled={isUpdating} /></div>
                     <div><Label className="text-xs">Duración (hrs)</Label><Input type="number" step="0.5" value={formData.estimated_duration_hours || ''} onChange={(e) => setFormData(p => ({...p, estimated_duration_hours: parseFloat(e.target.value)}))} disabled={isUpdating} /></div>
                   </div>
-                  <EmployeeSelector 
-                    selectedDate={formData.scheduled_date} 
-                    startTime={formData.scheduled_start_time} 
-                    duration={formData.estimated_duration_hours} 
-                    serviceType={formData.service_type}
-                    onSelect={(email) => setFormData(p => ({...p, assigned_to: email}))} 
-                    currentAssignee={formData.assigned_to} 
-                  />
+                  <SectionErrorBoundary title="La asignación de técnico no pudo cargarse">
+                    <EmployeeSelector 
+                      selectedDate={formData.scheduled_date} 
+                      startTime={formData.scheduled_start_time} 
+                      duration={formData.estimated_duration_hours} 
+                      serviceType={formData.service_type}
+                      onSelect={(email) => setFormData(p => ({...p, assigned_to: email}))} 
+                      currentAssignee={formData.assigned_to} 
+                    />
+                  </SectionErrorBoundary>
                 </div>
                 <div className="grid grid-cols-2 gap-4 pt-4 border-t">
                   <InputField label="Cotización ($)" type="number" value={formData.quote_amount} onChange={(e) => setFormData(p => ({...p, quote_amount: e.target.value}))} disabled={isUpdating} />
@@ -867,11 +872,15 @@ export default function InquiryDetailForm({
           </Card>
 
           {/* 3. COTIZACIÓN / FACTURACIÓN */}
-          <BillingDetails inquiryId={inquiry.id} canEdit={canEdit} inquiry={inquiry} />
+          <SectionErrorBoundary title="La sección de cotización no pudo cargarse">
+            <BillingDetails inquiryId={inquiry.id} canEdit={canEdit} inquiry={inquiry} />
+          </SectionErrorBoundary>
 
           {/* 4. GASTOS DEL TRABAJO */}
           <DetailSection title="Gastos internos del trabajo">
-            <WorkExpenses inquiryId={inquiry.id} canEdit={canEdit} />
+            <SectionErrorBoundary title="Los gastos del trabajo no pudieron cargarse">
+              <WorkExpenses inquiryId={inquiry.id} canEdit={canEdit} />
+            </SectionErrorBoundary>
           </DetailSection>
 
           {inquiry.satisfaction_rating && (

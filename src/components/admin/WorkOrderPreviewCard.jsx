@@ -25,6 +25,8 @@ export default function WorkOrderPreviewCard({ inquiryId }) {
 
   const stageMeta = getWorkflowStageMeta(workOrder.workflow_stage);
   const missing = formatMissingFields(workOrder.missing_operational_fields);
+  const requestedServices = Array.isArray(workOrder.requested_services) ? workOrder.requested_services : [];
+  const requiredMaterials = Array.isArray(workOrder.required_materials) ? workOrder.required_materials : [];
 
   return (
     <Card className="border-2 border-cyan-500 bg-cyan-50/40">
@@ -42,8 +44,8 @@ export default function WorkOrderPreviewCard({ inquiryId }) {
           <div><strong>Ubicación:</strong> {workOrder.location || 'Pendiente'}</div>
           <div><strong>Fecha/Hora:</strong> {[workOrder.scheduled_date, workOrder.scheduled_start_time].filter(Boolean).join(' · ') || 'Pendiente'}</div>
         </div>
-        {workOrder.requested_services?.length > 0 && <div><strong>Servicios:</strong> {workOrder.requested_services.join(' · ')}</div>}
-        {workOrder.required_materials?.length > 0 && <div><strong>Materiales:</strong> {workOrder.required_materials.join(' · ')}</div>}
+        {requestedServices.length > 0 && <div><strong>Servicios:</strong> {requestedServices.join(' · ')}</div>}
+        {requiredMaterials.length > 0 && <div><strong>Materiales:</strong> {requiredMaterials.join(' · ')}</div>}
         {workOrder.safety_notes && <div><strong>Seguridad:</strong> {workOrder.safety_notes}</div>}
         {missing.length > 0 && <div><strong>Faltantes:</strong> {missing.join(' · ')}</div>}
       </CardContent>
