@@ -3,12 +3,13 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { unwrapRecords } from '@/utils/entityRecord';
 import { getWorkflowStageMeta, formatMissingFields } from '@/lib/workflow';
 
 export default function WorkOrderPreviewCard({ inquiryId }) {
   const { data: workOrders = [] } = useQuery({
     queryKey: ['workOrderPreview', inquiryId],
-    queryFn: () => base44.entities.WorkOrder.filter({ inquiry_id: inquiryId }, '-updated_date', 1),
+    queryFn: () => base44.entities.WorkOrder.filter({ inquiry_id: inquiryId }, '-updated_date', 1).then(unwrapRecords),
     initialData: []
   });
 

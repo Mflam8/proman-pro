@@ -29,6 +29,7 @@ import CustomerContextAgentCard from "./CustomerContextAgentCard";
 import AISuggestionsPanel from "./AISuggestionsPanel";
 import WorkOrderPreviewCard from "./WorkOrderPreviewCard";
 import DetailSection from "./DetailSection";
+import { unwrapRecord, unwrapRecords } from "@/utils/entityRecord";
 import { commercialStatusConfig, workStatusConfig } from "@/components/utils/inquiryConfig";
 
 export default function InquiryDetailForm({ 
@@ -66,33 +67,33 @@ export default function InquiryDetailForm({
 
   const { data: progressLogs } = useQuery({
     queryKey: ['progressLogs', inquiry.id],
-    queryFn: () => base44.entities.ProgressLog.filter({ inquiry_id: inquiry.id }, '-created_date'),
+    queryFn: () => base44.entities.ProgressLog.filter({ inquiry_id: inquiry.id }, '-created_date').then(unwrapRecords),
     initialData: [],
   });
 
   const { data: payments } = useQuery({
     queryKey: ['payments', inquiry.id],
-    queryFn: () => base44.entities.Payment.filter({ inquiry_id: inquiry.id }, '-payment_date'),
+    queryFn: () => base44.entities.Payment.filter({ inquiry_id: inquiry.id }, '-payment_date').then(unwrapRecords),
     initialData: [],
   });
 
   const { data: currentInquiry } = useQuery({
     queryKey: ['inquiry', inquiry.id],
-    queryFn: () => base44.entities.ClientInquiry.filter({ id: inquiry.id }).then(res => res[0]),
+    queryFn: () => base44.entities.ClientInquiry.filter({ id: inquiry.id }).then(res => unwrapRecord(res[0])),
     initialData: inquiry,
     refetchInterval: 3000,
   });
 
   const { data: billingItems } = useQuery({
     queryKey: ['billingItems', inquiry.id],
-    queryFn: () => base44.entities.DetalleFacturaTrabajo.filter({ inquiry_id: inquiry.id }),
+    queryFn: () => base44.entities.DetalleFacturaTrabajo.filter({ inquiry_id: inquiry.id }).then(unwrapRecords),
     initialData: [],
   });
 
   // Servicios activos para selección rápida
   const { data: services = [] } = useQuery({
     queryKey: ['services'],
-    queryFn: () => base44.entities.Service.filter({ is_active: true }),
+    queryFn: () => base44.entities.Service.filter({ is_active: true }).then(unwrapRecords),
     initialData: [],
   });
 

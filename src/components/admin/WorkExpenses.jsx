@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Plus, Edit2, Trash2, Package, Truck, Wrench, FileText, Camera, Receipt } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { unwrapRecords } from "@/utils/entityRecord";
 
 const tipoGastoConfig = {
   material: { label: "Material", icon: Package, color: "bg-green-100 text-green-800" },
@@ -27,7 +28,7 @@ export default function WorkExpenses({ inquiryId, canEdit = true }) {
 
   const { data: gastos, isLoading } = useQuery({
     queryKey: ['workExpenses', inquiryId],
-    queryFn: () => base44.entities.GastoTrabajo.filter({ inquiry_id: inquiryId }),
+    queryFn: () => base44.entities.GastoTrabajo.filter({ inquiry_id: inquiryId }).then(unwrapRecords),
     enabled: !!inquiryId,
     initialData: [],
   });

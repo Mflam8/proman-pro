@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Plus, Edit2, Trash2, DollarSign, Wrench, FileText, FileDown, CheckCircle, Layers, ChevronUp, ChevronDown, Award } from "lucide-react";
 import CleaningCertificateModal from "./CleaningCertificateModal";
+import { unwrapRecords } from "@/utils/entityRecord";
 import { openPdfFromBase64 } from "@/utils/openPdfFromBase64";
 
 const tipoItemConfig = {
@@ -45,7 +46,7 @@ export default function BillingDetails({ inquiryId, canEdit = true, inquiry = nu
 
   const { data: allItems, isLoading } = useQuery({
     queryKey: ['billingItems', inquiryId],
-    queryFn: () => base44.entities.DetalleFacturaTrabajo.filter({ inquiry_id: inquiryId }),
+    queryFn: () => base44.entities.DetalleFacturaTrabajo.filter({ inquiry_id: inquiryId }).then(unwrapRecords),
     enabled: !!inquiryId,
     initialData: [],
   });
@@ -787,7 +788,7 @@ function BillingItemForm({ item, existingOptions, onSubmit, onCancel, isSubmitti
   // Fetch services from catalog
   const { data: services } = useQuery({
     queryKey: ['services'],
-    queryFn: () => base44.entities.Service.filter({ is_active: true }),
+    queryFn: () => base44.entities.Service.filter({ is_active: true }).then(unwrapRecords),
     initialData: [],
   });
 
