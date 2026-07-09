@@ -108,7 +108,7 @@ export default function EmployeeManagement() {
             <CardTitle>Empleados y Supervisores</CardTitle>
             <Button onClick={() => setShowInviteModal(true)} className="bg-proman-yellow text-proman-navy hover:opacity-90">
               <UserPlus className="w-4 h-4 mr-2" />
-              Crear Empleado
+              Agregar Usuario
             </Button>
           </div>
         </CardHeader>
@@ -222,27 +222,8 @@ function InviteUserModal({ isOpen, onClose }) {
     hire_date: '',
     phone: ''
   });
-  const [imageFile, setImageFile] = useState(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadedImageUrl, setUploadedImageUrl] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const queryClient = useQueryClient();
-
-  React.useEffect(() => {
-    const uploadImage = async () => {
-      if (!imageFile) return;
-      setIsUploading(true);
-      try {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file: imageFile });
-        setUploadedImageUrl(file_url);
-      } catch (error) {
-        console.error("Error uploading image", error);
-      } finally {
-        setIsUploading(false);
-      }
-    };
-    uploadImage();
-  }, [imageFile]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -252,12 +233,17 @@ function InviteUserModal({ isOpen, onClose }) {
       return;
     }
 
+    if (!formData.email?.trim()) {
+      alert('❌ El correo es obligatorio para enviar acceso al usuario');
+      return;
+    }
+
     setIsSaving(true);
 
     try {
-        const emailToUse = formData.email?.trim() || `empleado_${Date.now()}@proman.internal`;
+        const emailToUse = formData.email.trim().toLowerCase();
 
-        console.log('🔄 Creando empleado:', formData.employee_name, emailToUse);
+        console.log('🔄 Invitando usuario:', formData.employee_name, emailToUse);
 
         const response = await base44.functions.invoke('createEmployee', {
           email: emailToUse,
@@ -265,8 +251,7 @@ function InviteUserModal({ isOpen, onClose }) {
           employee_type: formData.employee_type || 'Empleado',
           role: formData.role || 'user',
           hire_date: formData.hire_date || null,
-          phone: formData.phone || null,
-          profile_picture_url: uploadedImageUrl || null
+          phone: formData.phone || null
         });
 
         const newUser = response.data.user;
@@ -276,7 +261,11 @@ function InviteUserModal({ isOpen, onClose }) {
         await queryClient.invalidateQueries({ queryKey: ['users'] });
         await queryClient.refetchQueries({ queryKey: ['users'] });
 
-        alert(`✅ Empleado "${formData.employee_name}" creado correctamente`);
+        const wasInvited = response.data.status === 'invited';
+        alert(wasInvited
+          ? `✅ Invitación enviada a ${emailToUse}`
+          : `✅ Usuario actualizado para ${emailToUse}`
+        );
         onClose();
         
         // Recargar la página para mostrar el nuevo empleado
@@ -293,27 +282,28 @@ function InviteUserModal({ isOpen, onClose }) {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Crear Nuevo Empleado</DialogTitle>
+          <DialogTitle>Agregar Usuario con Acceso</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
             <p className="text-sm text-blue-800">
-              <strong>ℹ️ Nota:</strong> El empleado será creado directamente. Puedes enviarle notificaciones más adelante.
+              <strong>ℹ️ Nota:</strong> Se enviará una invitación al correo para que el técnico pueda entrar y ver sus trabajos.
             </p>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-proman-navy mb-2">
-              Email (Opcional)
+              Correo del Usuario <span className="text-red-500">*</span>
             </label>
             <Input
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              placeholder="empleado@ejemplo.com (dejar vacío si no tiene)"
+              placeholder="tecnico@ejemplo.com"
+              required
             />
             <p className="text-xs text-gray-500 mt-1">
-              Si no tiene correo, se generará uno automático
+              Ahí recibirá el acceso para entrar al sistema
             </p>
           </div>
 
@@ -377,7 +367,7 @@ function InviteUserModal({ isOpen, onClose }) {
               </SelectContent>
             </Select>
             <p className="text-xs text-gray-500 mt-1">
-              💡 Los empleados normalmente no necesitan acceso al sistema
+              Usa “Usuario” para técnicos y “Administrador” solo para personal de oficina con control total
             </p>
           </div>
 
@@ -392,27 +382,6 @@ function InviteUserModal({ isOpen, onClose }) {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-proman-navy mb-2">
-              Foto de Perfil (Opcional)
-            </label>
-            {uploadedImageUrl && (
-              <div className="flex justify-center mb-3">
-                <img 
-                  src={uploadedImageUrl} 
-                  alt="Preview" 
-                  className="w-24 h-24 rounded-full border-4 border-proman-yellow object-cover"
-                />
-              </div>
-            )}
-            <Input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setImageFile(e.target.files[0])}
-              disabled={isUploading}
-            />
-            {isUploading && <p className="text-sm text-gray-500 mt-2">Subiendo imagen...</p>}
-          </div>
 
           <div className="flex justify-end gap-3 pt-4">
             <Button type="button" variant="outline" onClick={onClose}>
@@ -421,9 +390,9 @@ function InviteUserModal({ isOpen, onClose }) {
             <Button 
               type="submit"
               className="bg-proman-yellow text-proman-navy hover:opacity-90"
-              disabled={isSaving || isUploading || !formData.employee_name}
+              disabled={isSaving || !formData.employee_name || !formData.email}
             >
-              {isSaving ? "Creando..." : "Crear Empleado"}
+              {isSaving ? "Enviando..." : "Enviar Acceso"}
             </Button>
           </div>
         </form>
