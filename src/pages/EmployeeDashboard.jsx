@@ -6,6 +6,7 @@ import ProfileSection from "../components/employee/ProfileSection";
 import JobList from "../components/employee/JobList";
 import ClockInOut from "../components/employee/ClockInOut";
 import ScheduleManager from "../components/employee/ScheduleManager";
+import GoogleCalendarToday from "../components/employee/GoogleCalendarToday";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, ListChecks, Clock, Calendar } from "lucide-react";
 
@@ -84,7 +85,10 @@ export default function EmployeeDashboard() {
           </TabsList>
 
           <TabsContent value="today">
-            <JobList user={user} filterMode="today" />
+            <div className="space-y-6">
+              <GoogleCalendarToday user={user} />
+              <JobList user={user} filterMode="today" />
+            </div>
           </TabsContent>
           <TabsContent value="jobs">
             <JobList user={user} filterMode="all" />
