@@ -111,13 +111,13 @@ export default function Welcome() {
       icon: Briefcase,
       bgColor: 'bg-blue-100',
       color: 'text-blue-600',
-      description: 'Realizarás trabajos de campo y reportarás progreso',
+      description: 'Verás tus servicios asignados y podrás registrar tu avance en campo',
       features: [
-        'Ver y actualizar trabajos asignados',
-        'Registro de horas de entrada/salida',
-        'Reportar progreso en tiempo real',
-        'Subir fotos de antes/después',
-        'Gestionar tu horario semanal'
+        'Ver tus trabajos asignados',
+        'Abrir la orden con dirección, contacto y servicio',
+        'Registrar horas de entrada, salida y horas extra',
+        'Guardar el avance y notas del trabajo',
+        'Actualizar tu disponibilidad semanal'
       ]
     }
   };
@@ -135,10 +135,10 @@ export default function Welcome() {
       ];
     } else if (employeeType === 'Empleado') {
       return [
-        'Familiarízate con el panel de control',
-        'Configura tu horario semanal',
-        'Revisa los trabajos asignados',
-        'Marca tu hora de entrada/salida'
+        'Familiarízate con tu portal de empleado',
+        'Revisa la pestaña Mis Trabajos',
+        'Abre una orden asignada para ver los detalles del servicio',
+        'Registra tu entrada o salida cuando corresponda'
       ];
     } else {
       return [
