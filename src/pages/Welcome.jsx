@@ -161,10 +161,10 @@ export default function Welcome() {
               className="h-16 mx-auto"
             />
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-proman-navy">
             ¡Bienvenido a PROMAN Pro! 🎉
           </h1>
-          <p className="text-xl text-gray-200">
+          <p className="text-xl text-proman-navy">
             Estamos emocionados de tenerte en el equipo
           </p>
         </div>
