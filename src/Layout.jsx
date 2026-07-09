@@ -436,7 +436,7 @@ function LayoutContent({ children }) {
       </footer>
 
       {/* Floating WhatsApp Assistant */}
-      {!isManagementPage && (
+      {!isManagementPage && !user && (
         <WhatsAppMascot 
           phoneNumber={whatsappNumber} 
           message={whatsappMessage}
