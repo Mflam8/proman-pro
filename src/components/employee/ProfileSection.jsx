@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
@@ -52,7 +51,7 @@ export default function ProfileSection({ user }) {
                 <CardTitle>Mi Perfil</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-                <div className="flex items-center gap-6">
+                <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-center sm:text-left sm:gap-6">
                     <div className="relative">
                         <img 
                             src={user.profile_picture_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=fdc80c&color=252a5c&size=128`}

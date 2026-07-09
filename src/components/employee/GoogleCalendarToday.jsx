@@ -66,8 +66,8 @@ export default function GoogleCalendarToday({ user }) {
                     {event.description && <p className="text-sm text-gray-700 whitespace-pre-line">{event.description}</p>}
                   </div>
                   {event.html_link && (
-                    <a href={event.html_link} target="_blank" rel="noopener noreferrer">
-                      <Button variant="outline">
+                    <a href={event.html_link} target="_blank" rel="noopener noreferrer" className="w-full md:w-auto">
+                      <Button variant="outline" className="w-full md:w-auto">
                         <ExternalLink className="w-4 h-4 mr-2" />
                         Ver evento
                       </Button>

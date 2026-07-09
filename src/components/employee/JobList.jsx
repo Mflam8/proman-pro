@@ -85,7 +85,7 @@ export default function JobList({ user, filterMode = 'all' }) {
                     <div className="flex items-center gap-2"><Clock3 className="w-4 h-4 text-proman-yellow" />{order.scheduled_start_time || 'Sin hora'}</div>
                   </div>
                 </div>
-                <Button className="bg-proman-yellow text-proman-navy hover:opacity-90" onClick={() => setSelectedWorkOrder(order)}><Wrench className="w-4 h-4 mr-2" />Abrir orden</Button>
+                <Button className="w-full md:w-auto bg-proman-yellow text-proman-navy hover:opacity-90" onClick={() => setSelectedWorkOrder(order)}><Wrench className="w-4 h-4 mr-2" />Abrir orden</Button>
               </div>
             </CardContent>
           </Card>

@@ -58,17 +58,17 @@ export default function EmployeeDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="gradient-navy-yellow text-white py-12">
+      <div className="gradient-navy-yellow text-white py-8 sm:py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <img 
               src={user.profile_picture_url || `https://ui-avatars.com/api/?name=${user.full_name}&background=fdc80c&color=252a5c`} 
               alt="Perfil" 
-              className="w-16 h-16 rounded-full border-4 border-proman-yellow"
+              className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-4 border-proman-yellow"
             />
-            <div>
-              <h1 className="text-3xl font-bold">Portal de Empleado</h1>
-              <p className="text-gray-200">Bienvenido, {user.full_name}</p>
+            <div className="min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-bold">Portal de Empleado</h1>
+              <p className="text-sm sm:text-base text-gray-200 truncate">Bienvenido, {user.full_name}</p>
             </div>
           </div>
         </div>
@@ -76,12 +76,12 @@ export default function EmployeeDashboard() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs defaultValue="today">
-          <TabsList className="mb-6 flex flex-wrap h-auto gap-2 bg-transparent p-0">
-            <TabsTrigger value="today"><Calendar className="w-4 h-4 mr-2" />Hoy</TabsTrigger>
-            <TabsTrigger value="jobs"><ListChecks className="w-4 h-4 mr-2" />Mis Trabajos</TabsTrigger>
-            <TabsTrigger value="schedule"><Calendar className="w-4 h-4 mr-2" />Disponibilidad</TabsTrigger>
-            <TabsTrigger value="clock"><Clock className="w-4 h-4 mr-2" />Marcaje</TabsTrigger>
-            <TabsTrigger value="profile"><User className="w-4 h-4 mr-2" />Mi Perfil</TabsTrigger>
+          <TabsList className="mb-6 grid h-auto w-full grid-cols-2 gap-2 bg-transparent p-0 sm:flex sm:flex-wrap">
+            <TabsTrigger className="w-full rounded-2xl border bg-white px-3 py-3 text-xs sm:text-sm" value="today"><Calendar className="w-4 h-4 mr-2" />Hoy</TabsTrigger>
+            <TabsTrigger className="w-full rounded-2xl border bg-white px-3 py-3 text-xs sm:text-sm" value="jobs"><ListChecks className="w-4 h-4 mr-2" />Mis Trabajos</TabsTrigger>
+            <TabsTrigger className="w-full rounded-2xl border bg-white px-3 py-3 text-xs sm:text-sm" value="schedule"><Calendar className="w-4 h-4 mr-2" />Disponibilidad</TabsTrigger>
+            <TabsTrigger className="w-full rounded-2xl border bg-white px-3 py-3 text-xs sm:text-sm" value="clock"><Clock className="w-4 h-4 mr-2" />Marcaje</TabsTrigger>
+            <TabsTrigger className="col-span-2 w-full rounded-2xl border bg-white px-3 py-3 text-xs sm:col-span-1 sm:text-sm" value="profile"><User className="w-4 h-4 mr-2" />Mi Perfil</TabsTrigger>
           </TabsList>
 
           <TabsContent value="today">

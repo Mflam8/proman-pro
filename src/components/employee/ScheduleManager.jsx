@@ -91,10 +91,10 @@ export default function ScheduleManager({ user }) {
           const isEditing = !!editingSchedules[day.value];
 
           return (
-            <div key={day.value} className="border rounded-lg p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <span className="font-semibold text-proman-navy w-24">{day.label}</span>
+            <div key={day.value} className="border rounded-2xl p-4 space-y-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="font-semibold text-proman-navy w-full sm:w-24">{day.label}</span>
                   <Switch
                     checked={schedule.is_available}
                     onCheckedChange={(checked) => handleScheduleChange(day.value, 'is_available', checked)}
@@ -108,7 +108,7 @@ export default function ScheduleManager({ user }) {
                     size="sm"
                     onClick={() => handleSave(day.value)}
                     disabled={upsertSchedule.isPending}
-                    className="bg-proman-yellow text-proman-navy"
+                    className="w-full sm:w-auto bg-proman-yellow text-proman-navy"
                   >
                     <Save className="w-4 h-4 mr-1" />
                     Guardar
@@ -117,22 +117,22 @@ export default function ScheduleManager({ user }) {
               </div>
 
               {schedule.is_available && (
-                <div className="flex items-center gap-4 ml-28">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-[auto_1fr_auto_1fr] sm:items-center">
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-gray-400" />
                     <Input
                       type="time"
                       value={schedule.start_time}
                       onChange={(e) => handleScheduleChange(day.value, 'start_time', e.target.value)}
-                      className="w-32"
+                      className="w-full sm:w-32"
                     />
                   </div>
-                  <span className="text-gray-400">a</span>
+                  <span className="hidden sm:block text-gray-400">a</span>
                   <Input
                     type="time"
                     value={schedule.end_time}
                     onChange={(e) => handleScheduleChange(day.value, 'end_time', e.target.value)}
-                    className="w-32"
+                    className="w-full sm:w-32"
                   />
                 </div>
               )}

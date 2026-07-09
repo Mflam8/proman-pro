@@ -126,7 +126,7 @@ export default function TechnicianWorkOrderModal({ workOrder, isOpen, onClose, u
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[calc(100vw-1rem)] max-w-4xl max-h-[92vh] overflow-y-auto rounded-2xl p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="text-2xl">Orden de trabajo</DialogTitle>
         </DialogHeader>
@@ -149,7 +149,7 @@ export default function TechnicianWorkOrderModal({ workOrder, isOpen, onClose, u
           <Card className="border-2 border-blue-500 bg-blue-50/30">
             <CardHeader className="bg-blue-500 text-white"><CardTitle>Ejecución en campo</CardTitle></CardHeader>
             <CardContent className="space-y-4 pt-4">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Input type="number" min="0" max="100" placeholder="% avance" value={formData.progress_percentage} onChange={(e) => setFormData((prev) => ({ ...prev, progress_percentage: e.target.value }))} />
                 <Input type="number" min="1" placeholder="Técnicos" value={formData.num_tecnicos} onChange={(e) => setFormData((prev) => ({ ...prev, num_tecnicos: e.target.value }))} />
                 <Input type="time" value={formData.hora_inicio} onChange={(e) => setFormData((prev) => ({ ...prev, hora_inicio: e.target.value }))} />
@@ -159,7 +159,7 @@ export default function TechnicianWorkOrderModal({ workOrder, isOpen, onClose, u
               <Textarea rows={3} placeholder="Pendientes / observaciones" value={formData.work_notes_pending} onChange={(e) => setFormData((prev) => ({ ...prev, work_notes_pending: e.target.value }))} />
               <Textarea rows={3} placeholder="Materiales usados" value={formData.materials_used_summary} onChange={(e) => setFormData((prev) => ({ ...prev, materials_used_summary: e.target.value }))} />
               <Textarea rows={2} placeholder="Observaciones finales" value={formData.observaciones} onChange={(e) => setFormData((prev) => ({ ...prev, observaciones: e.target.value }))} />
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <UploadBox label="Foto antes" imageUrl={formData.before_image_url} onSelect={(file) => uploadImage(file, 'before_image_url')} isUploading={isUploading} />
                 <UploadBox label="Foto después" imageUrl={formData.after_image_url} onSelect={(file) => uploadImage(file, 'after_image_url')} isUploading={isUploading} />
               </div>

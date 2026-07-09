@@ -74,7 +74,7 @@ export default function ClockInOut({ user }) {
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Button
             onClick={() => clockMutation.mutate('entrada')}
             disabled={!canClockIn || clockMutation.isPending}
@@ -97,7 +97,7 @@ export default function ClockInOut({ user }) {
           <label className="block text-sm font-medium text-proman-navy mb-2">
             Registrar Horas Extras
           </label>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <Input
               type="number"
               step="0.5"
@@ -106,6 +106,7 @@ export default function ClockInOut({ user }) {
               onChange={(e) => setExtraHours(e.target.value)}
             />
             <Button
+              className="w-full sm:w-auto"
               onClick={() => extraHoursMutation.mutate(extraHours)}
               disabled={!extraHours || extraHoursMutation.isPending}
             >
