@@ -1,379 +1,308 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, Lock, Eye, FileText, UserCheck, Database, Mail } from "lucide-react";
+import { Shield, Database, ClipboardList, Cpu, Lock, Archive, UserCheck, MessageSquare, Cookie, RefreshCw, Mail, CheckCircle2 } from "lucide-react";
+
+const sections = [
+  {
+    id: "01",
+    title: "Información que recopilamos",
+    icon: Database,
+    intro: "Podemos recopilar información necesaria para atender solicitudes, cotizar, coordinar, ejecutar y dar seguimiento a nuestros servicios.",
+    blocks: [
+      {
+        title: "1.1 Datos de identificación y contacto",
+        items: [
+          "Nombre completo o nombre proporcionado por el cliente.",
+          "Número de teléfono.",
+          "Dirección de correo electrónico.",
+          "Dirección física, referencias de ubicación o zona del servicio.",
+          "Datos de contacto de personas autorizadas para recibir al técnico o coordinar el servicio."
+        ]
+      },
+      {
+        title: "1.2 Datos relacionados con servicios",
+        items: [
+          "Tipo de servicio solicitado.",
+          "Descripción del problema, necesidad o trabajo requerido.",
+          "Fotografías, audios, videos, documentos, ubicaciones, referencias o mensajes enviados voluntariamente por el cliente para explicar su solicitud.",
+          "Fechas y horarios preferidos para visitas técnicas o trabajos.",
+          "Historial de cotizaciones, visitas, trabajos realizados, reclamos, garantías o seguimientos."
+        ]
+      },
+      {
+        title: "1.3 Datos comerciales y administrativos",
+        items: [
+          "Cotizaciones, presupuestos y montos de servicios.",
+          "Estado de pagos, comprobantes, referencias o información necesaria para facturación y cobranza.",
+          "Comentarios, calificaciones o retroalimentación del cliente.",
+          "Registros necesarios para obligaciones comerciales, fiscales, contables o legales."
+        ]
+      },
+      {
+        title: "1.4 Datos técnicos y de uso",
+        items: [
+          "Dirección IP.",
+          "Tipo de navegador, dispositivo y sistema operativo.",
+          "Cookies, preferencias de navegación y datos de sesión.",
+          "Páginas visitadas, interacciones y datos generales de uso del sitio."
+        ],
+        note: "Estos datos se utilizan para operar, proteger, medir y mejorar nuestros canales digitales."
+      }
+    ]
+  },
+  {
+    id: "02",
+    title: "Finalidad del tratamiento de datos",
+    icon: ClipboardList,
+    intro: "Usamos la información personal para fines relacionados con la prestación de nuestros servicios, incluyendo:",
+    items: [
+      "Responder consultas y solicitudes de información.",
+      "Entender la necesidad del cliente y clasificar el servicio solicitado.",
+      "Preparar cotizaciones o presupuestos.",
+      "Coordinar visitas técnicas, agenda, horarios, direcciones y contactos.",
+      "Ejecutar servicios y dar seguimiento al avance del trabajo.",
+      "Registrar historial de atención para mantener continuidad en futuras comunicaciones.",
+      "Gestionar pagos, comprobantes, facturación y cobranza.",
+      "Atender reclamos, garantías, incidencias o solicitudes posteriores al servicio.",
+      "Mejorar nuestros procesos de atención, calidad y respuesta.",
+      "Cumplir obligaciones legales, fiscales, contables o administrativas aplicables."
+    ],
+    note: "Los datos pueden provenir de distintos canales, pero PROMAN Services aplica las mismas reglas de manejo, seguridad y confidencialidad independientemente del canal por el cual hayan sido recibidos."
+  },
+  {
+    id: "03",
+    title: "Uso de herramientas automatizadas",
+    icon: Cpu,
+    paragraphs: [
+      "PROMAN Services puede utilizar herramientas digitales, automatizaciones o sistemas de apoyo para organizar conversaciones, resumir solicitudes, transcribir audios, identificar datos operativos relevantes y mantener un registro ordenado del cliente y del servicio solicitado.",
+      "Estas herramientas se usan para ayudar al equipo administrativo y técnico a entender mejor la conversación, dar seguimiento, reducir errores, mejorar tiempos de respuesta y mantener continuidad en la atención.",
+      "PROMAN Services no utiliza estas herramientas para vender datos personales, tomar decisiones ajenas al servicio solicitado, discriminar personas ni realizar actividades de vigilancia."
+    ]
+  },
+  {
+    id: "04",
+    title: "Compartir información con terceros",
+    icon: Lock,
+    highlight: "PROMAN Services no vende, alquila ni comercializa datos personales de clientes.",
+    paragraphs: [
+      "La información personal no se comparte con terceros para fines publicitarios externos, venta de bases de datos o usos ajenos a la prestación del servicio.",
+      "Podemos compartir información únicamente cuando sea necesario para operar, administrar, proteger o cumplir el servicio solicitado, por ejemplo:"
+    ],
+    items: [
+      "con personal administrativo o técnico autorizado;",
+      "con proveedores de infraestructura, comunicación, almacenamiento, automatización, análisis, soporte técnico o herramientas digitales necesarias para operar el servicio;",
+      "cuando sea requerido por una obligación legal, fiscal, contable, administrativa o por autoridad competente;",
+      "cuando sea necesario para proteger derechos, seguridad o intereses legítimos de PROMAN Services, sus clientes o colaboradores."
+    ],
+    note: "En todos los casos, PROMAN Services procura limitar la información compartida a lo necesario y mantener controles razonables de confidencialidad, acceso y seguridad."
+  },
+  {
+    id: "05",
+    title: "Seguridad de la información",
+    icon: Shield,
+    paragraphs: [
+      "Implementamos medidas técnicas, administrativas y organizativas razonables para proteger la información contra acceso no autorizado, pérdida, alteración, uso indebido o divulgación no autorizada.",
+      "Estas medidas pueden incluir:"
+    ],
+    items: [
+      "controles de acceso para personal autorizado;",
+      "protección de cuentas y credenciales;",
+      "almacenamiento en sistemas con medidas de seguridad;",
+      "respaldos o registros operativos cuando sean necesarios;",
+      "revisión de accesos y prácticas internas;",
+      "manejo cuidadoso de información sensible como direcciones, comprobantes, ubicaciones y conversaciones."
+    ],
+    note: "Ningún sistema digital es absolutamente infalible, pero PROMAN Services trabaja para mantener prácticas razonables y proporcionales al tipo de información tratada."
+  },
+  {
+    id: "06",
+    title: "Retención y eliminación de datos",
+    icon: Archive,
+    paragraphs: [
+      "Conservamos la información personal durante el tiempo necesario para cumplir las finalidades para las que fue recopilada, mantener historial de servicios, atender seguimientos, resolver reclamos, cumplir obligaciones legales o proteger derechos comerciales y administrativos.",
+      "De forma general:"
+    ],
+    items: [
+      "Las conversaciones, solicitudes y datos operativos se conservan mientras sean necesarios para prestar el servicio, mantener continuidad, atender garantías, reclamos o relación comercial.",
+      "Los registros de pagos, facturación, comprobantes y documentos administrativos pueden conservarse durante el plazo requerido por obligaciones fiscales, contables o legales aplicables.",
+      "Audios, imágenes, videos, ubicaciones o documentos enviados por el cliente se conservan cuando sean necesarios como evidencia del servicio, cotización, reclamo, pago o cumplimiento legal."
+    ],
+    note: "Cuando la información ya no sea necesaria, PROMAN Services podrá eliminarla, anonimizarla o conservarla de forma agregada sin identificar directamente al cliente."
+  },
+  {
+    id: "07",
+    title: "Derechos del titular de datos",
+    icon: UserCheck,
+    intro: "El cliente o titular de datos puede solicitar:",
+    items: [
+      "acceso a la información personal que PROMAN Services conserva;",
+      "corrección de datos inexactos o incompletos;",
+      "eliminación de datos cuando ya no sean necesarios o cuando corresponda legalmente;",
+      "oposición al tratamiento para fines no esenciales;",
+      "información sobre el uso general de sus datos."
+    ],
+    paragraphs: [
+      "Para ejercer estos derechos, el titular puede contactar a PROMAN Services por los canales oficiales de atención:",
+      "PROMAN Services responderá en un plazo razonable, y cuando sea posible dentro de 15 días hábiles. Algunas solicitudes pueden estar limitadas cuando exista una obligación legal, fiscal, contractual o administrativa de conservar ciertos registros."
+    ],
+    contactList: [
+      "Teléfono: 6053-1213",
+      "Dirección: Urbanización Elisa, 17 Avenida Norte #1721, San Salvador, El Salvador",
+      "Correo de contacto: admin@proman.services"
+    ]
+  },
+  {
+    id: "08",
+    title: "Comunicaciones y mensajes",
+    icon: MessageSquare,
+    paragraphs: [
+      "PROMAN Services puede comunicarse con clientes para responder solicitudes, confirmar citas, coordinar visitas, enviar información del servicio, dar seguimiento a cotizaciones, atender pagos, resolver reclamos o mantener continuidad de la relación comercial.",
+      "El cliente puede solicitar dejar de recibir comunicaciones no esenciales o promocionales. Las comunicaciones necesarias para ejecutar o dar seguimiento a un servicio activo pueden continuar mientras sean razonablemente necesarias."
+    ]
+  },
+  {
+    id: "09",
+    title: "Cookies y tecnologías similares",
+    icon: Cookie,
+    intro: "Nuestro sitio web puede utilizar cookies y tecnologías similares para:",
+    items: [
+      "mantener sesiones activas;",
+      "recordar preferencias;",
+      "mejorar funcionalidad;",
+      "analizar tráfico y uso del sitio;",
+      "proteger y optimizar nuestros canales digitales."
+    ],
+    note: "El usuario puede configurar su navegador para rechazar cookies, aunque esto podría afectar algunas funciones del sitio."
+  },
+  {
+    id: "10",
+    title: "Cambios a esta política",
+    icon: RefreshCw,
+    paragraphs: [
+      "PROMAN Services puede actualizar esta Política de Privacidad para reflejar cambios en sus servicios, canales de atención, herramientas, procesos internos o requisitos legales.",
+      "La versión actualizada se publicará en esta página con su fecha de última actualización. Recomendamos revisar esta política periódicamente."
+    ]
+  },
+  {
+    id: "11",
+    title: "Contacto",
+    icon: Mail,
+    paragraphs: [
+      "Si tienes preguntas sobre esta Política de Privacidad o sobre el tratamiento de tus datos personales, puedes contactar a PROMAN Services:"
+    ],
+    contactList: [
+      "PROMAN Services",
+      "Urbanización Elisa, 17 Avenida Norte #1721, San Salvador, El Salvador",
+      "Teléfono: 6053-1213",
+      "Horario de atención: lunes a sábado, 7:00 a.m. a 6:00 p.m.",
+      "Correo de contacto: admin@proman.services"
+    ],
+    note: "Al utilizar nuestros canales de atención, sitio web o servicios, reconoces que tu información será tratada conforme a esta Política de Privacidad."
+  }
+];
+
+function BulletList({ items }) {
+  return (
+    <ul className="space-y-2">
+      {items.map((item) => (
+        <li key={item} className="flex gap-3 text-gray-700 leading-relaxed">
+          <CheckCircle2 className="w-5 h-5 mt-0.5 text-proman-yellow flex-shrink-0" />
+          <span>{item}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export default function PrivacyPolicy() {
-  const lastUpdated = "11 de enero de 2025";
+  const lastUpdated = "septiembre de 2026";
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <div className="gradient-navy-yellow text-white py-16">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center mb-6">
-            <div className="w-20 h-20 hexagon bg-proman-yellow flex items-center justify-center">
-              <Shield className="w-10 h-10 text-proman-navy" />
-            </div>
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-100">
+      <div className="gradient-navy-yellow text-white py-16 md:py-20">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-proman-yellow shadow-xl">
+            <Shield className="w-10 h-10 text-proman-navy" />
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-center">
-            Política de Privacidad
-          </h1>
-          <p className="text-xl text-gray-200 text-center">
-            En PROMAN Services, protegemos tu información personal con los más altos estándares de seguridad
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Política de Privacidad</h1>
+          <p className="mt-4 text-lg md:text-xl text-slate-200 max-w-3xl mx-auto leading-relaxed">
+            Transparencia, confidencialidad y manejo responsable de la información en cada canal de atención de PROMAN Services.
           </p>
-          <p className="text-sm text-gray-300 text-center mt-4">
-            Última actualización: {lastUpdated}
-          </p>
+          <div className="mt-6 inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm text-slate-100 backdrop-blur-sm">
+            Última actualización propuesta: {lastUpdated}
+          </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        
-        {/* Introduction */}
-        <Card className="mb-6 border-2 border-proman-yellow">
-          <CardContent className="p-6">
-            <p className="text-gray-700 leading-relaxed mb-4">
-              PROMAN Services, con domicilio en 17 Avenida norte #1721, Colonia Layco, San Salvador, El Salvador, 
-              es responsable del tratamiento de los datos personales que nos proporciones a través de nuestro 
-              sitio web y servicios.
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14 space-y-6">
+        <Card className="border-2 border-proman-yellow shadow-xl">
+          <CardContent className="p-6 md:p-8 space-y-4">
+            <p className="text-gray-700 leading-8">
+              <strong className="text-proman-navy">PROMAN Services</strong>, con domicilio en Urbanización Elisa, 17 Avenida Norte #1721, San Salvador, El Salvador, es responsable del tratamiento de los datos personales que los clientes, prospectos, proveedores o usuarios nos proporcionen a través de nuestros canales de atención, sitio web, formularios, llamadas, mensajes, redes sociales, aplicaciones, herramientas digitales o cualquier otro medio de contacto habilitado por PROMAN Services.
             </p>
-            <p className="text-gray-700 leading-relaxed">
-              Esta Política de Privacidad describe cómo recopilamos, utilizamos, almacenamos y protegemos 
-              tu información personal en cumplimiento con las mejores prácticas internacionales de protección de datos.
+            <p className="text-gray-700 leading-8">
+              Esta Política de Privacidad explica cómo recopilamos, usamos, almacenamos, protegemos y, cuando corresponde, eliminamos o anonimizamos la información personal relacionada con nuestros servicios.
             </p>
           </CardContent>
         </Card>
 
-        {/* Data Collection */}
-        <Card className="mb-6">
-          <CardHeader className="bg-gray-50">
-            <CardTitle className="flex items-center gap-3 text-proman-navy">
-              <Database className="w-6 h-6 text-proman-yellow" />
-              1. Información que Recopilamos
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6 space-y-4">
-            <div>
-              <h3 className="font-semibold text-proman-navy mb-2">1.1 Datos de Identificación Personal</h3>
-              <ul className="list-disc list-inside text-gray-700 space-y-1 ml-4">
-                <li>Nombre completo</li>
-                <li>Números de teléfono (principal y secundario)</li>
-                <li>Dirección de correo electrónico</li>
-                <li>Dirección física y referencias de ubicación</li>
-                <li>Departamento de residencia o trabajo</li>
-              </ul>
-            </div>
+        {sections.map((section) => {
+          const Icon = section.icon;
+          return (
+            <Card key={section.id} className="overflow-hidden border border-slate-200 shadow-lg">
+              <CardHeader className="bg-slate-50 border-b border-slate-200">
+                <CardTitle className="flex items-start gap-4 text-proman-navy">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-proman-yellow/15 border border-proman-yellow/30 flex-shrink-0">
+                    <Icon className="w-6 h-6 text-proman-navy" />
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.24em] text-slate-500 mb-1">Sección {section.id}</p>
+                    <h2 className="text-2xl font-bold leading-tight">{section.title}</h2>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-6 md:p-8 space-y-5">
+                {section.highlight && (
+                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-emerald-900 font-semibold leading-relaxed">
+                    {section.highlight}
+                  </div>
+                )}
 
-            <div>
-              <h3 className="font-semibold text-proman-navy mb-2">1.2 Datos de Servicios Contratados</h3>
-              <ul className="list-disc list-inside text-gray-700 space-y-1 ml-4">
-                <li>Tipo de servicio solicitado (fontanería, electricidad, construcción, etc.)</li>
-                <li>Descripción detallada de la necesidad o problema</li>
-                <li>Horarios preferidos para la prestación del servicio</li>
-                <li>Historial de trabajos realizados</li>
-                <li>Fotografías del antes y después de los trabajos (cuando aplique)</li>
-              </ul>
-            </div>
+                {section.intro && <p className="text-gray-700 leading-8">{section.intro}</p>}
 
-            <div>
-              <h3 className="font-semibold text-proman-navy mb-2">1.3 Datos Comerciales</h3>
-              <ul className="list-disc list-inside text-gray-700 space-y-1 ml-4">
-                <li>Cotizaciones y presupuestos</li>
-                <li>Montos de servicios contratados</li>
-                <li>Estado de pagos y transacciones</li>
-                <li>Calificaciones y comentarios sobre nuestros servicios</li>
-              </ul>
-            </div>
+                {section.paragraphs?.map((paragraph) => (
+                  <p key={paragraph} className="text-gray-700 leading-8">{paragraph}</p>
+                ))}
 
-            <div>
-              <h3 className="font-semibold text-proman-navy mb-2">1.4 Datos Técnicos (Automáticos)</h3>
-              <ul className="list-disc list-inside text-gray-700 space-y-1 ml-4">
-                <li>Dirección IP</li>
-                <li>Tipo de navegador y dispositivo</li>
-                <li>Cookies de sesión y preferencias</li>
-                <li>Páginas visitadas y tiempo de navegación</li>
-              </ul>
-            </div>
-          </CardContent>
-        </Card>
+                {section.blocks?.map((block) => (
+                  <div key={block.title} className="rounded-2xl bg-slate-50 border border-slate-200 p-5 space-y-3">
+                    <h3 className="text-lg font-semibold text-proman-navy">{block.title}</h3>
+                    <BulletList items={block.items} />
+                    {block.note && <p className="text-sm text-slate-600 leading-7">{block.note}</p>}
+                  </div>
+                ))}
 
-        {/* Purpose */}
-        <Card className="mb-6">
-          <CardHeader className="bg-gray-50">
-            <CardTitle className="flex items-center gap-3 text-proman-navy">
-              <FileText className="w-6 h-6 text-proman-yellow" />
-              2. Finalidad del Tratamiento de Datos
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6 space-y-3">
-            <p className="text-gray-700">Utilizamos tu información personal para los siguientes propósitos:</p>
-            
-            <div className="space-y-2">
-              <div className="flex gap-2">
-                <span className="text-proman-yellow font-bold">•</span>
-                <p className="text-gray-700"><strong>Gestión de servicios:</strong> Coordinar, programar y ejecutar los servicios solicitados</p>
-              </div>
-              <div className="flex gap-2">
-                <span className="text-proman-yellow font-bold">•</span>
-                <p className="text-gray-700"><strong>Comunicación con clientes:</strong> Contactarte para confirmar citas, enviar actualizaciones del trabajo y resolver consultas</p>
-              </div>
-              <div className="flex gap-2">
-                <span className="text-proman-yellow font-bold">•</span>
-                <p className="text-gray-700"><strong>Administración de perfiles:</strong> Mantener un registro de clientes para facilitar servicios futuros y personalizar la atención</p>
-              </div>
-              <div className="flex gap-2">
-                <span className="text-proman-yellow font-bold">•</span>
-                <p className="text-gray-700"><strong>Seguimiento profesional:</strong> Documentar el progreso de trabajos, generar reportes de avance y mantener historial de servicios</p>
-              </div>
-              <div className="flex gap-2">
-                <span className="text-proman-yellow font-bold">•</span>
-                <p className="text-gray-700"><strong>Facturación y cobranza:</strong> Emitir cotizaciones, facturas y gestionar pagos</p>
-              </div>
-              <div className="flex gap-2">
-                <span className="text-proman-yellow font-bold">•</span>
-                <p className="text-gray-700"><strong>Mejora continua:</strong> Analizar calificaciones y comentarios para optimizar nuestros servicios</p>
-              </div>
-              <div className="flex gap-2">
-                <span className="text-proman-yellow font-bold">•</span>
-                <p className="text-gray-700"><strong>Cumplimiento legal:</strong> Mantener registros conforme a obligaciones fiscales y comerciales en El Salvador</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+                {section.items && !section.blocks && <BulletList items={section.items} />}
 
-        {/* No Third Party Sharing */}
-        <Card className="mb-6 border-2 border-green-500">
-          <CardHeader className="bg-green-50">
-            <CardTitle className="flex items-center gap-3 text-proman-navy">
-              <Lock className="w-6 h-6 text-green-600" />
-              3. No Compartimos tu Información con Terceros
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6 space-y-4">
-            <div className="bg-green-100 border-l-4 border-green-600 p-4 rounded">
-              <p className="font-semibold text-green-800 mb-2">
-                ✓ Compromiso de Confidencialidad
-              </p>
-              <p className="text-gray-700">
-                PROMAN Services <strong>NO vende, alquila ni comparte</strong> tu información personal con terceros 
-                para fines comerciales, publicitarios o de marketing.
-              </p>
-            </div>
+                {section.contactList && (
+                  <div className="rounded-2xl border border-proman-yellow/40 bg-amber-50 px-5 py-5">
+                    <div className="space-y-2 text-gray-700">
+                      {section.contactList.map((item) => (
+                        <p key={item} className="leading-7">{item}</p>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-            <div>
-              <h3 className="font-semibold text-proman-navy mb-2">Excepciones Limitadas</h3>
-              <p className="text-gray-700 mb-2">
-                Tu información solo podría ser compartida en las siguientes circunstancias excepcionales:
-              </p>
-              <ul className="list-disc list-inside text-gray-700 space-y-1 ml-4">
-                <li><strong>Proveedores de servicios técnicos:</strong> Empresas que nos brindan servicios de hosting, almacenamiento en la nube y sistemas de gestión (con contratos de confidencialidad)</li>
-                <li><strong>Obligación legal:</strong> Cuando sea requerido por autoridades competentes mediante orden judicial</li>
-                <li><strong>Protección de derechos:</strong> Para hacer valer nuestros derechos legales o proteger la seguridad de nuestros empleados y clientes</li>
-              </ul>
-            </div>
+                {section.note && <p className="text-sm text-slate-600 leading-7">{section.note}</p>}
+              </CardContent>
+            </Card>
+          );
+        })}
 
-            <p className="text-sm text-gray-600 italic">
-              En todos los casos, garantizamos que cualquier tercero que acceda a tu información está 
-              obligado a mantener la misma confidencialidad y protección que nosotros.
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Security */}
-        <Card className="mb-6">
-          <CardHeader className="bg-gray-50">
-            <CardTitle className="flex items-center gap-3 text-proman-navy">
-              <Shield className="w-6 h-6 text-proman-yellow" />
-              4. Seguridad de la Información
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6 space-y-3">
-            <p className="text-gray-700">
-              Implementamos medidas de seguridad técnicas, administrativas y físicas para proteger 
-              tu información personal contra acceso no autorizado, pérdida, alteración o divulgación:
-            </p>
-            
-            <ul className="list-disc list-inside text-gray-700 space-y-1 ml-4">
-              <li><strong>Encriptación:</strong> Utilizamos protocolos SSL/TLS para proteger la transmisión de datos</li>
-              <li><strong>Control de acceso:</strong> Solo personal autorizado tiene acceso a información sensible</li>
-              <li><strong>Respaldos regulares:</strong> Realizamos copias de seguridad periódicas de la información</li>
-              <li><strong>Autenticación:</strong> Sistemas de login seguros con contraseñas encriptadas</li>
-              <li><strong>Auditorías:</strong> Revisión periódica de nuestras medidas de seguridad</li>
-            </ul>
-          </CardContent>
-        </Card>
-
-        {/* Data Retention */}
-        <Card className="mb-6">
-          <CardHeader className="bg-gray-50">
-            <CardTitle className="flex items-center gap-3 text-proman-navy">
-              <Eye className="w-6 h-6 text-proman-yellow" />
-              5. Retención de Datos
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6 space-y-3">
-            <p className="text-gray-700">
-              Conservamos tu información personal durante el tiempo necesario para:
-            </p>
-            
-            <ul className="list-disc list-inside text-gray-700 space-y-1 ml-4">
-              <li>Cumplir con la finalidad para la cual fue recopilada</li>
-              <li>Mantener un historial de servicios que facilite atenciones futuras</li>
-              <li>Cumplir con obligaciones legales, fiscales y contables (mínimo 5 años según legislación salvadoreña)</li>
-              <li>Resolver disputas o hacer valer derechos legales</li>
-            </ul>
-
-            <p className="text-gray-700 mt-3">
-              Una vez que tu información ya no sea necesaria, procederemos a eliminarla de manera segura 
-              o a anonimizarla para que no pueda ser identificada.
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* User Rights */}
-        <Card className="mb-6">
-          <CardHeader className="bg-gray-50">
-            <CardTitle className="flex items-center gap-3 text-proman-navy">
-              <UserCheck className="w-6 h-6 text-proman-yellow" />
-              6. Tus Derechos como Titular de Datos
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6 space-y-3">
-            <p className="text-gray-700 mb-3">
-              Tienes derecho a ejercer los siguientes derechos respecto a tu información personal:
-            </p>
-            
-            <div className="space-y-3">
-              <div className="bg-blue-50 p-3 rounded">
-                <p className="font-semibold text-proman-navy">Acceso</p>
-                <p className="text-sm text-gray-700">Conocer qué datos personales tenemos sobre ti</p>
-              </div>
-              
-              <div className="bg-blue-50 p-3 rounded">
-                <p className="font-semibold text-proman-navy">Rectificación</p>
-                <p className="text-sm text-gray-700">Solicitar la corrección de datos inexactos o incompletos</p>
-              </div>
-              
-              <div className="bg-blue-50 p-3 rounded">
-                <p className="font-semibold text-proman-navy">Cancelación</p>
-                <p className="text-sm text-gray-700">Solicitar la eliminación de tus datos cuando ya no sean necesarios</p>
-              </div>
-              
-              <div className="bg-blue-50 p-3 rounded">
-                <p className="font-semibold text-proman-navy">Oposición</p>
-                <p className="text-sm text-gray-700">Oponerte al tratamiento de tus datos para fines específicos</p>
-              </div>
-
-              <div className="bg-blue-50 p-3 rounded">
-                <p className="font-semibold text-proman-navy">Portabilidad</p>
-                <p className="text-sm text-gray-700">Obtener una copia de tus datos en formato electrónico</p>
-              </div>
-            </div>
-
-            <div className="mt-4 p-4 bg-proman-yellow bg-opacity-10 border-l-4 border-proman-yellow rounded">
-              <p className="text-sm text-gray-700">
-                <strong>Para ejercer cualquiera de estos derechos, contáctanos:</strong>
-              </p>
-              <ul className="text-sm text-gray-700 mt-2 space-y-1">
-                <li>📞 Teléfono: 6053-1213</li>
-                <li>📍 Dirección: Urbanización Elisa, 17 Avenida Norte #1721, San Salvador, San Salvador</li>
-              </ul>
-              <p className="text-xs text-gray-600 mt-2 italic">
-                Responderemos a tu solicitud en un plazo máximo de 15 días hábiles.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Cookies */}
-        <Card className="mb-6">
-          <CardHeader className="bg-gray-50">
-            <CardTitle className="flex items-center gap-3 text-proman-navy">
-              <FileText className="w-6 h-6 text-proman-yellow" />
-              7. Uso de Cookies y Tecnologías Similares
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6 space-y-3">
-            <p className="text-gray-700">
-              Nuestro sitio web utiliza cookies y tecnologías similares para:
-            </p>
-            
-            <ul className="list-disc list-inside text-gray-700 space-y-1 ml-4">
-              <li>Mantener tu sesión activa cuando inicias sesión</li>
-              <li>Recordar tus preferencias de navegación</li>
-              <li>Mejorar la funcionalidad del sitio web</li>
-              <li>Analizar el tráfico y uso del sitio (de forma anónima)</li>
-            </ul>
-
-            <p className="text-gray-700 mt-3">
-              Puedes configurar tu navegador para rechazar cookies, aunque esto podría afectar 
-              la funcionalidad de algunas características del sitio.
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Changes to Policy */}
-        <Card className="mb-6">
-          <CardHeader className="bg-gray-50">
-            <CardTitle className="flex items-center gap-3 text-proman-navy">
-              <Mail className="w-6 h-6 text-proman-yellow" />
-              8. Cambios a esta Política de Privacidad
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6 space-y-3">
-            <p className="text-gray-700">
-              Nos reservamos el derecho de actualizar esta Política de Privacidad periódicamente 
-              para reflejar cambios en nuestras prácticas o en la legislación aplicable.
-            </p>
-            
-            <p className="text-gray-700">
-              Cualquier cambio será publicado en esta página con la fecha de "Última actualización" 
-              modificada. Te recomendamos revisar esta política periódicamente.
-            </p>
-
-            <p className="text-gray-700">
-              Si realizamos cambios significativos, te notificaremos por correo electrónico o 
-              mediante un aviso destacado en nuestro sitio web.
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Contact */}
-        <Card className="border-2 border-proman-yellow">
-          <CardHeader className="bg-proman-yellow">
-            <CardTitle className="text-proman-navy">
-              Contacto
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <p className="text-gray-700 mb-4">
-              Si tienes preguntas, comentarios o inquietudes sobre esta Política de Privacidad 
-              o sobre el tratamiento de tus datos personales, no dudes en contactarnos:
-            </p>
-            
-            <div className="space-y-2 text-gray-700">
-              <p><strong>PROMAN Services</strong></p>
-              <p>📍 Urbanización Elisa, 17 Avenida Norte #1721, San Salvador, San Salvador</p>
-              <p>📞 Teléfono: 6053-1213</p>
-              <p>🕒 Horario de atención: Lunes a Sábado, 7:00 AM - 6:00 PM</p>
-            </div>
-
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-gray-700">
-                Al utilizar nuestro sitio web y servicios, aceptas los términos establecidos en esta 
-                Política de Privacidad. Si no estás de acuerdo con estos términos, te solicitamos 
-                que no utilices nuestros servicios.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Last Updated Notice */}
-        <div className="text-center mt-8 text-sm text-gray-500">
-          <p>Última actualización: {lastUpdated}</p>
-          <p className="mt-2">© 2024 PROMAN Services. Todos los derechos reservados.</p>
+        <div className="text-center pt-2 text-sm text-slate-500">
+          <p>Última actualización propuesta: {lastUpdated}</p>
+          <p className="mt-2">© 2026 PROMAN Services. Todos los derechos reservados.</p>
         </div>
       </div>
     </div>
