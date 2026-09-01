@@ -25,19 +25,39 @@ const formatMessageTime = (value) => {
   return format(new Date(value), "HH:mm", { locale: es });
 };
 
+const normalizePhone = (value) => {
+  if (!value) return "";
+  const digits = String(value).replace(/[^\d]/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("503")) return `+${digits}`;
+  if (digits.length === 8) return `+503${digits}`;
+  return `+${digits}`;
+};
+
+const getPhoneVariants = (value) => {
+  const raw = String(value || "").trim();
+  const digits = raw.replace(/[^\d]/g, "");
+  const normalized = normalizePhone(raw);
+  const variants = new Set([raw, digits, normalized]);
+
+  if (digits) variants.add(`+${digits}`);
+  if (digits.startsWith("503") && digits.length >= 11) variants.add(digits.slice(3));
+  if (digits.length === 8) variants.add(`503${digits}`);
+
+  return [...variants].filter(Boolean);
+};
+
 function MessageBubble({ msg }) {
   const isOutbound = msg.direction === 'outbound';
   const isCustomer = msg.sender_type === 'customer' || (!msg.sender_type && msg.direction === 'inbound');
   const isReaction = msg.event_type === 'reaction' || msg.message_type === 'reaction';
   const isStatus = msg.event_type === 'status' || msg.message_type === 'status';
   const isSystemEvent = isReaction || isStatus;
-  const senderLabel = isCustomer ? 'Cliente' : msg.sender_type === 'agent' ? 'Agente' : 'PROMAN';
+  const senderLabel = isCustomer ? 'Cliente' : 'Nosotros';
   const roleBadge = isCustomer ? (
     <Badge className="bg-slate-100 text-slate-700 flex items-center gap-1"><UserIcon className="w-3 h-3" />Cliente</Badge>
-  ) : msg.sender_type === 'agent' ? (
-    <Badge className="bg-blue-100 text-blue-800">Agente</Badge>
   ) : (
-    <Badge className="bg-green-100 text-green-800 flex items-center gap-1"><Bot className="w-3 h-3" />Bot</Badge>
+    <Badge className="bg-blue-100 text-blue-800 flex items-center gap-1"><Bot className="w-3 h-3" />PROMAN</Badge>
   );
 
   if (isSystemEvent) {
@@ -141,13 +161,31 @@ export default function WhatsAppConversationPanel({ customerId, inquiryId, phone
   const { data: messages = [], isLoading } = useQuery({
     queryKey: ['waLog', customerId, phone],
     queryFn: async () => {
-      const byCustomer = customerId ? await base44.entities.BitacoraWhatsApp.filter({ customer_id: customerId }, 'timestamp') : [];
-      const byPhone = phone ? await base44.entities.BitacoraWhatsApp.filter({ from_phone: phone }, 'timestamp') : [];
-      const byPhoneAlias = phone ? await base44.entities.BitacoraWhatsApp.filter({ phone }, 'timestamp') : [];
+      const phoneVariants = getPhoneVariants(phone);
+      const recordGroups = await Promise.all([
+        customerId ? base44.entities.BitacoraWhatsApp.filter({ customer_id: customerId }, 'timestamp') : Promise.resolve([]),
+        ...phoneVariants.flatMap((value) => [
+          base44.entities.BitacoraWhatsApp.filter({ from_phone: value }, 'timestamp'),
+          base44.entities.BitacoraWhatsApp.filter({ phone: value }, 'timestamp'),
+          base44.entities.BitacoraWhatsApp.filter({ contact_phone: value }, 'timestamp'),
+          base44.entities.BitacoraWhatsApp.filter({ to_phone: value }, 'timestamp'),
+          base44.entities.BitacoraWhatsApp.filter({ wa_id: value }, 'timestamp')
+        ])
+      ]);
 
-      const merged = [...byCustomer, ...byPhone, ...byPhoneAlias];
+      const merged = recordGroups.flat();
       const unique = Array.from(new Map(merged.map((item) => [item.id, item])).values());
-      return unique;
+      const conversationIds = Array.from(new Set(unique.map((item) => item.conversation_id).filter(Boolean)));
+
+      if (conversationIds.length === 0) return unique;
+
+      const conversationGroups = await Promise.all(
+        conversationIds.map((conversationId) =>
+          base44.entities.BitacoraWhatsApp.filter({ conversation_id: conversationId }, 'timestamp')
+        )
+      );
+
+      return Array.from(new Map([...unique, ...conversationGroups.flat()].map((item) => [item.id, item])).values());
     },
     enabled: viewerOpen && (!!customerId || !!phone),
     initialData: [],

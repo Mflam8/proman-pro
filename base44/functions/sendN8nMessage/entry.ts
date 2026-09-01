@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
+import { buildConversationKey, getPhoneVariants, normalizePhone } from '../../shared/whatsappIdentity.ts';
 
 Deno.serve(async (req) => {
   try {
@@ -8,6 +9,22 @@ Deno.serve(async (req) => {
 
     const body = await req.json();
     let { customer_id, inquiry_id, phone, text, media_url, message_type } = body || {};
+
+    const findCustomerByPhone = async (rawPhone) => {
+      const variants = getPhoneVariants(rawPhone);
+      if (variants.length === 0) return null;
+
+      const searches = await Promise.all(
+        variants.flatMap((value) => [
+          base44.asServiceRole.entities.Customer.filter({ phone: value }),
+          base44.asServiceRole.entities.Customer.filter({ normalized_phone: value }),
+          base44.asServiceRole.entities.Customer.filter({ wa_id: value }),
+          base44.asServiceRole.entities.Customer.filter({ canonical_wa_id: value })
+        ])
+      );
+
+      return searches.flat()[0] || null;
+    };
 
     // Resolver teléfono si no viene
     if (!phone) {
@@ -23,6 +40,8 @@ Deno.serve(async (req) => {
         }
       }
     }
+
+    phone = normalizePhone(phone);
 
     if (!phone && !customer_id) {
       return Response.json({ error: 'Missing phone or customer_id' }, { status: 400 });
@@ -65,22 +84,32 @@ Deno.serve(async (req) => {
     const customer = customer_id
       ? (await base44.asServiceRole.entities.Customer.filter({ id: customer_id }))[0]
       : phone
-        ? (await base44.asServiceRole.entities.Customer.filter({ phone }))[0]
+        ? await findCustomerByPhone(phone)
         : null;
-    const channelId = Deno.env.get('META_PHONE_NUMBER_ID') || '';
-    const stableConversationKey = `${phone || customer?.phone || 'unknown'}_${channelId || 'unknown'}`;
+    const channelId = normalizePhone(Deno.env.get('META_PHONE_NUMBER_ID') || '');
+    const stableConversationKey = buildConversationKey(phone || customer?.phone, channelId);
     let conversation = null;
 
     if (customer) {
       const existingConvs = await base44.asServiceRole.entities.WhatsappConversation.filter({ customer_id: customer.id, subject: stableConversationKey });
-      conversation = existingConvs[0] || await base44.asServiceRole.entities.WhatsappConversation.create({
-        customer_id: customer.id,
-        is_open: true,
-        channel: 'whatsapp',
-        last_message_at: new Date().toISOString(),
-        subject: stableConversationKey,
-        notes: `ck:${stableConversationKey}`
-      });
+      const openConvs = existingConvs.length > 0
+        ? existingConvs
+        : await base44.asServiceRole.entities.WhatsappConversation.filter({ customer_id: customer.id, is_open: true });
+
+      conversation = openConvs
+        .filter((item) => item.subject === stableConversationKey || item.subject?.startsWith(`${normalizePhone(phone || customer?.phone)}_`) || item.notes?.includes(`ck:${normalizePhone(phone || customer?.phone)}_`))
+        .sort((a, b) => new Date(b.last_message_at || 0).getTime() - new Date(a.last_message_at || 0).getTime())[0];
+
+      if (!conversation) {
+        conversation = await base44.asServiceRole.entities.WhatsappConversation.create({
+          customer_id: customer.id,
+          is_open: true,
+          channel: 'whatsapp',
+          last_message_at: new Date().toISOString(),
+          subject: stableConversationKey,
+          notes: `ck:${stableConversationKey}`
+        });
+      }
     }
 
     const localMessageId = `out_${Date.now()}`;

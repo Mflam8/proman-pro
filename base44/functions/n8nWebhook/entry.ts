@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+import { buildConversationKey, getPhoneVariants, normalizePhone } from '../../shared/whatsappIdentity.ts';
 
 /**
  * PROMAN - Webhook robusto para N8N
@@ -91,15 +92,6 @@ Deno.serve(async (req) => {
 
   const { event, data } = body;
 
-  const normalizePhone = (value) => {
-    if (!value) return '';
-    const digits = String(value).replace(/[^\d]/g, '');
-    if (!digits) return '';
-    if (digits.startsWith('503')) return `+${digits}`;
-    if (digits.length === 8) return `+503${digits}`;
-    return `+${digits}`;
-  };
-
   const normalizeEventType = (parsedEvent) => {
     if (parsedEvent.parsed_type === 'status') return 'status';
     if (parsedEvent.message_type === 'reaction' || parsedEvent.parsed_type?.includes('reaction')) return 'reaction';
@@ -120,15 +112,17 @@ Deno.serve(async (req) => {
   };
 
   const listActiveCustomersByPhone = async (rawPhone) => {
-    const normalizedPhone = normalizePhone(rawPhone);
-    if (!normalizedPhone) return [];
+    const variants = getPhoneVariants(rawPhone);
+    if (variants.length === 0) return [];
 
-    const searches = await Promise.all([
-      base44.asServiceRole.entities.Customer.filter({ phone: normalizedPhone }),
-      base44.asServiceRole.entities.Customer.filter({ normalized_phone: normalizedPhone }),
-      base44.asServiceRole.entities.Customer.filter({ wa_id: normalizedPhone }),
-      base44.asServiceRole.entities.Customer.filter({ canonical_wa_id: normalizedPhone })
-    ]);
+    const searches = await Promise.all(
+      variants.flatMap((value) => [
+        base44.asServiceRole.entities.Customer.filter({ phone: value }),
+        base44.asServiceRole.entities.Customer.filter({ normalized_phone: value }),
+        base44.asServiceRole.entities.Customer.filter({ wa_id: value }),
+        base44.asServiceRole.entities.Customer.filter({ canonical_wa_id: value })
+      ])
+    );
 
     const unique = new Map();
     searches.flat().forEach((customer) => {
@@ -220,10 +214,10 @@ Deno.serve(async (req) => {
     if (!canonical) return null;
 
     const patch = {};
-    if (!canonical.phone) patch.phone = normalizedPhone;
-    if (!canonical.normalized_phone) patch.normalized_phone = normalizedPhone;
-    if (!canonical.wa_id) patch.wa_id = normalizedPhone;
-    if (!canonical.canonical_wa_id) patch.canonical_wa_id = normalizedPhone;
+    if (canonical.phone !== normalizedPhone) patch.phone = normalizedPhone;
+    if (canonical.normalized_phone !== normalizedPhone) patch.normalized_phone = normalizedPhone;
+    if (canonical.wa_id !== normalizedPhone) patch.wa_id = normalizedPhone;
+    if (canonical.canonical_wa_id !== normalizedPhone) patch.canonical_wa_id = normalizedPhone;
     if ((!canonical.full_name || canonical.full_name === 'Sin nombre') && customerName) patch.full_name = customerName;
     if (canonical.channel !== channel) patch.channel = channel;
 
@@ -352,7 +346,7 @@ Deno.serve(async (req) => {
 
         const tsNum = Number(parsedEvent.timestamp || Date.now());
         const timestampISO = new Date(tsNum < 1e12 ? tsNum * 1000 : tsNum).toISOString();
-        const stableConversationKey = `${parsedEvent.contact_phone || 'unknown'}_${channelId || 'unknown'}`;
+        const stableConversationKey = buildConversationKey(parsedEvent.contact_phone, channelId);
 
         console.log(`${parsedEvent.parsed_type} parsed`, JSON.stringify({
           meta_message_id: parsedEvent.meta_message_id,
@@ -673,7 +667,8 @@ Deno.serve(async (req) => {
         }
 
         const normalizedPhone = normalizePhone(resolvedPhone);
-        const stableConversationKey = `${normalizedPhone || 'unknown'}_legacy`;
+        const channelId = normalizePhone(data?.display_phone_number || data?.meta?.display_phone_number || Deno.env.get('META_PHONE_NUMBER_ID') || '');
+        const stableConversationKey = buildConversationKey(normalizedPhone, channelId);
         const webhookLog = await base44.asServiceRole.entities.WebhookEvent.create({
           event: event || 'message_received',
           event_type: ['image', 'video', 'audio', 'document'].includes(message_type) ? 'media' : 'message',
@@ -869,14 +864,20 @@ Deno.serve(async (req) => {
           conversation_id: conversation.id,
           trabajo_id: inquiry.id,
           job_id: inquiry.id,
-          from_phone: resolvedPhone,
-          phone: resolvedPhone,
+          wa_id: normalizedPhone,
+          from_phone: normalizedPhone,
+          to_phone: channelId || null,
+          contact_phone: normalizedPhone,
+          phone: normalizedPhone,
           texto_mensaje: resolvedMessage,
           text: resolvedMessage,
           caption: caption || null,
           media_url: mediaUrl,
           mime_type: mimeType,
           timestamp: nowISO,
+          message_timestamp: nowISO,
+          provider_timestamp: String(timestamp || ''),
+          meta_timestamp: String(timestamp || ''),
           message_type: messageTypeGuessed,
           is_group: false,
           procesado: false,
