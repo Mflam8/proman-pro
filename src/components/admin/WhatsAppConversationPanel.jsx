@@ -136,7 +136,7 @@ export default function WhatsAppConversationPanel({ customerId, inquiryId, phone
   const [sending, setSending] = useState(false);
   const [messageText, setMessageText] = useState("");
   const [file, setFile] = useState(null);
-  const [isOpen, setIsOpen] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
 
   const { data: messages = [], isLoading } = useQuery({
     queryKey: ['waLog', customerId, phone],
@@ -149,9 +149,9 @@ export default function WhatsAppConversationPanel({ customerId, inquiryId, phone
       const unique = Array.from(new Map(merged.map((item) => [item.id, item])).values());
       return unique;
     },
-    enabled: isOpen && (!!customerId || !!phone),
+    enabled: viewerOpen && (!!customerId || !!phone),
     initialData: [],
-    refetchInterval: isOpen ? 5000 : false,
+    refetchInterval: viewerOpen ? 5000 : false,
   });
 
   const { data: jobs = [] } = useQuery({
@@ -160,7 +160,7 @@ export default function WhatsAppConversationPanel({ customerId, inquiryId, phone
       if (!customerId) return [];
       return base44.entities.ClientInquiry.filter({ customer_id: customerId }, '-created_date');
     },
-    enabled: isOpen && !!customerId,
+    enabled: viewerOpen && !!customerId,
     initialData: [],
   });
 
@@ -268,9 +268,8 @@ export default function WhatsAppConversationPanel({ customerId, inquiryId, phone
         <CardTitle className="flex items-center justify-between w-full">
           <span>💬 Conversación WhatsApp</span>
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={() => setIsOpen(v => !v)} className="bg-white text-emerald-700 hover:bg-emerald-50">
-              {isOpen ? <ChevronUp className="w-4 h-4 mr-1" /> : <ChevronDown className="w-4 h-4 mr-1" />}
-              {isOpen ? 'Ocultar' : 'Mostrar'}
+            <Button size="sm" variant="outline" onClick={() => setViewerOpen(true)} className="bg-white text-emerald-700 hover:bg-emerald-50">
+              Ver conversación completa
             </Button>
             <Button size="sm" variant="secondary" onClick={handleSummarize} disabled={summarizing}>
               {summarizing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <MessageCircle className="w-4 h-4 mr-2" />} Resumen
@@ -278,121 +277,139 @@ export default function WhatsAppConversationPanel({ customerId, inquiryId, phone
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent className={`pt-4 space-y-3 ${isOpen ? '' : 'hidden'}`}>
-        {/* Filtros */}
-        <div className="grid md:grid-cols-6 gap-2">
-          <div className="md:col-span-2">
-            <div className="relative">
-              <Search className="w-4 h-4 absolute left-2 top-2.5 text-slate-400" />
-              <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar texto/caption..." className="pl-8" />
-            </div>
-          </div>
-          <Select value={type} onValueChange={setType}>
-            <SelectTrigger><SelectValue placeholder="Tipo" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="text">Texto</SelectItem>
-              <SelectItem value="image">Imagen</SelectItem>
-              <SelectItem value="audio">Audio</SelectItem>
-              <SelectItem value="video">Video</SelectItem>
-              <SelectItem value="document">Documento</SelectItem>
-              <SelectItem value="reaction">Reacción</SelectItem>
-              <SelectItem value="status">Estado</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={direction} onValueChange={setDirection}>
-            <SelectTrigger><SelectValue placeholder="Dirección" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas</SelectItem>
-              <SelectItem value="inbound">Entrantes</SelectItem>
-              <SelectItem value="outbound">Salientes</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={sender} onValueChange={setSender}>
-            <SelectTrigger><SelectValue placeholder="Remitente" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="customer">Cliente</SelectItem>
-              <SelectItem value="bot">Bot</SelectItem>
-              <SelectItem value="agent">Agente</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={selectedJobId} onValueChange={setSelectedJobId}>
-            <SelectTrigger><SelectValue placeholder="Trabajo" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos los trabajos</SelectItem>
-              {jobs.map(j => (
-                <SelectItem key={j.id} value={j.id}>{j.service_type || j.rubro || 'Trabajo'} — {format(new Date(j.created_date), 'dd MMM', { locale: es })}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <Input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} />
-          <Input type="date" value={toDate} onChange={e => setToDate(e.target.value)} />
-        </div>
-
-        <AISuggestionsPanel
-          inquiry={inquiryId ? jobs.find((j) => j.id === inquiryId) : null}
-          customer={customerId ? { id: customerId, phone } : null}
-          phone={phone}
-          conversationId={messages.find((m) => m.conversation_id)?.conversation_id || null}
-          onOpenCreateInquiry={() => window.dispatchEvent(new CustomEvent('open-create-inquiry-from-whatsapp'))}
-        />
-
-        <PipelineDiagnosticsPanel
-          inquiryId={inquiryId}
-          conversationId={messages.find((m) => m.conversation_id)?.conversation_id || null}
-          phone={phone}
-        />
-
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
-          <div>
-            <p className="font-semibold text-slate-800">{filtered.length} mensaje{filtered.length === 1 ? '' : 's'} en esta vista</p>
-            <p className="text-xs text-slate-500">Ahora se muestran como conversación cronológica para leer mejor el contexto.</p>
-          </div>
-        </div>
-
-        {/* Lista */}
-        <div className="max-h-[620px] overflow-y-auto rounded-3xl border border-slate-200 bg-gradient-to-b from-slate-50 to-white p-3 md:p-4">
-          {isLoading ? (
-            <div className="flex items-center gap-2 text-sm text-slate-500"><Loader2 className="w-4 h-4 animate-spin" />Cargando...</div>
-          ) : filtered.length === 0 ? (
-            <p className="text-sm text-slate-500">Sin mensajes con los filtros actuales.</p>
-          ) : (
-            <div className="space-y-3">
-              {conversationItems.map((item) =>
-                item.type === 'day' ? (
-                  <div key={item.id} className="sticky top-0 z-10 flex items-center justify-center py-2">
-                    <div className="rounded-full border border-slate-200 bg-white/95 px-4 py-1 text-xs font-medium text-slate-600 shadow-sm backdrop-blur">
-                      {item.label}
-                    </div>
-                  </div>
-                ) : (
-                  <MessageBubble key={item.id} msg={item.message} />
-                )
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Composer */}
-        <div className="pt-3 border-t">
-          <Label className="text-sm mb-1 block">Responder (se enviará vía n8n)</Label>
-          <div className="grid md:grid-cols-5 gap-2">
-            <div className="md:col-span-4">
-              <Input value={messageText} onChange={e => setMessageText(e.target.value)} placeholder="Escribe tu mensaje..." />
-            </div>
-            <Button onClick={handleSend} disabled={sending}>
-              {sending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />} Enviar
-            </Button>
-          </div>
-          <div className="mt-2">
-            <input type="file" onChange={e => setFile(e.target.files?.[0] || null)} />
-            <p className="text-[11px] text-slate-500 mt-1">Puedes adjuntar imagen, audio, video o documento.</p>
-          </div>
+      <CardContent className="pt-4">
+        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 px-4 py-4">
+          <p className="font-semibold text-emerald-900">Abre la conversación en vista amplia</p>
+          <p className="mt-1 text-sm text-emerald-800">Se mostrará en un bloque grande para que puedas leer todo el historial del cliente con más comodidad.</p>
         </div>
       </CardContent>
+
+      <Dialog open={viewerOpen} onOpenChange={setViewerOpen}>
+        <DialogContent className="w-[94vw] max-w-[94vw] h-[88vh] p-0 gap-0 overflow-hidden">
+          <DialogHeader className="border-b bg-white px-6 py-4 text-left">
+            <DialogTitle className="flex items-center justify-between gap-4">
+              <span>Conversación completa de WhatsApp</span>
+              <span className="text-sm font-normal text-slate-500">Vista amplia para revisar todo el historial</span>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 bg-white">
+            {/* Filtros */}
+            <div className="grid md:grid-cols-6 gap-2">
+              <div className="md:col-span-2">
+                <div className="relative">
+                  <Search className="w-4 h-4 absolute left-2 top-2.5 text-slate-400" />
+                  <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar texto/caption..." className="pl-8" />
+                </div>
+              </div>
+              <Select value={type} onValueChange={setType}>
+                <SelectTrigger><SelectValue placeholder="Tipo" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="text">Texto</SelectItem>
+                  <SelectItem value="image">Imagen</SelectItem>
+                  <SelectItem value="audio">Audio</SelectItem>
+                  <SelectItem value="video">Video</SelectItem>
+                  <SelectItem value="document">Documento</SelectItem>
+                  <SelectItem value="reaction">Reacción</SelectItem>
+                  <SelectItem value="status">Estado</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={direction} onValueChange={setDirection}>
+                <SelectTrigger><SelectValue placeholder="Dirección" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas</SelectItem>
+                  <SelectItem value="inbound">Entrantes</SelectItem>
+                  <SelectItem value="outbound">Salientes</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={sender} onValueChange={setSender}>
+                <SelectTrigger><SelectValue placeholder="Remitente" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="customer">Cliente</SelectItem>
+                  <SelectItem value="bot">Bot</SelectItem>
+                  <SelectItem value="agent">Agente</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={selectedJobId} onValueChange={setSelectedJobId}>
+                <SelectTrigger><SelectValue placeholder="Trabajo" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los trabajos</SelectItem>
+                  {jobs.map(j => (
+                    <SelectItem key={j.id} value={j.id}>{j.service_type || j.rubro || 'Trabajo'} — {format(new Date(j.created_date), 'dd MMM', { locale: es })}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} />
+              <Input type="date" value={toDate} onChange={e => setToDate(e.target.value)} />
+            </div>
+
+            <AISuggestionsPanel
+              inquiry={inquiryId ? jobs.find((j) => j.id === inquiryId) : null}
+              customer={customerId ? { id: customerId, phone } : null}
+              phone={phone}
+              conversationId={messages.find((m) => m.conversation_id)?.conversation_id || null}
+              onOpenCreateInquiry={() => window.dispatchEvent(new CustomEvent('open-create-inquiry-from-whatsapp'))}
+            />
+
+            <PipelineDiagnosticsPanel
+              inquiryId={inquiryId}
+              conversationId={messages.find((m) => m.conversation_id)?.conversation_id || null}
+              phone={phone}
+            />
+
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+              <div>
+                <p className="font-semibold text-slate-800">{filtered.length} mensaje{filtered.length === 1 ? '' : 's'} en esta vista</p>
+                <p className="text-xs text-slate-500">Ahora se muestran como conversación cronológica para leer mejor el contexto.</p>
+              </div>
+            </div>
+
+            {/* Lista */}
+            <div className="h-[40vh] md:h-[48vh] overflow-y-auto rounded-3xl border border-slate-200 bg-gradient-to-b from-slate-50 to-white p-3 md:p-4">
+              {isLoading ? (
+                <div className="flex items-center gap-2 text-sm text-slate-500"><Loader2 className="w-4 h-4 animate-spin" />Cargando...</div>
+              ) : filtered.length === 0 ? (
+                <p className="text-sm text-slate-500">Sin mensajes con los filtros actuales.</p>
+              ) : (
+                <div className="space-y-3">
+                  {conversationItems.map((item) =>
+                    item.type === 'day' ? (
+                      <div key={item.id} className="sticky top-0 z-10 flex items-center justify-center py-2">
+                        <div className="rounded-full border border-slate-200 bg-white/95 px-4 py-1 text-xs font-medium text-slate-600 shadow-sm backdrop-blur">
+                          {item.label}
+                        </div>
+                      </div>
+                    ) : (
+                      <MessageBubble key={item.id} msg={item.message} />
+                    )
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Composer */}
+            <div className="pt-3 border-t">
+              <Label className="text-sm mb-1 block">Responder (se enviará vía n8n)</Label>
+              <div className="grid md:grid-cols-5 gap-2">
+                <div className="md:col-span-4">
+                  <Input value={messageText} onChange={e => setMessageText(e.target.value)} placeholder="Escribe tu mensaje..." />
+                </div>
+                <Button onClick={handleSend} disabled={sending}>
+                  {sending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />} Enviar
+                </Button>
+              </div>
+              <div className="mt-2">
+                <input type="file" onChange={e => setFile(e.target.files?.[0] || null)} />
+                <p className="text-[11px] text-slate-500 mt-1">Puedes adjuntar imagen, audio, video o documento.</p>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Resumen Dialog */}
       <Dialog open={summaryOpen} onOpenChange={setSummaryOpen}>
