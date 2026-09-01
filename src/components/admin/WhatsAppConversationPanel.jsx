@@ -15,11 +15,23 @@ import PipelineDiagnosticsPanel from "./PipelineDiagnosticsPanel";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
+const formatMessageDay = (value) => {
+  if (!value) return "Sin fecha";
+  return format(new Date(value), "EEEE d 'de' MMMM", { locale: es });
+};
+
+const formatMessageTime = (value) => {
+  if (!value) return "";
+  return format(new Date(value), "HH:mm", { locale: es });
+};
+
 function MessageBubble({ msg }) {
   const isOutbound = msg.direction === 'outbound';
   const isCustomer = msg.sender_type === 'customer' || (!msg.sender_type && msg.direction === 'inbound');
   const isReaction = msg.event_type === 'reaction' || msg.message_type === 'reaction';
   const isStatus = msg.event_type === 'status' || msg.message_type === 'status';
+  const isSystemEvent = isReaction || isStatus;
+  const senderLabel = isCustomer ? 'Cliente' : msg.sender_type === 'agent' ? 'Agente' : 'PROMAN';
   const roleBadge = isCustomer ? (
     <Badge className="bg-slate-100 text-slate-700 flex items-center gap-1"><UserIcon className="w-3 h-3" />Cliente</Badge>
   ) : msg.sender_type === 'agent' ? (
@@ -28,65 +40,83 @@ function MessageBubble({ msg }) {
     <Badge className="bg-green-100 text-green-800 flex items-center gap-1"><Bot className="w-3 h-3" />Bot</Badge>
   );
 
+  if (isSystemEvent) {
+    return (
+      <div className="flex justify-center">
+        <div className="max-w-[92%] rounded-full border border-slate-200 bg-slate-100 px-4 py-2 text-xs text-slate-700 shadow-sm">
+          <span className="font-semibold">{formatMessageTime(msg.timestamp)}</span>
+          <span className="mx-2">•</span>
+          <span>
+            {isReaction
+              ? `Reacción ${msg.reaction_emoji || ''} ${msg.target_message_id ? `al mensaje ${msg.target_message_id}` : ''}`
+              : `Estado: ${msg.delivery_status || msg.text || 'actualizado'}`}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`flex ${isOutbound ? 'justify-end' : 'justify-start'}`}>
-      <div className={`max-w-[80%] rounded-2xl border p-3 shadow-sm ${isOutbound ? 'bg-proman-navy text-white' : 'bg-white'}`}>
-        <div className="flex items-center justify-between gap-2 mb-1">
-          <div className="flex items-center gap-2 text-xs opacity-80">
-            {roleBadge}
-            <Badge variant="outline">{msg.direction === 'outbound' ? 'Saliente' : 'Entrante'}</Badge>
-            {msg.event_type && <Badge variant="outline">{msg.event_type}</Badge>}
-            {msg.message_type && <Badge variant="outline">{msg.message_type}</Badge>}
+      <div className={`max-w-[92%] md:max-w-[82%] rounded-3xl border px-4 py-3 shadow-sm ${isOutbound ? 'bg-proman-navy text-white border-proman-navy' : 'bg-white text-slate-900 border-slate-200'}`}>
+        <div className="flex items-center justify-between gap-3 mb-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold ${isOutbound ? 'bg-white/15 text-white' : 'bg-slate-100 text-slate-700'}`}>
+              {senderLabel.charAt(0)}
+            </div>
+            <div className="min-w-0">
+              <p className={`text-xs font-semibold ${isOutbound ? 'text-white' : 'text-slate-900'}`}>{senderLabel}</p>
+              <p className={`text-[11px] ${isOutbound ? 'text-white/70' : 'text-slate-500'}`}>{formatMessageTime(msg.timestamp)}</p>
+            </div>
           </div>
-          <div className="text-[11px] opacity-70">
-            {msg.timestamp ? format(new Date(msg.timestamp), "dd MMM yyyy, HH:mm", { locale: es }) : ''}
-          </div>
+          <div className="shrink-0">{roleBadge}</div>
         </div>
-        {isReaction ? (
-          <p className={`text-sm font-medium ${isOutbound ? 'text-white' : 'text-slate-800'}`}>
-            Reacción {msg.reaction_emoji || ''} {msg.target_message_id ? `al mensaje ${msg.target_message_id}` : ''}
-          </p>
-        ) : isStatus ? (
-          <p className={`text-sm font-medium ${isOutbound ? 'text-white' : 'text-slate-800'}`}>
-            Estado: {msg.delivery_status || msg.text || 'actualizado'}
-          </p>
-        ) : msg.text ? (
-          <p className={`whitespace-pre-wrap text-sm ${isOutbound ? 'text-white' : 'text-slate-800'}`}>{msg.text}</p>
-        ) : null}
-        {msg.caption && (
-          <p className={`whitespace-pre-wrap text-xs mt-1 italic ${isOutbound ? 'text-white/90' : 'text-slate-600'}`}>{msg.caption}</p>
+
+        {msg.text && (
+          <p className={`whitespace-pre-wrap text-sm leading-6 ${isOutbound ? 'text-white' : 'text-slate-800'}`}>{msg.text}</p>
         )}
 
-        {/* Media rendering */}
+        {msg.caption && (
+          <p className={`whitespace-pre-wrap text-sm leading-6 mt-2 italic ${isOutbound ? 'text-white/85' : 'text-slate-600'}`}>{msg.caption}</p>
+        )}
+
         {msg.media_url && (
-          <div className="mt-2">
+          <div className="mt-3 space-y-2">
             {msg.message_type === 'image' && (
               <a href={msg.media_url} target="_blank" rel="noopener noreferrer" className="block group">
-                <img src={msg.media_url} alt={msg.caption || 'Imagen'} className="max-h-64 rounded-lg border" />
+                <img src={msg.media_url} alt={msg.caption || 'Imagen'} className="max-h-72 rounded-2xl border bg-white" />
               </a>
             )}
             {msg.message_type === 'video' && (
-              <video controls className="max-h-64 rounded-lg border w-full">
+              <video controls className="max-h-72 rounded-2xl border w-full bg-black">
                 <source src={msg.media_url} type={msg.mime_type || 'video/mp4'} />
               </video>
             )}
             {msg.message_type === 'audio' && (
-              <audio controls className="w-full">
-                <source src={msg.media_url} type={msg.mime_type || 'audio/mpeg'} />
-              </audio>
+              <div className={`rounded-2xl border p-3 ${isOutbound ? 'bg-white/10 border-white/20' : 'bg-slate-50'}`}>
+                <audio controls className="w-full">
+                  <source src={msg.media_url} type={msg.mime_type || 'audio/mpeg'} />
+                </audio>
+              </div>
             )}
             {msg.message_type === 'document' && (
-              <a href={msg.media_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-sm underline mt-1">
+              <a href={msg.media_url} target="_blank" rel="noopener noreferrer" className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium ${isOutbound ? 'bg-white/10 text-white' : 'bg-slate-100 text-slate-800'}`}>
                 <FileText className="w-4 h-4" /> Ver documento
               </a>
             )}
-            <div className="mt-2">
-              <a href={msg.media_url} download className="inline-flex items-center gap-2 text-xs underline">
-                <Download className="w-3 h-3" /> Descargar
+            <div>
+              <a href={msg.media_url} download className={`inline-flex items-center gap-2 text-xs underline ${isOutbound ? 'text-white/85' : 'text-slate-600'}`}>
+                <Download className="w-3 h-3" /> Descargar archivo
               </a>
             </div>
           </div>
         )}
+
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Badge variant="outline">{msg.direction === 'outbound' ? 'Saliente' : 'Entrante'}</Badge>
+          {msg.message_type && msg.message_type !== 'text' && <Badge variant="outline">{msg.message_type}</Badge>}
+          {msg.event_type && msg.event_type !== 'message' && <Badge variant="outline">{msg.event_type}</Badge>}
+        </div>
       </div>
     </div>
   );
@@ -139,7 +169,6 @@ export default function WhatsAppConversationPanel({ customerId, inquiryId, phone
 
     // Filtros
     if (type !== 'all') arr = arr.filter(m => (m.message_type || 'text') === type);
-    if (type !== 'all') arr = arr.filter(m => (m.message_type || 'text') === type);
     if (direction !== 'all') arr = arr.filter(m => (m.direction || 'inbound') === direction);
     if (sender !== 'all') arr = arr.filter(m => (m.sender_type || (m.direction === 'inbound' ? 'customer' : 'bot')) === sender);
     if (selectedJobId !== 'all') arr = arr.filter(m => (m.trabajo_id === selectedJobId || m.job_id === selectedJobId));
@@ -171,6 +200,22 @@ export default function WhatsAppConversationPanel({ customerId, inquiryId, phone
       job_id: m.trabajo_id || m.job_id || null,
     }));
   }, [messages, type, direction, sender, selectedJobId, fromDate, toDate, search]);
+
+  const conversationItems = useMemo(() => {
+    const items = [];
+    let currentDay = null;
+
+    filtered.forEach((message) => {
+      const dayLabel = formatMessageDay(message.timestamp);
+      if (dayLabel !== currentDay) {
+        items.push({ id: `day-${dayLabel}`, type: 'day', label: dayLabel });
+        currentDay = dayLabel;
+      }
+      items.push({ id: message.id, type: 'message', message });
+    });
+
+    return items;
+  }, [filtered]);
 
   const handleSummarize = async () => {
     setSummarizing(true);
@@ -301,14 +346,33 @@ export default function WhatsAppConversationPanel({ customerId, inquiryId, phone
           phone={phone}
         />
 
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+          <div>
+            <p className="font-semibold text-slate-800">{filtered.length} mensaje{filtered.length === 1 ? '' : 's'} en esta vista</p>
+            <p className="text-xs text-slate-500">Ahora se muestran como conversación cronológica para leer mejor el contexto.</p>
+          </div>
+        </div>
+
         {/* Lista */}
-        <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+        <div className="max-h-[620px] overflow-y-auto rounded-3xl border border-slate-200 bg-gradient-to-b from-slate-50 to-white p-3 md:p-4">
           {isLoading ? (
             <div className="flex items-center gap-2 text-sm text-slate-500"><Loader2 className="w-4 h-4 animate-spin" />Cargando...</div>
           ) : filtered.length === 0 ? (
             <p className="text-sm text-slate-500">Sin mensajes con los filtros actuales.</p>
           ) : (
-            filtered.map(m => <MessageBubble key={m.id} msg={m} />)
+            <div className="space-y-3">
+              {conversationItems.map((item) =>
+                item.type === 'day' ? (
+                  <div key={item.id} className="sticky top-0 z-10 flex items-center justify-center py-2">
+                    <div className="rounded-full border border-slate-200 bg-white/95 px-4 py-1 text-xs font-medium text-slate-600 shadow-sm backdrop-blur">
+                      {item.label}
+                    </div>
+                  </div>
+                ) : (
+                  <MessageBubble key={item.id} msg={item.message} />
+                )
+              )}
+            </div>
           )}
         </div>
 
