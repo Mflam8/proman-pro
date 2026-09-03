@@ -1,0 +1,38 @@
+{
+  "name": "Sync work order from inquiry",
+  "description": "Mantiene la orden de trabajo inteligente sincronizada con cambios operativos y comerciales del servicio.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "entity",
+      "events": [
+        "create",
+        "update"
+      ],
+      "entity_name": "ClientInquiry"
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "sync_work_order_from_inquiry",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "syncWorkOrderFromInquiry",
+            "args": {}
+          },
+          "then": "end"
+        }
+      }
+    ]
+  },
+  "x-base44-migrated-from-automation": {
+    "legacy_payload_function": "syncWorkOrderFromInquiry"
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "name": "WhatsApp Dedup Cleanup",
+  "description": "Limpieza autom\u00e1tica por lotes de clientes y conversaciones duplicadas de WhatsApp.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "interval",
+      "cron_expression": null,
+      "one_time_date": null,
+      "timezone": "UTC",
+      "interval_value": 5,
+      "interval_unit": "minutes",
+      "interval_anchor": "2026-06-15T04:05:32.024000",
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "whatsapp_dedup_cleanup",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "auditWhatsappIntegrity",
+            "args": {
+              "triggered_by": "automation",
+              "merge": true,
+              "cleanup": true,
+              "max_customer_groups": 1,
+              "max_conversation_groups": 1,
+              "sample_limit": 1,
+              "write_pause_ms": 1200,
+              "max_write_retries": 5
+            }
+          },
+          "then": "end"
+        }
+      }
+    ]
+  },
+  "x-base44-migrated-from-automation": {
+    "legacy_payload_function": "auditWhatsappIntegrity"
+  }
+}
