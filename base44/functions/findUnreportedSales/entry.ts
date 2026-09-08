@@ -1,8 +1,28 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 
 const PAYMENT_KEYWORDS = [
-  'pago', 'pague', 'pague', 'pagado', 'abono', 'abone', 'abonado', 'deposito', 'deposite', 'transferencia',
+  'pago', 'pague', 'pagado', 'abono', 'abonado', 'deposito', 'deposite', 'transferencia',
   'transferi', 'cancelado', 'cancele', 'cobro', 'cobrado', 'recibido', 'recibi', 'comprobante', 'voucher', 'efectivo'
+];
+
+const CONTRACT_KEYWORDS = [
+  'agend', 'programad', 'confirmad', 'aprobad', 'realizado', 'realizamos', 'instalacion', 'instalación',
+  'reparacion', 'reparación', 'mantenimiento', 'visit', 'tecnico', 'técnico', 'cotizacion aprobada', 'cotización aprobada'
+];
+
+const ADDRESS_KEYWORDS = [
+  'direccion', 'dirección', 'colonia', 'residencial', 'urbanizacion', 'urbanización', 'pasaje', 'calle', 'avenida',
+  'boulevard', 'local', 'casa', 'km', 'kilometro', 'kilómetro'
+];
+
+const SERVICE_LABELS = [
+  { label: 'Plomería', hints: ['fuga', 'tuberia', 'tubería', 'agua', 'lavamanos', 'grifo', 'inodoro', 'cisterna', 'bomba', 'destape'] },
+  { label: 'Electricidad', hints: ['electricidad', 'eléctr', 'breaker', 'tomacorriente', 'voltaje', 'luz', 'cableado', 'panel'] },
+  { label: 'Pintura', hints: ['pintura', 'pintar', 'repello', 'sellador'] },
+  { label: 'Impermeabilización', hints: ['impermeabil', 'filtracion', 'filtración', 'techo', 'losa', 'goteras'] },
+  { label: 'Remodelación', hints: ['remodel', 'enchape', 'ceramica', 'cerámica', 'construccion', 'construcción', 'albañil'] },
+  { label: 'Aire acondicionado', hints: ['aire acondicionado', 'minisplit', 'compresor'] },
+  { label: 'Limpieza', hints: ['limpieza', 'lavado', 'desinfeccion', 'desinfección'] }
 ];
 
 const normalizeText = (value) => String(value || '')
@@ -10,12 +30,12 @@ const normalizeText = (value) => String(value || '')
   .normalize('NFD')
   .replace(/[\u0300-\u036f]/g, '');
 
+const money = (value) => Number(Number(value || 0).toFixed(2));
+
 const phoneKey = (value) => {
   const digits = String(value || '').replace(/\D/g, '');
   return digits ? digits.slice(-8) : '';
 };
-
-const money = (value) => Number(Number(value || 0).toFixed(2));
 
 const parseDate = (value) => {
   if (!value) return null;
@@ -23,12 +43,7 @@ const parseDate = (value) => {
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
-const inRange = (date, start, end) => {
-  if (!date) return false;
-  if (start && date < start) return false;
-  if (end && date > end) return false;
-  return true;
-};
+const dedupeBy = (items, getKey) => Array.from(new Map(items.map((item) => [getKey(item), item])).values());
 
 const pushToMap = (map, key, value) => {
   if (!key) return;
@@ -53,6 +68,21 @@ const listAll = async (entityApi, sort = '-created_date', batchSize = 200) => {
   return results;
 };
 
+const getMonthRange = (monthValue) => {
+  if (!monthValue || !/^\d{4}-\d{2}$/.test(monthValue)) return null;
+  const [year, month] = monthValue.split('-').map(Number);
+  const start = new Date(year, month - 1, 1, 0, 0, 0, 0);
+  const end = new Date(year, month, 0, 23, 59, 59, 999);
+  return { start, end };
+};
+
+const inRange = (date, start, end) => {
+  if (!date) return false;
+  if (start && date < start) return false;
+  if (end && date > end) return false;
+  return true;
+};
+
 const extractAmounts = (rawText) => {
   const text = normalizeText(rawText);
   const amounts = [];
@@ -72,24 +102,65 @@ const extractAmounts = (rawText) => {
   return [...new Set(amounts)].sort((a, b) => b - a);
 };
 
-const analyzeMessage = (message) => {
-  const rawText = [message?.text, message?.texto_mensaje, message?.caption].filter(Boolean).join(' ').trim();
-  const normalized = normalizeText(rawText);
-  const amounts = extractAmounts(rawText);
-  const hasKeyword = PAYMENT_KEYWORDS.some((keyword) => normalized.includes(keyword));
-  const hasProofWord = normalized.includes('comprobante') || normalized.includes('voucher') || normalized.includes('captura');
-  const mediaType = String(message?.message_type || '').toLowerCase();
-  const hasPaymentMedia = ['image', 'document'].includes(mediaType) && hasProofWord;
-  const hasSignal = hasKeyword || amounts.length > 0 || hasPaymentMedia;
+const extractNameFromText = (rawText) => {
+  if (!rawText) return '';
+  const match = rawText.match(/(?:mi nombre es|soy|habla(?: con)?|a nombre de)\s+([A-Za-zÁÉÍÓÚÑáéíóúñ]+(?:\s+[A-Za-zÁÉÍÓÚÑáéíóúñ]+){0,3})/i);
+  return match?.[1]?.trim() || '';
+};
+
+const extractAddressFromText = (messages) => {
+  const candidates = messages
+    .map((message) => [message?.text, message?.texto_mensaje, message?.caption].filter(Boolean).join(' ').trim())
+    .filter(Boolean)
+    .filter((text) => ADDRESS_KEYWORDS.some((keyword) => normalizeText(text).includes(normalizeText(keyword))));
+
+  return candidates.sort((a, b) => b.length - a.length)[0] || '';
+};
+
+const extractServiceFromText = (messages) => {
+  const joined = normalizeText(messages.map((message) => [message?.text, message?.texto_mensaje, message?.caption].filter(Boolean).join(' ')).join(' \n '));
+  const explicitMatch = joined.match(/(?:servicio|trabajo|cotizacion|cotizacion de|cotización|cotización de)\s+de\s+([a-z0-9\s]{4,60})/i);
+  if (explicitMatch?.[1]) return explicitMatch[1].trim();
+
+  const found = SERVICE_LABELS.find((item) => item.hints.some((hint) => joined.includes(normalizeText(hint))));
+  return found?.label || '';
+};
+
+const analyzeConversationMessages = (messages) => {
+  const evidence = [];
+  const allAmounts = [];
+  let contractKeywordCount = 0;
+  let paymentKeywordCount = 0;
+  let nameCandidate = '';
+
+  messages.forEach((message) => {
+    const rawText = [message?.text, message?.texto_mensaje, message?.caption].filter(Boolean).join(' ').trim();
+    const normalized = normalizeText(rawText);
+    const amounts = extractAmounts(rawText);
+    const hasPaymentKeyword = PAYMENT_KEYWORDS.some((keyword) => normalized.includes(keyword));
+    const hasContractKeyword = CONTRACT_KEYWORDS.some((keyword) => normalized.includes(normalizeText(keyword)));
+    const hasAddressKeyword = ADDRESS_KEYWORDS.some((keyword) => normalized.includes(normalizeText(keyword)));
+
+    if (!nameCandidate) nameCandidate = extractNameFromText(rawText);
+    if (hasPaymentKeyword) paymentKeywordCount += 1;
+    if (hasContractKeyword) contractKeywordCount += 1;
+    allAmounts.push(...amounts);
+
+    if (rawText && (hasPaymentKeyword || hasContractKeyword || hasAddressKeyword || amounts.length > 0)) {
+      evidence.push(rawText.slice(0, 220));
+    }
+  });
 
   return {
-    hasSignal,
-    amounts,
-    snippet: rawText || '[Mensaje sin texto]'
+    evidenceSnippets: evidence.slice(0, 3),
+    allAmounts: [...new Set(allAmounts)].sort((a, b) => b - a),
+    contractKeywordCount,
+    paymentKeywordCount,
+    nameCandidate
   };
 };
 
-export default async function(req) {
+export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -98,14 +169,16 @@ export default async function(req) {
       return Response.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    if (user.role !== 'admin') {
+    if (user.role !== 'admin' && user.employee_type !== 'Supervisor') {
       return Response.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
     const body = req.method === 'POST' ? await req.json().catch(() => ({})) : {};
-    const start = parseDate(body?.startDate || null);
-    const end = parseDate(body?.endDate || null);
-    if (end) end.setHours(23, 59, 59, 999);
+    const month = body?.month || new Date().toISOString().slice(0, 7);
+    const monthRange = getMonthRange(month);
+    const start = monthRange?.start || parseDate(body?.startDate || null);
+    const end = monthRange?.end || parseDate(body?.endDate || null);
+    if (end && !monthRange) end.setHours(23, 59, 59, 999);
 
     const [rawInquiries, rawPayments, rawCustomers, rawMessages] = await Promise.all([
       listAll(base44.asServiceRole.entities.ClientInquiry, '-created_date'),
@@ -122,23 +195,12 @@ export default async function(req) {
     const customerMap = new Map(customers.map((customer) => [customer.id, customer]));
     const paymentsByInquiry = new Map();
     const inquiriesByCustomer = new Map();
-    const inquiriesByPhone = new Map();
     const inquiriesByConversation = new Map();
-    const messagesByInquiry = new Map();
-    const messagesByCustomer = new Map();
-    const messagesByPhone = new Map();
-    const messagesByConversation = new Map();
+    const inquiriesByPhone = new Map();
 
-    payments.forEach((payment) => {
-      pushToMap(paymentsByInquiry, payment?.inquiry_id, payment);
-    });
+    payments.forEach((payment) => pushToMap(paymentsByInquiry, payment?.inquiry_id, payment));
 
-    const filteredInquiries = inquiries.filter((inquiry) => {
-      const referenceDate = parseDate(inquiry?.completed_at || inquiry?.scheduled_date || inquiry?.created_date);
-      return (!start && !end) || inRange(referenceDate, start, end);
-    });
-
-    filteredInquiries.forEach((inquiry) => {
+    inquiries.forEach((inquiry) => {
       pushToMap(inquiriesByCustomer, inquiry?.customer_id, inquiry);
       pushToMap(inquiriesByConversation, inquiry?.source_conversation_id, inquiry);
       [
@@ -152,142 +214,158 @@ export default async function(req) {
       ].forEach((value) => pushToMap(inquiriesByPhone, phoneKey(value), inquiry));
     });
 
-    const filteredMessages = messages.filter((message) => {
-      const referenceDate = parseDate(message?.timestamp || message?.message_timestamp || message?.created_date);
-      return (!start && !end) || inRange(referenceDate, start, end);
-    });
+    const filteredMessages = messages
+      .filter((message) => inRange(parseDate(message?.timestamp || message?.message_timestamp || message?.created_date), start, end))
+      .sort((a, b) => new Date(a?.timestamp || a?.message_timestamp || a?.created_date || 0).getTime() - new Date(b?.timestamp || b?.message_timestamp || b?.created_date || 0).getTime());
+
+    const groups = new Map();
 
     filteredMessages.forEach((message) => {
-      pushToMap(messagesByInquiry, message?.job_id || message?.trabajo_id, message);
-      pushToMap(messagesByCustomer, message?.customer_id, message);
-      pushToMap(messagesByConversation, message?.conversation_id, message);
-      [message?.from_phone, message?.phone, message?.contact_phone, message?.author_phone, message?.to_phone, message?.wa_id].forEach((value) => {
-        pushToMap(messagesByPhone, phoneKey(value), message);
-      });
-    });
-
-    const candidates = filteredInquiries.map((inquiry) => {
-      const customer = customerMap.get(inquiry?.customer_id);
-      const relatedMessages = [
-        ...(messagesByInquiry.get(inquiry?.id) || []),
-        ...(messagesByCustomer.get(inquiry?.customer_id) || []),
-        ...(messagesByConversation.get(inquiry?.source_conversation_id) || [])
-      ];
-
-      [
-        inquiry?.phone,
-        inquiry?.normalized_phone,
-        customer?.phone,
-        customer?.secondary_phone,
-        customer?.normalized_phone,
-        customer?.wa_id,
-        customer?.canonical_wa_id
-      ].forEach((value) => {
-        relatedMessages.push(...(messagesByPhone.get(phoneKey(value)) || []));
-      });
-
-      const dedupedMessages = Array.from(new Map(relatedMessages.map((message) => {
-        const key = message?.id || message?.message_id || message?.mensaje_id || `${message?.timestamp || ''}-${message?.text || message?.texto_mensaje || ''}`;
-        return [key, message];
-      })).values());
-
-      const evidence = dedupedMessages.map((message) => ({
-        message,
-        analysis: analyzeMessage(message)
-      })).filter((item) => item.analysis.hasSignal);
-
-      const recordedAmount = money((paymentsByInquiry.get(inquiry?.id) || []).reduce((sum, payment) => sum + Number(payment?.amount_paid || 0), 0));
-      const expectedAmount = money(inquiry?.final_amount || inquiry?.balance_due || inquiry?.quote_amount || inquiry?.subtotal_amount || 0);
-      const largestMentionedAmount = money(Math.max(0, ...evidence.flatMap((item) => item.analysis.amounts)));
-      const latestEvidence = evidence
-        .map((item) => parseDate(item.message?.timestamp || item.message?.message_timestamp || item.message?.created_date))
-        .filter(Boolean)
-        .sort((a, b) => b.getTime() - a.getTime())[0] || null;
-
-      let reason = '';
-      if (evidence.length > 0 && recordedAmount === 0) reason = 'Hay señales de pago en el chat pero no existe pago registrado';
-      else if (largestMentionedAmount > recordedAmount + 1) reason = 'El monto mencionado en chat es mayor al pago registrado';
-      else if (evidence.length > 0 && inquiry?.payment_status !== 'pagado') reason = 'El chat sugiere cobro, pero el estado aún no está actualizado';
-
-      if (!reason) return null;
-
-      return {
-        inquiry_id: inquiry?.id,
-        customer_name: customer?.full_name || inquiry?.client_name || 'Cliente sin nombre',
-        phone: customer?.phone || inquiry?.phone || '',
-        service_type: inquiry?.service_type || inquiry?.rubro || 'Sin especificar',
-        expected_amount: expectedAmount,
-        recorded_amount: recordedAmount,
-        suspected_amount: largestMentionedAmount,
-        payment_status: inquiry?.payment_status || 'pendiente',
-        evidence_count: evidence.length,
-        latest_evidence_at: latestEvidence ? latestEvidence.toISOString() : null,
-        reason,
-        sample_message: evidence[0]?.analysis?.snippet?.slice(0, 220) || ''
-      };
-    }).filter(Boolean).sort((a, b) => {
-      if (b.suspected_amount !== a.suspected_amount) return b.suspected_amount - a.suspected_amount;
-      return new Date(b.latest_evidence_at || 0).getTime() - new Date(a.latest_evidence_at || 0).getTime();
-    });
-
-    const orphanGroups = new Map();
-
-    filteredMessages.forEach((message) => {
-      const analysis = analyzeMessage(message);
-      if (!analysis.hasSignal) return;
-
-      const linkedInquiries = [
-        ...(inquiriesByCustomer.get(message?.customer_id) || []),
-        ...(inquiriesByConversation.get(message?.conversation_id) || []),
-        ...(inquiriesByPhone.get(phoneKey(message?.from_phone || message?.phone || message?.contact_phone)) || []),
-        ...(inquiriesByPhone.get(phoneKey(message?.author_phone || message?.to_phone)) || []),
-        ...(message?.job_id || message?.trabajo_id ? filteredInquiries.filter((inquiry) => inquiry.id === (message.job_id || message.trabajo_id)) : [])
-      ];
-
-      if (linkedInquiries.length > 0) return;
-
-      const groupKey = message?.customer_id || message?.conversation_id || phoneKey(message?.from_phone || message?.phone || message?.contact_phone) || message?.id;
-      if (!orphanGroups.has(groupKey)) {
-        orphanGroups.set(groupKey, {
-          customer_name: 'Conversación sin trabajo',
-          phone: message?.from_phone || message?.phone || message?.contact_phone || '',
-          evidence_count: 0,
-          suspected_amount: 0,
-          latest_evidence_at: null,
-          sample_message: analysis.snippet.slice(0, 220)
+      const key = message?.conversation_id || message?.customer_id || phoneKey(message?.from_phone || message?.phone || message?.contact_phone || message?.wa_id) || message?.id;
+      if (!groups.has(key)) {
+        groups.set(key, {
+          key,
+          conversationId: message?.conversation_id || '',
+          customerId: message?.customer_id || '',
+          phone: message?.from_phone || message?.phone || message?.contact_phone || message?.wa_id || '',
+          messages: []
         });
       }
-
-      const group = orphanGroups.get(groupKey);
-      const customer = customerMap.get(message?.customer_id);
-      group.customer_name = customer?.full_name || group.customer_name;
-      group.evidence_count += 1;
-      group.suspected_amount = Math.max(group.suspected_amount, ...analysis.amounts, group.suspected_amount);
-      const currentDate = parseDate(message?.timestamp || message?.message_timestamp || message?.created_date);
-      if (currentDate && (!group.latest_evidence_at || currentDate > new Date(group.latest_evidence_at))) {
-        group.latest_evidence_at = currentDate.toISOString();
-      }
+      groups.get(key).messages.push(message);
     });
 
-    const orphans = Array.from(orphanGroups.values()).sort((a, b) => {
-      if (b.suspected_amount !== a.suspected_amount) return b.suspected_amount - a.suspected_amount;
-      return new Date(b.latest_evidence_at || 0).getTime() - new Date(a.latest_evidence_at || 0).getTime();
+    const conversations = Array.from(groups.values()).map((group) => {
+      const phone = group.phone;
+      const linkedInquiries = dedupeBy([
+        ...(inquiriesByCustomer.get(group.customerId) || []),
+        ...(inquiriesByConversation.get(group.conversationId) || []),
+        ...(inquiriesByPhone.get(phoneKey(phone)) || [])
+      ], (item) => item?.id || `${item?.customer_id}-${item?.created_date}`);
+
+      const primaryInquiry = linkedInquiries
+        .sort((a, b) => new Date(b?.updated_date || b?.created_date || 0).getTime() - new Date(a?.updated_date || a?.created_date || 0).getTime())[0] || null;
+
+      const customer = customerMap.get(group.customerId) || customerMap.get(primaryInquiry?.customer_id) || null;
+      const paymentTotal = money(linkedInquiries.reduce((sum, inquiry) => {
+        const inquiryPayments = paymentsByInquiry.get(inquiry?.id) || [];
+        return sum + inquiryPayments.reduce((inner, payment) => inner + Number(payment?.amount_paid || 0), 0);
+      }, 0));
+
+      const analysis = analyzeConversationMessages(group.messages);
+      const address = primaryInquiry?.address || primaryInquiry?.location_name || customer?.addresses?.find?.((item) => item?.is_primary)?.address || customer?.addresses?.[0]?.address || extractAddressFromText(group.messages);
+      const service = primaryInquiry?.service_type || primaryInquiry?.rubro || extractServiceFromText(group.messages);
+      const systemAmount = money(primaryInquiry?.final_amount || primaryInquiry?.quote_amount || primaryInquiry?.subtotal_amount || 0);
+      const chatAmount = money(analysis.allAmounts[0] || 0);
+      const latestMessageAt = parseDate(group.messages[group.messages.length - 1]?.timestamp || group.messages[group.messages.length - 1]?.message_timestamp || group.messages[group.messages.length - 1]?.created_date);
+      const detectedName = customer?.full_name || primaryInquiry?.client_name || analysis.nameCandidate || '';
+      const detectedPhone = customer?.phone || primaryInquiry?.phone || phone || '';
+
+      const flags = [];
+      let score = 0;
+
+      if (linkedInquiries.length > 0) {
+        score += 4;
+        flags.push('Trabajo vinculado');
+      }
+      if (paymentTotal > 0) {
+        score += 4;
+        flags.push('Pago registrado');
+      }
+      if (analysis.contractKeywordCount > 0) {
+        score += 2;
+        flags.push('Lenguaje de contratación');
+      }
+      if (analysis.paymentKeywordCount > 0) {
+        score += 2;
+        flags.push('Lenguaje de pago');
+      }
+      if (chatAmount > 0) {
+        score += 1;
+        flags.push('Monto en chat');
+      }
+      if (service) {
+        score += 1;
+        flags.push('Servicio detectado');
+      }
+      if (address) {
+        score += 1;
+        flags.push('Dirección detectada');
+      }
+
+      let contractStatus = 'sin_indicio';
+      let contractStatusLabel = 'Sin indicio claro';
+      if (paymentTotal > 0 || linkedInquiries.length > 0) {
+        contractStatus = 'confirmado_en_sistema';
+        contractStatusLabel = 'Confirmado en sistema';
+      } else if (score >= 5) {
+        contractStatus = 'probable';
+        contractStatusLabel = 'Probable contratación';
+      } else if (score >= 2) {
+        contractStatus = 'dudoso';
+        contractStatusLabel = 'Caso dudoso';
+      }
+
+      const summaryParts = [
+        detectedName ? `${detectedName}` : 'Conversación sin nombre detectado',
+        detectedPhone ? `tel. ${detectedPhone}` : 'sin teléfono claro',
+        service ? `servicio: ${service}` : 'servicio no claro',
+        address ? `dirección: ${address}` : 'sin dirección clara',
+        chatAmount > 0 ? `monto en chat: $${chatAmount.toFixed(2)}` : 'sin monto escrito',
+        paymentTotal > 0 ? `pago registrado: $${paymentTotal.toFixed(2)}` : 'sin pago registrado'
+      ];
+
+      return {
+        review_key: `${month}:${group.key}`,
+        audit_period: month,
+        conversation_id: group.conversationId,
+        customer_id: customer?.id || group.customerId || '',
+        inquiry_id: primaryInquiry?.id || '',
+        customer_name: customer?.full_name || primaryInquiry?.client_name || 'Conversación sin nombre',
+        phone: detectedPhone,
+        detected_name: detectedName,
+        detected_phone: detectedPhone,
+        detected_address: address || '',
+        detected_service: service || '',
+        chat_amount: chatAmount,
+        system_amount: systemAmount,
+        recorded_amount: paymentTotal,
+        message_count: group.messages.length,
+        latest_message_at: latestMessageAt ? latestMessageAt.toISOString() : null,
+        linked_inquiry_count: linkedInquiries.length,
+        contract_status: contractStatus,
+        contract_status_label: contractStatusLabel,
+        flags,
+        evidence_snippets: analysis.evidenceSnippets,
+        audit_summary: summaryParts.join(' • ')
+      };
+    }).sort((a, b) => {
+      const statusRank = {
+        confirmado_en_sistema: 3,
+        probable: 2,
+        dudoso: 1,
+        sin_indicio: 0
+      };
+      if (statusRank[b.contract_status] !== statusRank[a.contract_status]) {
+        return statusRank[b.contract_status] - statusRank[a.contract_status];
+      }
+      return new Date(b.latest_message_at || 0).getTime() - new Date(a.latest_message_at || 0).getTime();
     });
 
     const summary = {
-      totalCandidates: candidates.length,
-      totalSuspectedAmount: money(candidates.reduce((sum, item) => sum + Number(item.suspected_amount || 0), 0) + orphans.reduce((sum, item) => sum + Number(item.suspected_amount || 0), 0)),
-      noPaymentRecordCount: candidates.filter((item) => item.recorded_amount === 0).length,
-      amountGapCount: candidates.filter((item) => item.suspected_amount > item.recorded_amount + 1).length,
-      orphanConversationCount: orphans.length
+      totalConversations: conversations.length,
+      confirmedInSystemCount: conversations.filter((item) => item.contract_status === 'confirmado_en_sistema').length,
+      probableCount: conversations.filter((item) => item.contract_status === 'probable').length,
+      doubtfulCount: conversations.filter((item) => item.contract_status === 'dudoso').length,
+      totalChatAmount: money(conversations.reduce((sum, item) => sum + Number(item.chat_amount || 0), 0)),
+      totalRecordedAmount: money(conversations.reduce((sum, item) => sum + Number(item.recorded_amount || 0), 0))
     };
 
     return Response.json({
       success: true,
+      month,
       summary,
-      candidates,
-      orphans,
-      criteria: 'Búsqueda heurística en chats usando palabras como pago, transferencia, depósito, abono, comprobante y montos detectables. Requiere revisión humana antes de registrar pagos.'
+      conversations,
+      criteria: 'Auditoría histórica por conversación del mes seleccionado. Detecta nombre, teléfono, dirección, servicio y montos escritos en el chat, y los cruza con trabajos y pagos ya existentes para revisión manual.'
     });
   } catch (error) {
     console.error('FIND_UNREPORTED_SALES_ERROR', error);

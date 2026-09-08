@@ -1,0 +1,123 @@
+{
+  "name": "FinanceAuditReview",
+  "type": "object",
+  "properties": {
+    "review_key": {
+      "type": "string",
+      "description": "Clave \u00fanica de revisi\u00f3n por per\u00edodo y conversaci\u00f3n"
+    },
+    "audit_period": {
+      "type": "string",
+      "description": "Per\u00edodo auditado en formato YYYY-MM"
+    },
+    "conversation_id": {
+      "type": "string",
+      "description": "ID de la conversaci\u00f3n auditada"
+    },
+    "customer_id": {
+      "type": "string",
+      "description": "ID del cliente relacionado"
+    },
+    "inquiry_id": {
+      "type": "string",
+      "description": "ID principal del trabajo relacionado"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Tel\u00e9fono principal del caso auditado"
+    },
+    "customer_name": {
+      "type": "string",
+      "description": "Nombre principal del caso auditado"
+    },
+    "detected_service": {
+      "type": "string",
+      "description": "Servicio detectado durante la auditor\u00eda"
+    },
+    "detected_address": {
+      "type": "string",
+      "description": "Direcci\u00f3n detectada durante la auditor\u00eda"
+    },
+    "detected_amount": {
+      "type": "number",
+      "description": "Monto principal detectado en chat"
+    },
+    "review_status": {
+      "type": "string",
+      "enum": [
+        "pendiente",
+        "confirmado",
+        "descartado"
+      ],
+      "default": "pendiente",
+      "description": "Estado de revisi\u00f3n manual del caso"
+    },
+    "review_notes": {
+      "type": "string",
+      "description": "Notas manuales del revisor"
+    }
+  },
+  "required": [
+    "review_key",
+    "audit_period",
+    "review_status"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "employee_type": "Supervisor"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "employee_type": "Supervisor"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "employee_type": "Supervisor"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "employee_type": "Supervisor"
+          }
+        }
+      ]
+    }
+  }
+}
