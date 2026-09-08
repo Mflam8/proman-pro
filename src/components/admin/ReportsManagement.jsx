@@ -14,6 +14,7 @@ import {
 import { format, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isWithinInterval, subMonths, subWeeks, startOfYear, endOfYear } from "date-fns";
 import { es } from "date-fns/locale";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPie, Pie, Cell, Legend } from "recharts";
+import UnreportedSalesReport from "@/components/admin/UnreportedSalesReport";
 
 const COLORS = ['#252a5c', '#fdc80c', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
@@ -546,6 +547,9 @@ export default function ReportsManagement() {
           <TabsTrigger value="recolectores" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
             🤝 Dinero en Manos
           </TabsTrigger>
+          <TabsTrigger value="conciliacion" className="data-[state=active]:bg-proman-yellow data-[state=active]:text-proman-navy">
+            🔎 No Reportado
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="geografia">
@@ -838,6 +842,10 @@ export default function ReportsManagement() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="conciliacion">
+          <UnreportedSalesReport />
         </TabsContent>
       </Tabs>
     </div>
