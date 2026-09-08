@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle, Download, FileSearch, History, CheckCircle2, Clock3 } from "lucide-react";
 import HistoricalAuditReviewCard from "@/components/admin/HistoricalAuditReviewCard";
+import MonthlyAuditSummary from "@/components/admin/MonthlyAuditSummary";
 
 const money = (value) => new Intl.NumberFormat("es-SV", { style: "currency", currency: "USD" }).format(Number(value || 0));
+const INITIAL_MONTHS = ["2026-04", "2026-05", "2026-06", "2026-07"];
 
 export default function UnreportedSalesReport() {
   const queryClient = useQueryClient();
@@ -30,6 +32,25 @@ export default function UnreportedSalesReport() {
     });
     return map;
   }, [reviews]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const runReport = async () => {
+      setLoading(true);
+      try {
+        const response = await base44.functions.invoke("findUnreportedSales", { month });
+        if (!cancelled) setReport(response.data);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    runReport();
+    return () => {
+      cancelled = true;
+    };
+  }, [month]);
 
   const handleRun = async () => {
     setLoading(true);
@@ -143,6 +164,12 @@ export default function UnreportedSalesReport() {
         </CardContent>
       </Card>
 
+      <MonthlyAuditSummary
+        months={INITIAL_MONTHS}
+        selectedMonth={month}
+        onSelectMonth={setMonth}
+      />
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between gap-3 flex-wrap">
@@ -170,10 +197,17 @@ export default function UnreportedSalesReport() {
             </div>
             <Badge className="bg-slate-100 text-slate-700">Se agrupa por número / conversación</Badge>
             <Badge className="bg-slate-100 text-slate-700">Confirmación manual requerida</Badge>
+            {loading && <Badge className="bg-amber-100 text-amber-800">Cargando reporte...</Badge>}
           </div>
           {report?.criteria && <p className="text-sm text-gray-600">{report.criteria}</p>}
         </CardContent>
       </Card>
+
+      {!report && loading && (
+        <Card>
+          <CardContent className="p-10 text-center text-gray-500">Cargando auditoría del mes seleccionado...</CardContent>
+        </Card>
+      )}
 
       {report?.success && (
         <>
