@@ -246,6 +246,16 @@ Deno.serve(async (req) => {
     if (verifiedEvidence.length !== proposedEvidence.length) analysis.requires_human_review = true;
     analysis.field_evidence = verifiedEvidence;
 
+    if (body?.dry_run === true) {
+      return Response.json({
+        success: true,
+        dry_run: true,
+        model: ANALYSIS_MODEL,
+        analysis,
+        source_messages: recentMessages.length
+      });
+    }
+
     const addTimelineEvent = async ({ eventType, title, description, relatedEntityId = null, metadata = {} }) => {
       if (!resolvedConversationId) return;
       await base44.asServiceRole.entities.ConversationTimelineEvent.create({
