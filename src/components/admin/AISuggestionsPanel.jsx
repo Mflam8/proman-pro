@@ -223,8 +223,6 @@ export default function AISuggestionsPanel({ inquiry, customer, phone, conversat
         ) : (
           <>
             <div className="space-y-2 text-sm">
-              {analysisError && <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-2 text-sm text-red-700">{analysisError}</div>}
-              {previewAnalysis?._dryRun && <div className="rounded-md border border-blue-200 bg-blue-50 p-2 text-sm text-blue-800">Vista previa sin guardar · {previewAnalysis._sourceMessages || 0} mensajes consultados</div>}
               <div><span className="font-semibold">Resumen IA:</span> {latest.summary}</div>
               {fieldEvidence.length > 0 && (
                 <div className="rounded-lg border bg-white p-3 space-y-2">
