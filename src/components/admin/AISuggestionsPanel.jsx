@@ -14,6 +14,8 @@ export default function AISuggestionsPanel({ inquiry, customer, phone, conversat
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [linkJobId, setLinkJobId] = useState("");
+  const [previewAnalysis, setPreviewAnalysis] = useState(null);
+  const [analysisError, setAnalysisError] = useState('');
 
   const { data: analyses = [] } = useQuery({
     queryKey: ['conversationAnalysis', inquiry?.id, customer?.id, phone, conversationId],
@@ -28,25 +30,48 @@ export default function AISuggestionsPanel({ inquiry, customer, phone, conversat
     initialData: []
   });
 
-  const latest = analyses[0] || null;
-  let fieldEvidence = [];
-  try {
-    const parsed = JSON.parse(latest?.field_evidence_json || '[]');
-    fieldEvidence = Array.isArray(parsed) ? parsed : [];
-  } catch {}
+  const latest = previewAnalysis || analyses[0] || null;
+  let fieldEvidence = Array.isArray(latest?.field_evidence) ? latest.field_evidence : [];
+  if (fieldEvidence.length === 0) {
+    try {
+      const parsed = JSON.parse(latest?.field_evidence_json || '[]');
+      fieldEvidence = Array.isArray(parsed) ? parsed : [];
+    } catch {}
+  }
 
   const handleAnalyze = async () => {
+    if (!conversationId) {
+      setAnalysisError('Esta ficha no tiene una conversación vinculada para probar.');
+      return;
+    }
+    const approvedToSend = window.confirm(
+      'La prueba enviará a Meta Model API hasta 30 mensajes recientes y captions de esta conversación para analizarlos con Muse Spark. No guardará el análisis ni modificará el trabajo. ¿Continuar?'
+    );
+    if (!approvedToSend) return;
+
     setLoading(true);
+    setAnalysisError('');
+    setPreviewAnalysis(null);
     try {
-      await analyzeConversation({
+      const result = await analyzeConversation({
         inquiry_id: inquiry?.id || null,
         customer_id: customer?.id || null,
-        conversation_id: conversationId || null,
+        conversation_id: conversationId,
         phone: phone || customer?.phone || inquiry?.phone || null,
-        trigger_reason: 'manual_review'
+        trigger_reason: 'manual_review_preview',
+        dry_run: true
       });
-      queryClient.invalidateQueries({ queryKey: ['conversationAnalysis'] });
-      queryClient.invalidateQueries({ queryKey: ['conversationTimeline'] });
+      const payload = result?.data || result;
+      if (!payload?.success || !payload?.analysis) {
+        throw new Error(payload?.error || 'Muse Spark no devolvió un análisis utilizable.');
+      }
+      setPreviewAnalysis({
+        ...payload.analysis,
+        _dryRun: true,
+        _sourceMessages: payload.source_messages
+      });
+    } catch (error) {
+      setAnalysisError(error?.message || 'No se pudo completar la prueba con Muse Spark.');
     } finally {
       setLoading(false);
     }
