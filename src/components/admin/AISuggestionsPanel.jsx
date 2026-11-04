@@ -127,7 +127,7 @@ export default function AISuggestionsPanel({ inquiry, customer, phone, conversat
       const patch = {
         human_review_status: 'approved',
         approved_operational_snapshot: JSON.stringify(snapshot),
-        notes: [inquiry.notes, `Muse Spark revisado: ${previewAnalysis.summary}`].filter(Boolean).join('\\n\\n')
+        notes: [inquiry.notes, `Muse Spark revisado: ${previewAnalysis.summary}`].filter(Boolean).join('\n\n')
       };
       if (previewAnalysis.service && previewAnalysis.service !== 'unknown') patch.service_type = previewAnalysis.service;
       if (previewAnalysis.urgency) patch.priority = previewAnalysis.urgency;
