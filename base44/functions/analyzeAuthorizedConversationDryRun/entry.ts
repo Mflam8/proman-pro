@@ -117,7 +117,7 @@ Deno.serve(async (req) => {
       return Boolean(sourceText && item?.quote && sourceText.includes(item.quote.trim()));
     });
     analysis.field_evidence = verified;
-    if (verified.length !== proposed.length) analysis.requires_human_review = true;
+    analysis.requires_human_review = true;
 
     // This function is intentionally read-only: no analysis, state, timeline, or inquiry writes.
     return Response.json({
