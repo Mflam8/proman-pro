@@ -1,5 +1,23 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
+async function retryOnRateLimit(label, operation) {
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      const status = Number(error?.status || error?.statusCode || error?.response?.status || 0);
+      const message = String(error?.message || error || '');
+      const isRateLimited = status === 429 || /rate limit exceeded/i.test(message) || /\b429\b/.test(message);
+      if (!isRateLimited || attempt === 3) throw error;
+
+      const waitMs = (300 * (2 ** attempt)) + Math.floor(Math.random() * 200);
+      console.warn(`${label} rate limited; retrying after ${waitMs}ms (attempt ${attempt + 2}/4)`);
+      await new Promise((resolve) => setTimeout(resolve, waitMs));
+    }
+  }
+  throw new Error(`${label} failed after rate-limit retries.`);
+}
+
 function uniqueList(values) {
   return [...new Set((values || []).filter(Boolean).map((value) => String(value).trim()).filter(Boolean))];
 }
@@ -85,7 +103,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'ClientInquiry not provided' }, { status: 400 });
     }
 
-    const [customer, latestAnalysisList, billingItems, materialItems, employees] = await Promise.all([
+    const [customer, latestAnalysisList, billingItems, materialItems, employees] = await retryOnRateLimit('load work order context', () => Promise.all([
       inquiry.customer_id ? base44.asServiceRole.entities.Customer.get(inquiry.customer_id) : Promise.resolve(null),
       inquiry.source_conversation_id
         ? base44.asServiceRole.entities.ConversationAnalysis.filter({ conversation_id: inquiry.source_conversation_id }, '-created_date', 1)
@@ -93,7 +111,7 @@ Deno.serve(async (req) => {
       base44.asServiceRole.entities.DetalleFacturaTrabajo.filter({ inquiry_id: inquiry.id }),
       base44.asServiceRole.entities.MaterialTrabajo.filter({ inquiry_id: inquiry.id }),
       inquiry.assigned_to ? base44.asServiceRole.entities.Employee.filter({ email: inquiry.assigned_to }, '-created_date', 1) : Promise.resolve([])
-    ]);
+    ]));
 
     const analysis = latestAnalysisList[0] || null;
     const employee = employees[0] || null;
@@ -148,11 +166,11 @@ Deno.serve(async (req) => {
       last_synced_at: new Date().toISOString()
     };
 
-    const existing = await base44.asServiceRole.entities.WorkOrder.filter({ inquiry_id: inquiry.id }, '-updated_date', 1);
+    const existing = await retryOnRateLimit('find existing work order', () => base44.asServiceRole.entities.WorkOrder.filter({ inquiry_id: inquiry.id }, '-updated_date', 1));
     const wasCreated = !existing[0];
     const workOrder = existing[0]
-      ? await base44.asServiceRole.entities.WorkOrder.update(existing[0].id, workOrderPayload)
-      : await base44.asServiceRole.entities.WorkOrder.create(workOrderPayload);
+      ? await retryOnRateLimit('update work order', () => base44.asServiceRole.entities.WorkOrder.update(existing[0].id, workOrderPayload))
+      : await retryOnRateLimit('create work order', () => base44.asServiceRole.entities.WorkOrder.create(workOrderPayload));
 
     await addTimelineEvent({
       conversationId: workOrderPayload.conversation_id,
