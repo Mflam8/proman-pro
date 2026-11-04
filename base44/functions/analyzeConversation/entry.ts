@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
-const PROMPT_VERSION = 'conversation-intelligence-v2';
+const PROMPT_VERSION = 'proman-muse-spark-evidence-v1';
 const ANALYSIS_MODEL = 'muse-spark-1.3';
 const MIN_ANALYSIS_INTERVAL_MS = 3 * 60 * 1000;
 const LONG_SILENCE_MS = 6 * 60 * 60 * 1000;
@@ -199,6 +199,11 @@ Deno.serve(async (req) => {
           service: { type: 'string' },
           urgency: { type: 'string', enum: ['baja', 'media', 'alta', 'urgente'] },
           direction_or_location: { type: 'string' },
+          detected_name: { type: 'string' },
+          detected_address: { type: 'string' },
+          detected_price: { type: 'number' },
+          detected_schedule: { type: 'string' },
+          missing_fields: { type: 'array', items: { type: 'string' } },
           names: { type: 'array', items: { type: 'string' } },
           dates: { type: 'array', items: { type: 'string' } },
           payments: { type: 'array', items: { type: 'string' } },
@@ -265,6 +270,11 @@ Deno.serve(async (req) => {
       service: analysis.service,
       urgency: analysis.urgency,
       direction_or_location: analysis.direction_or_location || '',
+      detected_name: analysis.detected_name || '',
+      detected_address: analysis.detected_address || '',
+      detected_price: analysis.detected_price ?? null,
+      detected_schedule: analysis.detected_schedule || '',
+      missing_fields: analysis.missing_fields || [],
       names: analysis.names || [],
       dates: analysis.dates || [],
       payments: analysis.payments || [],
