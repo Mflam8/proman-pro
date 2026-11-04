@@ -20,14 +20,6 @@ function inferPriority(urgency = 'media') {
   return 'media';
 }
 
-function detectApproval(analysis) {
-  const text = `${analysis.intent || ''} ${analysis.summary || ''} ${analysis.suggested_next_reply || ''}`.toLowerCase();
-  const negatives = ['cancel', 'rechaz', 'perdid', 'no acepta', 'no aprueba', 'no desea'];
-  if (negatives.some((token) => text.includes(token))) return false;
-  const positives = ['aprueba', 'aprob', 'acepta', 'confirm', 'autoriza', 'reserve', 'reservar', 'agenda'];
-  return positives.some((token) => text.includes(token));
-}
-
 function needsInformation(analysis) {
   const missing = uniqueList(analysis.missing_fields);
   if (missing.length > 0) return true;
@@ -170,9 +162,9 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'ConversationAnalysis not provided' }, { status: 400 });
     }
 
-    const confidence = analysis.ai_confidence_score ?? analysis.confidence_score ?? 0;
-    const requiresReview = analysis.requires_human_review || confidence < 0.72;
-    const approved = !requiresReview && detectApproval(analysis);
+    // AI text is never treated as the customer's explicit approval.
+    const requiresReview = true;
+    const approved = false;
 
     let inquiry = null;
     if (analysis.inquiry_id) {
