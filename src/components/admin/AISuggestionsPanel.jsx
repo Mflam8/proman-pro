@@ -92,6 +92,59 @@ export default function AISuggestionsPanel({ inquiry, customer, phone, conversat
 
   const handleUpdateJob = async () => {
     if (!latest || !inquiry?.id) return;
+
+    if (previewAnalysis?._dryRun) {
+      const changes = [
+        previewAnalysis.service && `servicio: ${previewAnalysis.service}`,
+        previewAnalysis.urgency && `prioridad: ${previewAnalysis.urgency}`,
+        previewAnalysis.detected_address && `dirección: ${previewAnalysis.detected_address}`,
+        previewAnalysis.detected_schedule && `horario mencionado: ${previewAnalysis.detected_schedule}`
+      ].filter(Boolean);
+      if (changes.length === 0) {
+        setAnalysisError('La prueba no produjo campos suficientes para actualizar esta ficha.');
+        return;
+      }
+      const approvedToApply = window.confirm(
+        `Se actualizará la ficha de trabajo existente con: ${changes.join('; ')}. El monto, pagos y asignación no se registrarán automáticamente. ¿Confirmas aplicar estos cambios?`
+      );
+      if (!approvedToApply) return;
+
+      const snapshot = {
+        source: 'Muse Spark preview reviewed by operator',
+        source_conversation_id: conversationId,
+        detected_service: previewAnalysis.service || null,
+        detected_urgency: previewAnalysis.urgency || null,
+        detected_location: previewAnalysis.direction_or_location || null,
+        detected_address: previewAnalysis.detected_address || null,
+        detected_price: previewAnalysis.detected_price ?? null,
+        detected_schedule: previewAnalysis.detected_schedule || null,
+        detected_amounts: previewAnalysis.payments || [],
+        missing_fields: previewAnalysis.missing_fields || [],
+        field_evidence: previewAnalysis.field_evidence || [],
+        source_message_count: previewAnalysis._sourceMessages || null,
+        reviewed_at: new Date().toISOString()
+      };
+      const patch = {
+        human_review_status: 'approved',
+        approved_operational_snapshot: JSON.stringify(snapshot),
+        notes: [inquiry.notes, `Muse Spark revisado: ${previewAnalysis.summary}`].filter(Boolean).join('\\n\\n')
+      };
+      if (previewAnalysis.service && previewAnalysis.service !== 'unknown') patch.service_type = previewAnalysis.service;
+      if (previewAnalysis.urgency) patch.priority = previewAnalysis.urgency;
+      if (previewAnalysis.detected_address) patch.address = previewAnalysis.detected_address;
+      if (previewAnalysis.direction_or_location) patch.location_name = previewAnalysis.direction_or_location;
+      if (previewAnalysis.detected_schedule) patch.preferred_time = previewAnalysis.detected_schedule;
+      if (previewAnalysis.suggested_next_reply) patch.next_best_action = previewAnalysis.suggested_next_reply;
+
+      await base44.entities.ClientInquiry.update(inquiry.id, patch);
+      queryClient.invalidateQueries({ queryKey: ['inquiry', inquiry.id] });
+      queryClient.invalidateQueries({ queryKey: ['clientInquiries'] });
+      queryClient.invalidateQueries({ queryKey: ['conversationAnalysis'] });
+      setPreviewAnalysis(null);
+      setAnalysisError('');
+      return;
+    }
+
     await base44.entities.ClientInquiry.update(inquiry.id, {
       service_type: latest.service || inquiry.service_type,
       priority: latest.urgency || inquiry.priority,
