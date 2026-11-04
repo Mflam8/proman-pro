@@ -216,6 +216,8 @@ export default function AISuggestionsPanel({ inquiry, customer, phone, conversat
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-4 space-y-4">
+        {analysisError && <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-2 text-sm text-red-700">{analysisError}</div>}
+        {previewAnalysis?._dryRun && <div className="rounded-md border border-blue-200 bg-blue-50 p-2 text-sm text-blue-800">Vista previa sin guardar · {previewAnalysis._sourceMessages || 0} mensajes consultados</div>}
         {!latest ? (
           <p className="text-sm text-slate-600">Aún no hay análisis. Presiona “Analizar” para generar sugerencias.</p>
         ) : (
