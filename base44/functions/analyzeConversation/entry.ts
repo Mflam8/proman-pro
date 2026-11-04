@@ -168,7 +168,10 @@ Deno.serve(async (req) => {
 
     const lastAnalysis = previousAnalyses[0] || null;
     const lastState = stateList[0] || null;
-    const decision = shouldAnalyze({ latestMessage, lastAnalysis, lastState, recentMessages, trigger_reason });
+    const isManualDryRun = body?.dry_run === true && trigger_reason === 'manual_review_preview';
+    const decision = isManualDryRun
+      ? { run: true, reason: 'manual_review_preview' }
+      : shouldAnalyze({ latestMessage, lastAnalysis, lastState, recentMessages, trigger_reason });
 
     if (!decision.run) {
       return Response.json({ success: true, skipped: true, reason: decision.reason });
