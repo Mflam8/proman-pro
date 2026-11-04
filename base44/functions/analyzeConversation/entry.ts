@@ -1,11 +1,61 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 const PROMPT_VERSION = 'conversation-intelligence-v2';
-const ANALYSIS_MODEL = 'automatic';
+const ANALYSIS_MODEL = 'muse-spark-1.3';
 const MIN_ANALYSIS_INTERVAL_MS = 3 * 60 * 1000;
 const LONG_SILENCE_MS = 6 * 60 * 60 * 1000;
 const SHORT_NOISE = ['ok', 'gracias', '👍', '👍🏻', '👍🏼', '👍🏽', '👍🏾', '👍🏿'];
 const SHORT_SILENCE_OR_NOISE = new Set(SHORT_NOISE);
+
+async function invokeMuseSpark({ model, prompt, response_json_schema }) {
+  const apiKey = Deno.env.get('MODEL_API_KEY');
+  if (!apiKey) {
+    throw new Error('MODEL_API_KEY is not configured for Muse Spark analysis.');
+  }
+
+  const response = await fetch('https://api.meta.ai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        {
+          role: 'developer',
+          content: 'Analyze PROMAN service conversations conservatively. Suggest and summarize only. Never claim a payment, assignment, schedule, or completion unless the source messages explicitly support it. Keep uncertainty visible.'
+        },
+        { role: 'user', content: prompt }
+      ],
+      response_format: {
+        type: 'json_schema',
+        json_schema: {
+          name: 'proman_conversation_analysis',
+          schema: response_json_schema,
+          strict: false
+        }
+      }
+    })
+  });
+
+  if (!response.ok) {
+    const detail = await response.text().catch(() => '');
+    throw new Error(`Meta Model API request failed (${response.status}): ${detail.slice(0, 300)}`);
+  }
+
+  const payload = await response.json();
+  const content = payload?.choices?.[0]?.message?.content;
+  if (typeof content !== 'string' || !content.trim()) {
+    throw new Error('Meta Model API returned no analysis content.');
+  }
+  try {
+    return JSON.parse(content);
+  } catch {
+    throw new Error('Meta Model API returned invalid JSON for conversation analysis.');
+  }
+}
+
 
 function normalizeText(value) {
   return String(value || '').trim().toLowerCase();
@@ -133,13 +183,13 @@ Deno.serve(async (req) => {
           : msg.event_type === 'status'
             ? `[estado ${msg.delivery_status || msg.text || ''}]`
             : (msg.text || msg.texto_mensaje || msg.caption || '[sin texto]');
-        return `${role}: ${text}`;
+        return `[record_id:${msg.id || 'unknown'}][timestamp:${msg.timestamp || msg.created_date || 'unknown'}] ${role}: ${text}`;
       })
       .join('\n');
 
-    const analysis = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const analysis = await invokeMuseSpark({
       model: ANALYSIS_MODEL,
-      prompt: `Eres un asistente de inteligencia operacional para WhatsApp de una empresa de servicios técnicos.\n\nDebes analizar SOLO para resumir, detectar, priorizar y sugerir.\nNO debes asumir automatización peligrosa.\nNO crear trabajos, NO cobrar, NO cerrar, NO asignar técnicos.\n\nRolling summary previo:\n${rollingSummary || 'Sin resumen previo'}\n\nEstado previo:\n- intención actual: ${lastState?.current_intent || 'desconocida'}\n- servicio actual: ${lastState?.current_service || 'desconocido'}\n- urgencia actual: ${lastState?.current_urgency || 'media'}\n- pendiente del cliente: ${lastState?.pending_customer_request || 'ninguno'}\n- pendientes abiertos: ${(lastState?.unresolved_items || []).join(', ') || 'ninguno'}\n\nMensajes recientes:\n${transcript}\n\nResponde con continuidad operacional, poco ruido y criterio conservador.`,
+      prompt: `Eres un asistente de inteligencia operacional para WhatsApp de una empresa de servicios técnicos.\n\nDebes analizar SOLO para resumir, detectar, priorizar y sugerir.\nNO debes asumir automatización peligrosa.\nNO crear trabajos, NO cobrar, NO cerrar, NO asignar técnicos.\n\nRolling summary previo:\n${rollingSummary || 'Sin resumen previo'}\n\nEstado previo:\n- intención actual: ${lastState?.current_intent || 'desconocida'}\n- servicio actual: ${lastState?.current_service || 'desconocido'}\n- urgencia actual: ${lastState?.current_urgency || 'media'}\n- pendiente del cliente: ${lastState?.pending_customer_request || 'ninguno'}\n- pendientes abiertos: ${(lastState?.unresolved_items || []).join(', ') || 'ninguno'}\n\nMensajes recientes:\n${transcript}\n\nPor cada dato operativo detectado, incluye en field_evidence el ID del mensaje origen y una cita literal exacta. Si no hay evidencia, deja el dato como pendiente y solicita revisión humana. La cita debe provenir de un mensaje de esta conversación, no de una inferencia ni del resumen anterior.\n\nResponde con continuidad operacional, poco ruido y criterio conservador.`,
       response_json_schema: {
         type: 'object',
         properties: {
@@ -164,11 +214,32 @@ Deno.serve(async (req) => {
           risks_detected: { type: 'array', items: { type: 'string' } },
           pending_from_customer: { type: 'string' },
           unresolved_items: { type: 'array', items: { type: 'string' } },
-          sla_warning: { type: 'boolean' }
+          sla_warning: { type: 'boolean' },
+          field_evidence: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                field: { type: 'string' },
+                message_record_id: { type: 'string' },
+                quote: { type: 'string' }
+              },
+              required: ['field', 'message_record_id', 'quote']
+            }
+          }
         },
         required: ['summary', 'rolling_summary', 'intent', 'service', 'urgency', 'suggested_action', 'suggested_next_reply']
       }
     });
+
+    const sourceTextById = new Map(recentMessages.map((msg) => [msg.id, String(msg.text || msg.texto_mensaje || msg.caption || '')]));
+    const proposedEvidence = Array.isArray(analysis.field_evidence) ? analysis.field_evidence : [];
+    const verifiedEvidence = proposedEvidence.filter((item) => {
+      const sourceText = sourceTextById.get(item?.message_record_id);
+      return Boolean(sourceText && item?.quote && sourceText.includes(item.quote.trim()));
+    });
+    if (verifiedEvidence.length !== proposedEvidence.length) analysis.requires_human_review = true;
+    analysis.field_evidence = verifiedEvidence;
 
     const addTimelineEvent = async ({ eventType, title, description, relatedEntityId = null, metadata = {} }) => {
       if (!resolvedConversationId) return;
@@ -217,6 +288,7 @@ Deno.serve(async (req) => {
       token_usage: Math.ceil((`${rollingSummary}\n${transcript}`).length / 4),
       analysis_duration_ms: duration,
       status: 'pending',
+      field_evidence_json: JSON.stringify(analysis.field_evidence || []),
       raw_analysis: JSON.stringify(analysis)
     });
 
