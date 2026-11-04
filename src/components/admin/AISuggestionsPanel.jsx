@@ -210,8 +210,8 @@ export default function AISuggestionsPanel({ inquiry, customer, phone, conversat
       <CardHeader className="bg-fuchsia-500 text-white">
         <CardTitle className="flex items-center justify-between gap-3">
           <span className="flex items-center gap-2"><Sparkles className="w-5 h-5" />AI Suggestions</span>
-          <Button size="sm" variant="outline" onClick={handleAnalyze} disabled={loading} className="bg-white text-fuchsia-700 hover:bg-fuchsia-50">
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Analizar'}
+          <Button size="sm" variant="outline" onClick={handleAnalyze} disabled={loading || !conversationId} className="bg-white text-fuchsia-700 hover:bg-fuchsia-50">
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Probar Muse Spark'}
           </Button>
         </CardTitle>
       </CardHeader>
@@ -221,6 +221,8 @@ export default function AISuggestionsPanel({ inquiry, customer, phone, conversat
         ) : (
           <>
             <div className="space-y-2 text-sm">
+              {analysisError && <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-2 text-sm text-red-700">{analysisError}</div>}
+              {previewAnalysis?._dryRun && <div className="rounded-md border border-blue-200 bg-blue-50 p-2 text-sm text-blue-800">Vista previa sin guardar · {previewAnalysis._sourceMessages || 0} mensajes consultados</div>}
               <div><span className="font-semibold">Resumen IA:</span> {latest.summary}</div>
               {fieldEvidence.length > 0 && (
                 <div className="rounded-lg border bg-white p-3 space-y-2">
@@ -266,16 +268,16 @@ export default function AISuggestionsPanel({ inquiry, customer, phone, conversat
 
             <div className="grid gap-2 pt-2 border-t">
               <div className="flex flex-wrap gap-2">
-                <Button type="button" onClick={onOpenCreateInquiry} className="bg-proman-yellow text-proman-navy hover:opacity-90">Crear Inquiry</Button>
-                <Button type="button" variant="outline" onClick={handleUpdateJob} disabled={!inquiry?.id}>{inquiry?.human_review_status === 'approved' ? '✓ Aprobado' : 'Aprobar IA'}</Button>
-                <Button type="button" variant="destructive" onClick={handleMarkUrgent}>
+                <Button type="button" onClick={onOpenCreateInquiry} disabled={!!previewAnalysis} className="bg-proman-yellow text-proman-navy hover:opacity-90">Crear Inquiry</Button>
+                <Button type="button" variant="outline" onClick={handleUpdateJob} disabled={!inquiry?.id}>{previewAnalysis ? 'Aplicar a ficha' : inquiry?.human_review_status === 'approved' ? '✓ Aprobado' : 'Aprobar IA'}</Button>
+                <Button type="button" variant="destructive" onClick={handleMarkUrgent} disabled={!!previewAnalysis}>
                   <AlertTriangle className="w-4 h-4 mr-2" />Marcar urgente
                 </Button>
-                <Button type="button" variant="outline" onClick={handleIgnore}>Ignorar</Button>
+                <Button type="button" variant="outline" onClick={handleIgnore} disabled={!!previewAnalysis}>Ignorar</Button>
               </div>
               <div className="flex gap-2">
                 <Input value={linkJobId} onChange={(e) => setLinkJobId(e.target.value)} placeholder="ID de Job para vincular" />
-                <Button type="button" variant="outline" onClick={handleLinkJob}>
+                <Button type="button" variant="outline" onClick={handleLinkJob} disabled={!!previewAnalysis}>
                   <Link2 className="w-4 h-4 mr-2" />Vincular a Job
                 </Button>
               </div>
