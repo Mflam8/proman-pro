@@ -29,6 +29,11 @@ export default function AISuggestionsPanel({ inquiry, customer, phone, conversat
   });
 
   const latest = analyses[0] || null;
+  let fieldEvidence = [];
+  try {
+    const parsed = JSON.parse(latest?.field_evidence_json || '[]');
+    fieldEvidence = Array.isArray(parsed) ? parsed : [];
+  } catch {}
 
   const handleAnalyze = async () => {
     setLoading(true);
@@ -139,6 +144,17 @@ export default function AISuggestionsPanel({ inquiry, customer, phone, conversat
           <>
             <div className="space-y-2 text-sm">
               <div><span className="font-semibold">Resumen IA:</span> {latest.summary}</div>
+              {fieldEvidence.length > 0 && (
+                <div className="rounded-lg border bg-white p-3 space-y-2">
+                  <div className="font-semibold">Evidencia verificada en la conversación</div>
+                  {fieldEvidence.map((item, index) => (
+                    <div key={`${item.message_record_id}-${item.field}-${index}`} className="text-slate-700">
+                      <span className="font-medium">{item.field}:</span> “{item.quote}”
+                      <span className="block text-xs text-slate-500">Mensaje {item.message_record_id}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
               <div className="flex flex-wrap gap-2">
                 <Badge>{latest.intent}</Badge>
                 {latest.service && <Badge variant="outline">{latest.service}</Badge>}
